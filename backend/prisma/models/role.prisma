@@ -1,0 +1,5 @@
+model Role {
+  id    String     @id @default(uuid())
+  name  String     @unique  // "ALUMNO", "DOCENTE", "PRECEPTOR", "DIRECTIVO"
+  users UserRole[]
+}
