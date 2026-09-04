@@ -1,9 +1,10 @@
-const express = require('express');
+import { Router } from 'express';
+import { registerStudent, registerTeacher, login } from '../controllers/auth.controller.js';
 
-const router = express.Router();
+const router = Router();
 
-router.get('/ping', (req, res) => {
-    res.json({ message: 'auth routes funcionando' });
-});
+router.post('/register/student', registerStudent);
+router.post('/register/teacher', registerTeacher);
+router.post('/login', login);
 
-module.exports = router;
+export default router;
