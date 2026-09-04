@@ -1,0 +1,58 @@
+model Activity {
+  id            Int      @id @default(autoincrement())
+  title         String
+  description   String?
+  gameType      String
+  content       Json
+  pointsAwarded Int      @default(100)
+  createdAt     DateTime @default(now())
+
+  teacherId Int
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id])
+
+  attempts GameAttempt[]
+}
+
+model GameAttempt {
+  id          Int      @id @default(autoincrement())
+  score       Int
+  isCompleted Boolean  @default(false)
+  timeInSec   Int
+  createdAt   DateTime @default(now())
+
+  activityId Int
+  activity   Activity @relation(fields: [activityId], references: [id])
+
+  studentId Int
+  student   StudentProfile @relation(fields: [studentId], references: [id])
+}
+
+model AvatarConfig {
+  id         Int  @id @default(autoincrement())
+  configJson Json
+
+  studentId Int            @unique
+  student   StudentProfile @relation(fields: [studentId], references: [id])
+}
+
+model StoreItem {
+  id       Int    @id @default(autoincrement())
+  name     String
+  price    Int
+  category String
+
+  buyers StudentInventory[]
+}
+
+model StudentInventory {
+  id       Int      @id @default(autoincrement())
+  boughtAt DateTime @default(now())
+
+  studentId Int
+  student   StudentProfile @relation(fields: [studentId], references: [id])
+
+  itemId Int
+  item   StoreItem @relation(fields: [itemId], references: [id])
+
+  @@unique([studentId, itemId])
+}

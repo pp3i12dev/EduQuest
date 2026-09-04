@@ -1,0 +1,17 @@
+enum InvitedRole {
+  TEACHER
+  PRECEPTOR
+}
+
+model Invitation {
+  id        Int         @id @default(autoincrement())
+  email     String
+  role      InvitedRole
+  token     String      @unique @default(uuid())
+  isUsed    Boolean     @default(false)
+  expiresAt DateTime
+  createdAt DateTime    @default(now())
+
+  directorId Int
+  director   User @relation("DirectorInvitations", fields: [directorId], references: [id])
+}

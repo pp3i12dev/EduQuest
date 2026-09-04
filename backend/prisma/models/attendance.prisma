@@ -1,0 +1,19 @@
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  JUSTIFIED
+  LATE
+}
+
+model Attendance {
+  id        Int              @id @default(autoincrement())
+  date      DateTime         @default(now())
+  status    AttendanceStatus
+  createdAt DateTime         @default(now())
+
+  studentId Int
+  student   StudentProfile @relation(fields: [studentId], references: [id])
+
+  preceptorId Int
+  preceptor   PreceptorProfile @relation("PreceptorAttendance", fields: [preceptorId], references: [id])
+}

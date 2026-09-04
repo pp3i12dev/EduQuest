@@ -1,10 +1,23 @@
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  password      String
-  name          String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  roles         UserRole[]
-  refreshTokens RefreshToken[]
+  id           Int      @id @default(autoincrement())
+  dni          String   @unique
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  institutionId Int
+  institution   Institution @relation(fields: [institutionId], references: [id])
+
+  // Un usuario puede poseer múltiples perfiles a la vez (ej: Docente + Preceptor)
+  studentProfile   StudentProfile?
+  teacherProfile   TeacherProfile?
+  preceptorProfile PreceptorProfile?
+  directorProfile  DirectorProfile?
+
+  refreshTokens   RefreshToken[]
+  sentInvitations Invitation[]   @relation("DirectorInvitations")
 }

@@ -1,0 +1,12 @@
+model TeacherProfile {
+  id            Int      @id @default(autoincrement())
+  legajoTeacher String   @unique
+  specialty     String?
+  createdAt     DateTime @default(now())
+
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  teacherSubjects TeacherSubject[]
+  activities      Activity[]
+}

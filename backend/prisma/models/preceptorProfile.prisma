@@ -1,0 +1,11 @@
+model PreceptorProfile {
+  id              Int      @id @default(autoincrement())
+  legajoPreceptor String   @unique
+  shift           String?
+  createdAt       DateTime @default(now())
+
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  registeredAttendances Attendance[] @relation("PreceptorAttendance")
+}

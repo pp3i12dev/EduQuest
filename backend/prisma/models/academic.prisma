@@ -1,0 +1,61 @@
+model Career {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  createdAt DateTime @default(now())
+
+  institutionId Int
+  institution   Institution @relation(fields: [institutionId], references: [id])
+
+  courses Course[]
+}
+
+model Course {
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  academicYear Int      @default(2026)
+  createdAt    DateTime @default(now())
+
+  institutionId Int
+  institution   Institution @relation(fields: [institutionId], references: [id])
+
+  careerId Int?
+  career   Career? @relation(fields: [careerId], references: [id])
+
+  students StudentCourse[]
+  teachers TeacherSubject[]
+}
+
+model Subject {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  createdAt DateTime @default(now())
+
+  teachers TeacherSubject[]
+}
+
+model TeacherSubject {
+  id Int @id @default(autoincrement())
+
+  teacherId Int
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id])
+
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id])
+
+  @@unique([teacherId, subjectId, courseId])
+}
+
+model StudentCourse {
+  id Int @id @default(autoincrement())
+
+  studentId Int
+  student   StudentProfile @relation(fields: [studentId], references: [id])
+
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id])
+
+  @@unique([studentId, courseId])
+}
