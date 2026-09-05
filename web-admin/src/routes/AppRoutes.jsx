@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import LoginView from '../views/LoginView';
-import DashboardView from '../views/DashboardView';
+import DashboardView from '../views/DashBoardView';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useContext(AuthContext);

@@ -1,9 +1,12 @@
-const express = require('express');
+import { Router } from 'express';
+import { authenticate, requirePermission } from '../middleware/auth.middleware.js';
+// import { createStudent, ... } from '../controllers/users.controller.js';
 
-const router = express.Router();
+const router = Router();
 
-router.get('/ping', (req, res) => {
-    res.json({ message: 'user routes funcionando' });
-});
+router.use(authenticate);
 
-module.exports = router;
+router.post('/students', requirePermission('student:create'), /* createStudent */ (req, res) => res.status(501).end());
+router.delete('/students/:id', requirePermission('student:delete'), (req, res) => res.status(501).end());
+router.post('/staff/invite', requirePermission('staff:invite'), (req, res) => res.status(501).end());
+// etc.

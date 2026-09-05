@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { getPrisma } from '../config/prisma.js';
+import { getRolesFromUser } from '../utils/rols.js';
 
 export const login = async (req, res) => {
     try {
@@ -10,7 +11,6 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: 'Debe ingresar email/DNI y contraseña' });
         }
 
-        // Inicialización bajo demanda cuando la petición HTTP ya está viva
         const prisma = getPrisma();
 
         const user = await prisma.user.findFirst({
@@ -32,11 +32,14 @@ export const login = async (req, res) => {
             return res.status(401).json({ message: 'Credenciales inválidas' });
         }
 
+        const roles = getRolesFromUser(user);
+
         const token = jwt.sign(
             {
                 id: user.id,
                 email: user.email,
                 institutionId: user.institutionId,
+                roles,
             },
             process.env.JWT_SECRET || 'estaesmipalabrasecreta',
             { expiresIn: '24h' }
@@ -49,6 +52,7 @@ export const login = async (req, res) => {
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
+                roles,
                 directorProfile: user.directorProfile,
                 teacherProfile: user.teacherProfile,
                 preceptorProfile: user.preceptorProfile,
