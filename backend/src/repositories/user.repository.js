@@ -82,3 +82,16 @@ export const deleteUserById = ({ id, institutionId }) => {
   const prisma = getPrisma();
   return prisma.user.delete({ where: { id, institutionId } });
 };
+
+// Reemplaza la matrícula actual del alumno por el curso indicado
+// (o la borra si courseId viene null/undefined). Nunca deja al alumno
+// con más de un curso activo a la vez.
+export const assignStudentCourse = async ({ studentProfileId, courseId }) => {
+  const prisma = getPrisma();
+  return prisma.$transaction(async (tx) => {
+    await tx.studentCourse.deleteMany({ where: { studentId: studentProfileId } });
+    if (courseId) {
+      await tx.studentCourse.create({ data: { studentId: studentProfileId, courseId } });
+    }
+  });
+};

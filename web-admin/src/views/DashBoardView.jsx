@@ -1,77 +1,24 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { AuthContext } from '../context/AuthContext';
-import api from '../api/axios';
+import { useDashboardSummary } from '../hooks/useDashboard';
 
 const ROLE_SECTIONS = [
-    {
-        key: 'students',
-        label: 'Alumnos',
-        color: 'text-blue-400',
-        path: '/dashboard/students',
-    },
-    {
-        key: 'teachers',
-        label: 'Docentes',
-        color: 'text-emerald-400',
-        path: '/dashboard/teachers',
-    },
-    {
-        key: 'preceptors',
-        label: 'Preceptores',
-        color: 'text-purple-400',
-        path: '/dashboard/preceptors',
-    },
-    {
-        key: 'directors',
-        label: 'Directivos',
-        color: 'text-amber-400',
-        path: '/dashboard/directors',
-    },
-    {
-        key: 'invitations',
-        label: 'Invitaciones Activas',
-        color: 'text-pink-400',
-        path: '/dashboard/invitations',
-    },
+    { key: 'students', label: 'Alumnos', color: 'text-blue-400', path: '/dashboard/students' },
+    { key: 'teachers', label: 'Docentes', color: 'text-emerald-400', path: '/dashboard/teachers' },
+    { key: 'preceptors', label: 'Preceptores', color: 'text-purple-400', path: '/dashboard/preceptors' },
+    { key: 'directors', label: 'Directivos', color: 'text-amber-400', path: '/dashboard/directors' },
+    { key: 'invitations', label: 'Invitaciones Activas', color: 'text-pink-400', path: '/dashboard/invitations' },
 ];
 
-function useDashboardSummary() {
-    return useQuery({
-        queryKey: ['dashboard-summary'],
-        queryFn: async () => {
-            const { data } = await api.get('/dashboard/summary');
-            return data;
-            // Esperado del backend: { students: 12, teachers: 4, preceptors: 2, directors: 1, invitations: 3 }
-        },
-    });
-}
-
 export default function DashboardView() {
-    const { user, logoutContext } = useContext(AuthContext);
+    const { user } = useContext(AuthContext);
     const { data: summary, isLoading, isError } = useDashboardSummary();
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white p-8">
-            <header className="flex justify-between items-center pb-6 border-b border-slate-800">
-                <div>
-                    <h1 className="text-2xl font-bold">Bienvenido, {user?.firstName || 'Usuario'}</h1>
-                    <p className="text-slate-400 text-xs">
-                        {user?.roles?.map((r) => (
-                            <span key={r} className="uppercase text-blue-400 font-semibold mr-2">{r}</span>
-                        ))}
-                    </p>
-                </div>
-                <button
-                    onClick={logoutContext}
-                    className="bg-red-600/20 text-red-400 border border-red-500/30 px-4 py-2 rounded hover:bg-red-600/30 transition-colors"
-                >
-                    Cerrar Sesión
-                </button>
-            </header>
-
-            <main className="mt-8 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div>
+            <p className="text-slate-400 text-sm mb-6">Hola de nuevo, {user?.firstName}.</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 {ROLE_SECTIONS.map((section) => (
                     <Link
                         key={section.key}
@@ -87,7 +34,7 @@ export default function DashboardView() {
                         </span>
                     </Link>
                 ))}
-            </main>
+            </div>
         </div>
     );
 }

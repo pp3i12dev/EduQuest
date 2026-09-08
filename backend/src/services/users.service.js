@@ -70,6 +70,17 @@ export const createUserService = async (role, body, requester) => {
             profileField: config.profileField,
             profileData: config.buildProfileCreate(rest),
         });
+
+        if (role === 'student' && rest.courseId !== undefined) {
+            if (!canAnyRole(requester.roles, 'student:enroll')) {
+                throw new ServiceError('No tenés permisos para matricular alumnos', 403);
+            }
+            await userRepository.assignStudentCourse({
+                studentProfileId: user.studentProfile.id,
+                courseId: rest.courseId ? Number(rest.courseId) : null,
+            });
+        }
+
         return serializeUser(user, config.profileField);
     } catch (error) {
         if (error.code === 'P2002') throw new ServiceError('El email, DNI o legajo ya está en uso', 409);
@@ -103,6 +114,17 @@ export const updateUserService = async (role, id, body, requester) => {
             profileField: config.profileField,
             profileData,
         });
+
+        if (role === 'student' && rest.courseId !== undefined) {
+            if (!canAnyRole(requester.roles, 'student:enroll')) {
+                throw new ServiceError('No tenés permisos para matricular alumnos', 403);
+            }
+            await userRepository.assignStudentCourse({
+                studentProfileId: user.studentProfile.id,
+                courseId: rest.courseId ? Number(rest.courseId) : null,
+            });
+        }
+
         return serializeUser(user, config.profileField);
     } catch (error) {
         if (error.code === 'P2002') throw new ServiceError('El email o DNI ya está en uso', 409);
@@ -116,6 +138,7 @@ export const toggleUserStatusService = async (role, id, isActive, requester) => 
     const permissionKey = isActive
         ? (config.permissions.reactivate ?? config.permissions.toggle)
         : config.permissions.toggle;
+
     assertPermission(requester.roles, permissionKey);
 
     try {
