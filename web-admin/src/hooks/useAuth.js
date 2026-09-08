@@ -18,5 +18,9 @@ export const useLogin = () => {
             loginContext(user, token);
             navigate('/dashboard');
         },
+        onError: (error) => {
+            console.error('Error en login:', error);
+            // Aquí puedes manejar el error, por ejemplo, mostrando un mensaje al usuario
+        }
     });
 };

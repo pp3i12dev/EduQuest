@@ -1,7 +1,14 @@
+enum EducationLevel {
+  JARDIN
+  PRIMARIO
+  SECUNDARIO
+}
+
 model Career {
-  id        Int      @id @default(autoincrement())
+  id        Int            @id @default(autoincrement())
   nombre    String
-  createdAt DateTime @default(now())
+  level     EducationLevel
+  createdAt DateTime       @default(now())
 
   institutionId Int
   institution   Institution @relation(fields: [institutionId], references: [id])
@@ -21,8 +28,9 @@ model Course {
   careerId Int?
   career   Career? @relation(fields: [careerId], references: [id])
 
-  students StudentCourse[]
-  teachers TeacherSubject[]
+  students    StudentCourse[]
+  teachers    TeacherSubject[]
+  invitations Invitation[]
 }
 
 model Subject {

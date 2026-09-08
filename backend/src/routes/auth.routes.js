@@ -3,8 +3,8 @@ import { registerStudent, registerTeacher, login } from '../controllers/auth.con
 
 const router = Router();
 
-router.post('/register/student', registerStudent);
-router.post('/register/teacher', registerTeacher);
+router.post('/register-student', registerStudent);
+router.post('/register-teacher', registerTeacher);
 router.post('/login', login);
 
 export default router;

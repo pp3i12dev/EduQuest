@@ -19,5 +19,5 @@ model User {
   directorProfile  DirectorProfile?
 
   refreshTokens   RefreshToken[]
-  sentInvitations Invitation[]   @relation("DirectorInvitations")
+  sentInvitations Invitation[]   @relation("SentInvitations")
 }

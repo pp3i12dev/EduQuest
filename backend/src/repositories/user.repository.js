@@ -1,79 +1,84 @@
-import prisma from '../config/prisma.js';
+import { getPrisma } from '../config/prisma.js';
 
-// Busca un usuario por email trayendo sus perfiles (Student, Teacher, etc.)
-export const findUserByEmail = async (email) => {
-  return await prisma.user.findUnique({
-    where: { email },
-    include: {
-      studentProfile: true,
-      teacherProfile: true,
-      preceptorProfile: true,
-      directorProfile: true,
-    },
+const PROFILE_INCLUDE = {
+  directorProfile: true,
+  teacherProfile: true,
+  preceptorProfile: true,
+  studentProfile: true,
+};
+
+export const findUserByEmailOrDni = ({ email, dni }) => {
+  const prisma = getPrisma();
+  return prisma.user.findFirst({
+    where: email ? { email } : { dni },
+    include: PROFILE_INCLUDE,
   });
 };
 
-// Inserción de Alumno (Crea Usuario + Perfil + Avatar inicial + Matrícula en un solo paso)
-export const createStudentTransaction = async (userData, studentProfileData, courseId) => {
-  return await prisma.$transaction(async (tx) => {
+export const listUsersByProfile = ({ institutionId, profileField }) => {
+  const prisma = getPrisma();
+  return prisma.user.findMany({
+    where: { institutionId, [profileField]: { isNot: null } },
+    include: { [profileField]: true },
+    orderBy: { lastName: 'asc' },
+  });
+};
+
+export const createUserWithProfile = ({ userData, profileField, profileData }) => {
+  const prisma = getPrisma();
+  return prisma.user.create({
+    data: { ...userData, [profileField]: { create: profileData } },
+    include: { [profileField]: true },
+  });
+};
+
+export const createStudentSelfSignup = ({ userData, courseId }) => {
+  const prisma = getPrisma();
+  return prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
         ...userData,
+        isActive: false,
         studentProfile: {
           create: {
-            ...studentProfileData,
+            legajoStudent: `ALU-${Date.now()}`,
             avatarConfig: {
-              create: {
-                configJson: { skin: 'default', hair: 'short', shirtColor: '#3b82f6' },
-              },
+              create: { configJson: { skin: 'default', hair: 'short', shirtColor: '#3b82f6' } },
             },
           },
         },
       },
-      include: {
-        studentProfile: {
-          include: { avatarConfig: true },
-        },
-      },
+      include: { studentProfile: { include: { avatarConfig: true } } },
     });
 
     await tx.studentCourse.create({
-      data: {
-        studentId: user.studentProfile.id,
-        courseId: courseId,
-      },
+      data: { studentId: user.studentProfile.id, courseId },
     });
 
     return user;
   });
 };
 
-// Inserción de Docente (Valida invitación y quema el token usado)
-export const createTeacherTransaction = async (userData, teacherProfileData, invitationToken) => {
-  return await prisma.$transaction(async (tx) => {
-    const invitation = await tx.invitation.findUnique({
-      where: { token: invitationToken },
-    });
-
-    if (!invitation || invitation.isUsed) {
-      throw new Error('La invitación no es válida o ya fue utilizada');
-    }
-
-    const user = await tx.user.create({
-      data: {
-        ...userData,
-        teacherProfile: {
-          create: teacherProfileData,
-        },
-      },
-      include: { teacherProfile: true },
-    });
-
-    await tx.invitation.update({
-      where: { id: invitation.id },
-      data: { isUsed: true },
-    });
-
-    return user;
+export const updateUserWithProfile = ({ id, institutionId, userData, profileField, profileData }) => {
+  const prisma = getPrisma();
+  return prisma.user.update({
+    where: { id, institutionId },
+    data: {
+      ...userData,
+      ...(profileData && Object.keys(profileData).length > 0
+        ? { [profileField]: { update: profileData } }
+        : {}),
+    },
+    include: { [profileField]: true },
   });
+};
+
+export const setUserActive = ({ id, institutionId, isActive }) => {
+  const prisma = getPrisma();
+  return prisma.user.update({ where: { id, institutionId }, data: { isActive } });
+};
+
+export const deleteUserById = ({ id, institutionId }) => {
+  const prisma = getPrisma();
+  return prisma.user.delete({ where: { id, institutionId } });
 };

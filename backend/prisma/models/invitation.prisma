@@ -1,6 +1,8 @@
 enum InvitedRole {
-  TEACHER
+  DIRECTOR
   PRECEPTOR
+  TEACHER
+  STUDENT
 }
 
 model Invitation {
@@ -12,6 +14,11 @@ model Invitation {
   expiresAt DateTime
   createdAt DateTime    @default(now())
 
-  directorId Int
-  director   User @relation("DirectorInvitations", fields: [directorId], references: [id])
+  invitedById Int
+  invitedBy   User @relation("SentInvitations", fields: [invitedById], references: [id])
+
+  // Solo se completa cuando el que invita es un docente invitando a un
+  // alumno: fija a qué curso queda matriculado el alumno al aceptar.
+  courseId Int?
+  course   Course? @relation(fields: [courseId], references: [id])
 }
