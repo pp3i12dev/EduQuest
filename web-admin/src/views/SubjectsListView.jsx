@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSubjectsAdmin, useCreateSubject, useUpdateSubject, useDeleteSubject } from '../hooks/useSubjectAdmin';
-import SubjectFormModal from '../components/SubjectFormModal';
+import SubjectFormModal from '../components/SubjectFormModal'
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function SubjectsListView() {
