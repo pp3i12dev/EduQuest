@@ -12,4 +12,5 @@ model Institution {
   users    User[]
   careers  Career[]
   courses  Course[]
+  subjects Subject[]
 }

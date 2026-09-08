@@ -38,6 +38,9 @@ model Subject {
   nombre    String
   createdAt DateTime @default(now())
 
+  institutionId Int
+  institution   Institution @relation(fields: [institutionId], references: [id])
+
   teachers TeacherSubject[]
 }
 

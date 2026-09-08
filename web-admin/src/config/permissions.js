@@ -7,6 +7,8 @@ export const FRONTEND_PERMISSIONS = {
     'student:manage': ['DIRECTOR', 'PRECEPTOR'],
     'student:view': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
     'invitation:manage': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
+    'institution:manage': ['DIRECTOR'],
+    'course:manage': ['DIRECTOR', 'PRECEPTOR'],
 };
 
 export function hasAny(userRoles = [], action) {

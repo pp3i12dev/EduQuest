@@ -1,6 +1,7 @@
 export const PERMISSIONS = {
     'institution:manage': ['DIRECTOR'],
     'course:manage': ['DIRECTOR', 'PRECEPTOR'],
+    'career:manage': ['DIRECTOR', 'PRECEPTOR'],
     'subject:manage': ['DIRECTOR', 'PRECEPTOR'],
     'teacher:assignSubject': ['DIRECTOR', 'PRECEPTOR'],
 
@@ -22,7 +23,7 @@ export const PERMISSIONS = {
     'teacher:deactivate': ['DIRECTOR', 'PRECEPTOR'],
     'teacher:delete': ['DIRECTOR', 'PRECEPTOR'],
 
-    'student:list': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'], 
+    'student:list': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
     'student:create': ['DIRECTOR', 'PRECEPTOR'],
     'student:edit': ['DIRECTOR', 'PRECEPTOR'],
     'student:enroll': ['DIRECTOR', 'PRECEPTOR'],
