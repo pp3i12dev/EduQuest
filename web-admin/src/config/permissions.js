@@ -1,5 +1,3 @@
-// Espejo liviano de src/config/permissions.js del backend, SOLO para
-// decidir qué mostrar en la UI. La seguridad real la hace el backend.
 export const FRONTEND_PERMISSIONS = {
     'teacher:manage': ['DIRECTOR', 'PRECEPTOR'],
     'preceptor:manage': ['DIRECTOR'],
@@ -8,7 +6,9 @@ export const FRONTEND_PERMISSIONS = {
     'student:view': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
     'invitation:manage': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
     'institution:manage': ['DIRECTOR'],
+    'career:manage': ['DIRECTOR', 'PRECEPTOR'],
     'course:manage': ['DIRECTOR', 'PRECEPTOR'],
+    'subject:manage': ['DIRECTOR', 'PRECEPTOR'],
 };
 
 export function hasAny(userRoles = [], action) {

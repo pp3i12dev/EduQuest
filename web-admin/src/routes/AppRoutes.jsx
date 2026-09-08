@@ -7,6 +7,10 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import UsersListView from '../views/UsersListView';
 import InvitationsListView from '../views/InvitationListView';
 import RoleRoute from './RoleRoute';
+import CareersListView from '../views/CareersListView';
+import CoursesListView from '../views/CoursesListView';
+import SubjectsListView from '../views/SubjectsListView';
+import InstitutionView from '../views/InstitutionView';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useContext(AuthContext);
@@ -76,7 +80,22 @@ export default function AppRouter() {
                 </Route>
 
                 <Route path="*" element={<Navigate to="/login" replace />} />
+
+                <Route path="careers" element={
+                    <RoleRoute action="career:manage"><CareersListView /></RoleRoute>
+                } />
+                <Route path="courses" element={
+                    <RoleRoute action="course:manage"><CoursesListView /></RoleRoute>
+                } />
+                <Route path="subjects" element={
+                    <RoleRoute action="subject:manage"><SubjectsListView /></RoleRoute>
+                } />
+                <Route path="institution" element={
+                    <RoleRoute action="institution:manage"><InstitutionView /></RoleRoute>
+                } />
             </Routes>
         </BrowserRouter>
     );
+
+
 }

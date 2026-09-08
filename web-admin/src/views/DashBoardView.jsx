@@ -10,9 +10,9 @@ const ROLE_SECTIONS = [
     { key: 'preceptors', label: 'Preceptores', color: 'text-purple-400', path: '/dashboard/preceptors', action: 'preceptor:manage' },
     { key: 'directors', label: 'Directivos', color: 'text-amber-400', path: '/dashboard/directors', action: 'director:manage' },
     { key: 'invitations', label: 'Invitaciones Activas', color: 'text-pink-400', path: '/dashboard/invitations', action: 'invitation:manage' },
-    { key: 'careers', label: 'Carreras / Niveles', color: 'text-cyan-400', path: '/dashboard/careers', action: 'course:manage' },
+    { key: 'careers', label: 'Carreras / Niveles', color: 'text-cyan-400', path: '/dashboard/careers', action: 'career:manage' },
     { key: 'courses', label: 'Cursos', color: 'text-teal-400', path: '/dashboard/courses', action: 'course:manage' },
-    { key: 'subjects', label: 'Materias', color: 'text-lime-400', path: '/dashboard/subjects', action: 'course:manage' },
+    { key: 'subjects', label: 'Materias', color: 'text-lime-400', path: '/dashboard/subjects', action: 'subject:manage' },
     { key: 'institutions', label: 'Institución', color: 'text-orange-400', path: '/dashboard/institution', action: 'institution:manage' },
 ];
 
