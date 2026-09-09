@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" path-mode="Absolute" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/HomeStyles.uss?fileID=7433441132597879392&amp;guid=713b4548b5c8c9f4f8074890e60a129f&amp;type=3#HomeStyles"/>
+    <ui:VisualElement name="MainContainer" class="container">
+        <ui:VisualElement name="Header" class="header">
+            <ui:Label text="¡Bienvenido a EduQuest!" parse-escape-sequences="false" class="title" style="-unity-text-align: upper-center; text-overflow: clip; height: auto; width: auto; max-width: none; font-size: 25px;"/>
+            <ui:Label text="Plataforma Educativa Interactiva" class="subtitle"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="ButtonGroup" class="button-group">
+            <ui:Button name="BtnLogin" text="Ingresar" class="btn-primary"/>
+            <ui:Button name="BtnRegister" text="Registrarse" class="btn-secondary"/>
+            <ui:Button name="BtnWebAdmin" text="Ir a Web Admin" class="btn-secondary"/>
+            <ui:Button name="BtnPlayChanchis" text="Jugar Chanchis Adventures" class="btn-accent"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

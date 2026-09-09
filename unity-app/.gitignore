@@ -1,0 +1,38 @@
+# Ignorar carpetas generadas por Unity dentro de unity-app
+unity-app/[Ll]ibrary/
+unity-app/[Tt]emp/
+unity-app/[Oo]bj/
+unity-app/[Bb]uild/
+unity-app/[Bb]uilds/
+unity-app/[Ll]ogs/
+unity-app/[Uu]ser[Ss]ettings/
+unity-app/[Mm]emoryCaptures/
+
+# Si la carpeta del proyecto de Unity puede cambiar de nombre, usa comodines genéricos:
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+
+# Archivos de solución autogenerados por Visual Studio / VS Code
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.opendb
+*.VC.db
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
