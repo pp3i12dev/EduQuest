@@ -1,0 +1,650 @@
+fileFormatVersion: 2
+guid: 3d66a535bf8abcf4aab6506bddf00909
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 7551873558645633579
+    second: character_berie_idle_poisoned_0
+  - first:
+      213: 6528172060908984618
+    second: character_berie_idle_poisoned_1
+  - first:
+      213: 4104396173380585804
+    second: character_berie_idle_poisoned_2
+  - first:
+      213: -7134320430091051196
+    second: character_berie_idle_poisoned_3
+  - first:
+      213: -9128910925821681293
+    second: character_berie_idle_poisoned_4
+  - first:
+      213: -4615489647258696922
+    second: character_berie_idle_poisoned_5
+  - first:
+      213: -1156482199805267328
+    second: character_berie_idle_poisoned_6
+  - first:
+      213: 9138155571731561683
+    second: character_berie_idle_poisoned_7
+  - first:
+      213: 2115554118223802638
+    second: character_berie_idle_poisoned_8
+  - first:
+      213: -7120646857985081051
+    second: character_berie_idle_poisoned_9
+  - first:
+      213: 3309442358450610820
+    second: character_berie_idle_poisoned_10
+  - first:
+      213: 8048397081043199192
+    second: character_berie_idle_poisoned_11
+  - first:
+      213: -949969016009221699
+    second: character_berie_idle_poisoned_12
+  - first:
+      213: -4930179951632643534
+    second: character_berie_idle_poisoned_13
+  - first:
+      213: 3230855562792891265
+    second: character_berie_idle_poisoned_14
+  - first:
+      213: -7704259476162487413
+    second: character_berie_idle_poisoned_15
+  - first:
+      213: 1561802664780145876
+    second: character_berie_idle_poisoned_16
+  - first:
+      213: -3112868649101341106
+    second: character_berie_idle_poisoned_17
+  - first:
+      213: 6805735766874988568
+    second: character_berie_idle_poisoned_18
+  - first:
+      213: 1649422744552038677
+    second: character_berie_idle_poisoned_19
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_0
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 0
+        width: 31
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b22fcb37df4adc860800000000000000
+      internalID: 7551873558645633579
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_1
+      rect:
+        serializedVersion: 2
+        x: 56
+        y: 0
+        width: 31
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a291c13d6e9b89a50800000000000000
+      internalID: 6528172060908984618
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_2
+      rect:
+        serializedVersion: 2
+        x: 104
+        y: 0
+        width: 30
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4982dbd29eb5f830800000000000000
+      internalID: 4104396173380585804
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_3
+      rect:
+        serializedVersion: 2
+        x: 152
+        y: 0
+        width: 30
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 44f5c9a3e5dcdfc90800000000000000
+      internalID: -7134320430091051196
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_4
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 0
+        width: 30
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 371673841e79f4180800000000000000
+      internalID: -9128910925821681293
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_5
+      rect:
+        serializedVersion: 2
+        x: 248
+        y: 0
+        width: 31
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 62307a6ae9c72ffb0800000000000000
+      internalID: -4615489647258696922
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_6
+      rect:
+        serializedVersion: 2
+        x: 296
+        y: 0
+        width: 31
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0827b8b019953ffe0800000000000000
+      internalID: -1156482199805267328
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_7
+      rect:
+        serializedVersion: 2
+        x: 344
+        y: 0
+        width: 30
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3dcf053931041de70800000000000000
+      internalID: 9138155571731561683
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_8
+      rect:
+        serializedVersion: 2
+        x: 392
+        y: 0
+        width: 30
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e0138d70345fb5d10800000000000000
+      internalID: 2115554118223802638
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_9
+      rect:
+        serializedVersion: 2
+        x: 440
+        y: 0
+        width: 30
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5214cc2d8616e2d90800000000000000
+      internalID: -7120646857985081051
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_10
+      rect:
+        serializedVersion: 2
+        x: 488
+        y: 0
+        width: 31
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 48264147a408ded20800000000000000
+      internalID: 3309442358450610820
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_11
+      rect:
+        serializedVersion: 2
+        x: 536
+        y: 0
+        width: 31
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d4eed2c086a1bf60800000000000000
+      internalID: 8048397081043199192
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_12
+      rect:
+        serializedVersion: 2
+        x: 584
+        y: 0
+        width: 30
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: db9942d863801d2f0800000000000000
+      internalID: -949969016009221699
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_13
+      rect:
+        serializedVersion: 2
+        x: 632
+        y: 0
+        width: 30
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 23a0f28847b749bb0800000000000000
+      internalID: -4930179951632643534
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_14
+      rect:
+        serializedVersion: 2
+        x: 680
+        y: 0
+        width: 30
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1837ddc340e46dc20800000000000000
+      internalID: 3230855562792891265
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_15
+      rect:
+        serializedVersion: 2
+        x: 728
+        y: 0
+        width: 31
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b8bd5e943d8f41590800000000000000
+      internalID: -7704259476162487413
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_16
+      rect:
+        serializedVersion: 2
+        x: 776
+        y: 0
+        width: 31
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d4aa73bf33aca510800000000000000
+      internalID: 1561802664780145876
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_17
+      rect:
+        serializedVersion: 2
+        x: 824
+        y: 0
+        width: 30
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e4e4dd1d47edcc4d0800000000000000
+      internalID: -3112868649101341106
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_18
+      rect:
+        serializedVersion: 2
+        x: 872
+        y: 0
+        width: 30
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 81021c32f94d27e50800000000000000
+      internalID: 6805735766874988568
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: character_berie_idle_poisoned_19
+      rect:
+        serializedVersion: 2
+        x: 920
+        y: 0
+        width: 30
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 51169754f3de3e610800000000000000
+      internalID: 1649422744552038677
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      character_berie_idle_poisoned_0: 7551873558645633579
+      character_berie_idle_poisoned_1: 6528172060908984618
+      character_berie_idle_poisoned_10: 3309442358450610820
+      character_berie_idle_poisoned_11: 8048397081043199192
+      character_berie_idle_poisoned_12: -949969016009221699
+      character_berie_idle_poisoned_13: -4930179951632643534
+      character_berie_idle_poisoned_14: 3230855562792891265
+      character_berie_idle_poisoned_15: -7704259476162487413
+      character_berie_idle_poisoned_16: 1561802664780145876
+      character_berie_idle_poisoned_17: -3112868649101341106
+      character_berie_idle_poisoned_18: 6805735766874988568
+      character_berie_idle_poisoned_19: 1649422744552038677
+      character_berie_idle_poisoned_2: 4104396173380585804
+      character_berie_idle_poisoned_3: -7134320430091051196
+      character_berie_idle_poisoned_4: -9128910925821681293
+      character_berie_idle_poisoned_5: -4615489647258696922
+      character_berie_idle_poisoned_6: -1156482199805267328
+      character_berie_idle_poisoned_7: 9138155571731561683
+      character_berie_idle_poisoned_8: 2115554118223802638
+      character_berie_idle_poisoned_9: -7120646857985081051
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

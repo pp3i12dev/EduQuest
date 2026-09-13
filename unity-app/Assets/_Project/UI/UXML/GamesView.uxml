@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../USS/Theme.uss" />
+    <ui:VisualElement name="games-container" class="screen">
+        <ui:Label text="Zona de Juegos" class="title" />
+        <ui:Label text="Elegí tu aventura para comenzar" class="subtitle" />
+        
+        <ui:Button name="play-pig-button" text="Porqui's Adventures" class="primary-button" />
+        <ui:Button name="back-to-home-button" text="Volver" class="secondary-button" />
+    </ui:VisualElement>
+</ui:UXML>

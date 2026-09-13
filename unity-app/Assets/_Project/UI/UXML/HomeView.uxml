@@ -3,7 +3,12 @@
     <Style src="../USS/HomeView.uss" />
     <ui:VisualElement name="home-container" class="screen">
         <ui:Label name="welcome-label" class="title" />
-        <ui:Label text="Elegí un juego para empezar" class="subtitle" />
-        <ui:Button name="logout-button" text="Cerrar sesión" class="secondary-button" />
+        <ui:Label text="¿Qué te gustaría hacer hoy?" class="subtitle" />
+        
+        <ui:Button name="courses-button" text="Ver Cursos" class="primary-button" />
+        <ui:Button name="profile-button" text="Mi Perfil" class="secondary-button" />
+        <ui:Button name="games-button" text="Juegos" class="primary-button" />
+        
+        <ui:Button name="logout-button" text="Cerrar sesión" class="link-button" />
     </ui:VisualElement>
 </ui:UXML>
