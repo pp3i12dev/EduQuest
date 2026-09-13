@@ -1,0 +1,19 @@
+#welcome-container {
+    justify-content: space-between;
+}
+
+#brand-block {
+    margin-top: 80px;
+}
+
+.brand-title {
+    font-size: 40px;
+    -unity-font-style: bold;
+    color: rgb(96, 165, 250);
+    -unity-text-align: middle-center;
+    margin-bottom: 40px;
+}
+
+#actions-block {
+    margin-bottom: 40px;
+}

@@ -1,0 +1,16 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../USS/Theme.uss" />
+    <Style src="../USS/LoginView.uss" />
+    <ui:VisualElement name="login-container" class="screen">
+        <ui:Label text="Iniciar sesión" class="title" />
+        <ui:Label text="Ingresá con tu email y contraseña" class="subtitle" />
+
+        <ui:TextField name="email-field" label="Email" />
+        <ui:TextField name="password-field" label="Contraseña" password="true" />
+
+        <ui:Button name="login-button" text="Ingresar" class="primary-button" />
+        <ui:Label name="error-label" class="error-text" />
+
+        <ui:Button name="back-button" text="Volver" class="link-button" />
+    </ui:VisualElement>
+</ui:UXML>

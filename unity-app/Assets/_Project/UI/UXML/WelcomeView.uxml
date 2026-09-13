@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../USS/Theme.uss" />
+    <Style src="../USS/WelcomeView.uss" />
+    <ui:VisualElement name="welcome-container" class="screen">
+        <ui:VisualElement name="brand-block">
+            <ui:Label text="EduQuest" class="brand-title" />
+            <ui:Label text="Bienvenido a EduQuest" class="title" />
+            <ui:Label text="Aprendé jugando, a tu ritmo" class="subtitle" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="actions-block">
+            <ui:Button name="login-button" text="Ingresar" class="primary-button" />
+            <ui:Button name="register-button" text="Crear cuenta" class="secondary-button" />
+            <ui:Button name="web-admin-button" text="Panel administrativo (directivos)" class="link-button" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

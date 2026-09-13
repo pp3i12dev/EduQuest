@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../USS/Theme.uss" />
+    <Style src="../USS/HomeView.uss" />
+    <ui:VisualElement name="home-container" class="screen">
+        <ui:Label name="welcome-label" class="title" />
+        <ui:Label text="Elegí un juego para empezar" class="subtitle" />
+        <ui:Button name="logout-button" text="Cerrar sesión" class="secondary-button" />
+    </ui:VisualElement>
+</ui:UXML>
