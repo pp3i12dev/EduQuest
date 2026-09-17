@@ -1,7 +1,9 @@
 import { hashPassword } from '../utils/password.js';
 import { canAnyRole } from '../config/permissions.js';
-import { getRoleConfig } from '../config/userRoles.js';
+
 import * as userRepository from '../repositories/user.repository.js';
+import { ROLE_CONFIG, getRoleConfig } from '../config/userRoles.js';
+import { getRolesFromUser } from '../utils/rols.js';
 
 class ServiceError extends Error {
     constructor(message, status = 400) {
@@ -164,4 +166,83 @@ export const deleteUserService = async (role, id, requester) => {
         if (error.code === 'P2025') throw new ServiceError('Usuario no encontrado', 404);
         throw error;
     }
+};
+
+
+function serializeUserWithRoles(user) {
+    return {
+        id: user.id,
+        dni: user.dni,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isActive: user.isActive,
+        roles: getRolesFromUser(user),
+        profiles: {
+            student: user.studentProfile,
+            teacher: user.teacherProfile,
+            preceptor: user.preceptorProfile,
+            director: user.directorProfile,
+        },
+    };
+}
+
+export const getUserWithRolesService = async (id, requester) => {
+    assertPermission(requester.roles, 'user:manageRoles');
+
+    const user = await userRepository.findUserWithAllProfiles({
+        id: Number(id),
+        institutionId: requester.institutionId,
+    });
+    if (!user) throw new ServiceError('Usuario no encontrado', 404);
+
+    return serializeUserWithRoles(user);
+};
+
+// rolesPayload: { student?: { enabled, legajoStudent }, teacher?: { enabled, legajoTeacher, specialty }, ... }
+// Solo se tocan las claves presentes; una clave ausente = "no cambiar ese rol".
+export const updateUserRolesService = async (id, rolesPayload, requester) => {
+    assertPermission(requester.roles, 'user:manageRoles');
+
+    const user = await userRepository.findUserWithAllProfiles({
+        id: Number(id),
+        institutionId: requester.institutionId,
+    });
+    if (!user) throw new ServiceError('Usuario no encontrado', 404);
+
+    for (const role of Object.keys(ROLE_CONFIG)) {
+        const desired = rolesPayload[role];
+        if (desired === undefined) continue;
+
+        const config = getRoleConfig(role);
+        const currentlyHas = Boolean(user[config.profileField]);
+
+        if (desired.enabled && !currentlyHas) {
+            if (!config.permissions.create) {
+                throw new ServiceError(`El rol "${role}" no se asigna directamente (usa invitación)`, 400);
+            }
+            assertPermission(requester.roles, config.permissions.create);
+
+            for (const field of config.requiredCreateFields ?? []) {
+                if (!desired[field]) throw new ServiceError(`Falta "${field}" para asignar el rol ${role}`, 400);
+            }
+
+            await userRepository.addProfileToUser({
+                id: Number(id),
+                profileField: config.profileField,
+                profileData: config.buildProfileCreate(desired),
+            });
+        }
+
+        if (!desired.enabled && currentlyHas) {
+            assertPermission(requester.roles, config.permissions.delete);
+            await userRepository.removeProfileFromUser({ id: Number(id), profileField: config.profileField });
+        }
+    }
+
+    const updated = await userRepository.findUserWithAllProfiles({
+        id: Number(id),
+        institutionId: requester.institutionId,
+    });
+    return serializeUserWithRoles(updated);
 };

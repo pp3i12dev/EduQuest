@@ -45,3 +45,23 @@ export function useDeleteUser(role) {
         },
     });
 }
+
+export function useUserRoles(id) {
+    return useQuery({
+        queryKey: ['user-roles', id],
+        queryFn: () => usersService.getRoles(id),
+        enabled: Boolean(id),
+    });
+}
+
+export function useUpdateUserRoles() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, roles }) => usersService.updateRoles(id, roles),
+        onSuccess: (_, { }) => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            queryClient.invalidateQueries({ queryKey: ['user-roles'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+        },
+    });
+}

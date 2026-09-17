@@ -20,4 +20,13 @@ export const usersService = {
     remove: async (role, id) => {
         await api.delete(`/users/${id}`, { params: { role } });
     },
+
+    getRoles: async (id) => {
+        const { data } = await api.get(`/users/${id}/roles`);
+        return data;
+    },
+    updateRoles: async (id, roles) => {
+        const { data } = await api.patch(`/users/${id}/roles`, { roles });
+        return data;
+    },
 };

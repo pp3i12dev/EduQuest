@@ -1,4 +1,5 @@
 export const PERMISSIONS = {
+    'user:manageRoles': ['DIRECTOR', 'PRECEPTOR'],
     'institution:manage': ['DIRECTOR'],
     'course:manage': ['DIRECTOR', 'PRECEPTOR'],
     'career:manage': ['DIRECTOR', 'PRECEPTOR'],

@@ -70,7 +70,6 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &5654985330534390646
 SpriteRenderer:
-  serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -116,7 +115,6 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_MaskInteraction: 0
   m_Sprite: {fileID: -5606227204291313350, guid: 7b152b2ded7861d428e353068b372f45, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -125,7 +123,8 @@ SpriteRenderer:
   m_Size: {x: 0.29, y: 0.34}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
+  m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!95 &674046317440770881
 Animator:
@@ -225,15 +224,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e63d27a5ed3e56b4d929956c780e2f39, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VirtualJoystick
-  playersoundcontroller: {fileID: 0}
   runSpeedHorizontal: 3
   runSpeedVertical: 3
   runSpeed: 1
-  textCoins: {fileID: 0}
   velocidad: 5
   fuerzaSalto: 6.5
   longitudRaycast: 0.07
   capaSuelo:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8
+  animator: {fileID: 0}
   joystick: {fileID: 0}

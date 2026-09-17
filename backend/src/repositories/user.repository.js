@@ -95,3 +95,34 @@ export const assignStudentCourse = async ({ studentProfileId, courseId }) => {
     }
   });
 };
+
+const ALL_PROFILES_INCLUDE = {
+  studentProfile: true,
+  teacherProfile: true,
+  preceptorProfile: true,
+  directorProfile: true,
+};
+
+export const findUserWithAllProfiles = ({ id, institutionId }) => {
+  const prisma = getPrisma();
+  return prisma.user.findFirst({
+    where: { id, institutionId },
+    include: ALL_PROFILES_INCLUDE,
+  });
+};
+
+export const addProfileToUser = ({ id, profileField, profileData }) => {
+  const prisma = getPrisma();
+  return prisma.user.update({
+    where: { id },
+    data: { [profileField]: { create: profileData } },
+  });
+};
+
+export const removeProfileFromUser = ({ id, profileField }) => {
+  const prisma = getPrisma();
+  return prisma.user.update({
+    where: { id },
+    data: { [profileField]: { delete: true } },
+  });
+};

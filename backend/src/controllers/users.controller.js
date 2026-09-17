@@ -45,3 +45,21 @@ export const deleteUser = async (req, res) => {
         return handleServiceError(error, res);
     }
 };
+
+import { getUserWithRolesService, updateUserRolesService } from '../services/users.service.js';
+
+export const getUserRoles = async (req, res) => {
+    try {
+        return res.json(await getUserWithRolesService(req.params.id, req.user));
+    } catch (error) {
+        return handleServiceError(error, res);
+    }
+};
+
+export const updateUserRoles = async (req, res) => {
+    try {
+        return res.json(await updateUserRolesService(req.params.id, req.body.roles, req.user));
+    } catch (error) {
+        return handleServiceError(error, res);
+    }
+};

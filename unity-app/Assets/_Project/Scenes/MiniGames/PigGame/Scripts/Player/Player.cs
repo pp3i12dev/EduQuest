@@ -34,20 +34,12 @@ public class PlayerMovement : MonoBehaviour
         totalCoins = GameObject.FindGameObjectsWithTag("Coin").Length;
     }
 
- void Update()
+    void Update()
     {
         if (isDead) return;
 
-        // Protección por si el joystick no se asignó en el Inspector
-        if (joystick != null)
-        {
-            horizontalMove = joystick.Horizontal * runSpeedHorizontal;
-        }
-
-        if (rb2D != null)
-        {
-            rb2D.linearVelocity = new Vector2(horizontalMove * runSpeed, rb2D.linearVelocity.y);
-        }
+        horizontalMove = joystick.Horizontal * runSpeedHorizontal;
+        rb2D.linearVelocity = new Vector2(horizontalMove * runSpeed, rb2D.linearVelocity.y);
 
         if (horizontalMove != 0)
             transform.localScale = new Vector3(Mathf.Sign(horizontalMove), 1, 1);
@@ -55,13 +47,9 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, longitudRaycast, capaSuelo);
         enSuelo = hit.collider != null;
 
-        // Protección para el Animator que vimos sin Controller hace un momento
-        if (animator != null)
-        {
-            animator.SetFloat("Speed", Mathf.Abs(horizontalMove));
-            animator.SetFloat("VerticalVelocity", rb2D != null ? rb2D.linearVelocity.y : 0);
-            animator.SetBool("enSuelo", enSuelo);
-        }
+        animator.SetFloat("Speed", Mathf.Abs(horizontalMove));
+        animator.SetFloat("VerticalVelocity", rb2D.linearVelocity.y);
+        animator.SetBool("enSuelo", enSuelo);
     }
 
     public void Jump()
