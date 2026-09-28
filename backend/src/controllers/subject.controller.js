@@ -1,5 +1,5 @@
 import {
-    listSubjectsService, createSubjectService, updateSubjectService, deleteSubjectService,
+    listSubjectsService, listSubjectGamesService, createSubjectService, updateSubjectService, deleteSubjectService,
 } from '../services/subject.service.js';
 import { handleServiceError } from '../utils/handleServiceError.js';
 
@@ -31,6 +31,14 @@ export const deleteSubject = async (req, res) => {
     try {
         await deleteSubjectService(req.params.id, req.user);
         return res.status(204).end();
+    } catch (error) {
+        return handleServiceError(error, res);
+    }
+};
+
+export const listSubjectGames = async (req, res) => {
+    try {
+        return res.json(listSubjectGamesService(req.user));
     } catch (error) {
         return handleServiceError(error, res);
     }

@@ -1,6 +1,8 @@
 import { canAnyRole } from '../config/permissions.js';
 import * as subjectRepository from '../repositories/subject.repository.js';
 
+const AVAILABLE_GAMES = [{ id: 'pig-game', nombre: 'Pig Game' }];
+
 class ServiceError extends Error {
     constructor(message, status = 400) {
         super(message);
@@ -19,12 +21,30 @@ export const listSubjectsService = (requester) => {
     return subjectRepository.listSubjects(requester.institutionId);
 };
 
+export const listSubjectGamesService = (requester) => {
+    assertPermission(requester.roles);
+    return AVAILABLE_GAMES;
+};
+
 export const createSubjectService = async (body, requester) => {
     assertPermission(requester.roles);
-    const { nombre } = body;
-    if (!nombre) throw new ServiceError('Falta el nombre de la materia', 400);
+    const { nombre, teacherId, courseId, gameId } = body;
+    if (!nombre || !teacherId || !courseId || !gameId) {
+        throw new ServiceError('Completá el nombre, docente, curso y juego', 400);
+    }
+    if (!AVAILABLE_GAMES.some((game) => game.id === gameId)) {
+        throw new ServiceError('El juego seleccionado no está disponible', 400);
+    }
 
-    return subjectRepository.createSubject({ nombre, institutionId: requester.institutionId });
+    const subject = await subjectRepository.createSubject({
+        nombre: nombre.trim(),
+        institutionId: requester.institutionId,
+        teacherId: Number(teacherId),
+        courseId: Number(courseId),
+        gameId,
+    });
+    if (!subject) throw new ServiceError('El docente o curso no pertenece a la institución', 400);
+    return subject;
 };
 
 export const updateSubjectService = async (id, body, requester) => {

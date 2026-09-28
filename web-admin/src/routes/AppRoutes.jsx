@@ -77,22 +77,21 @@ export default function AppRouter() {
                             </RoleRoute>
                         }
                     />
+                    <Route path="careers" element={
+                        <RoleRoute action="career:manage"><CareersListView /></RoleRoute>
+                    } />
+                    <Route path="courses" element={
+                        <RoleRoute action="course:manage"><CoursesListView /></RoleRoute>
+                    } />
+                    <Route path="subjects" element={
+                        <RoleRoute action="subject:manage"><SubjectsListView /></RoleRoute>
+                    } />
+                    <Route path="institution" element={
+                        <RoleRoute action="institution:manage"><InstitutionView /></RoleRoute>
+                    } />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/login" replace />} />
-
-                <Route path="careers" element={
-                    <RoleRoute action="career:manage"><CareersListView /></RoleRoute>
-                } />
-                <Route path="courses" element={
-                    <RoleRoute action="course:manage"><CoursesListView /></RoleRoute>
-                } />
-                <Route path="subjects" element={
-                    <RoleRoute action="subject:manage"><SubjectsListView /></RoleRoute>
-                } />
-                <Route path="institution" element={
-                    <RoleRoute action="institution:manage"><InstitutionView /></RoleRoute>
-                } />
             </Routes>
         </BrowserRouter>
     );

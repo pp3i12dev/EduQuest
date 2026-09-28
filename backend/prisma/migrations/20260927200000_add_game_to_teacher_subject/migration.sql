@@ -1,0 +1,1 @@
+ALTER TABLE "TeacherSubject" ADD COLUMN "gameId" TEXT;

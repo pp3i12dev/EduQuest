@@ -5,6 +5,10 @@ export const subjectAdminService = {
         const { data } = await api.get('/subjects');
         return data;
     },
+    listGames: async () => {
+        const { data } = await api.get('/subjects/games');
+        return data;
+    },
     create: async (payload) => {
         const { data } = await api.post('/subjects', payload);
         return data;

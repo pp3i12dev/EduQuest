@@ -32,26 +32,30 @@ export default function SubjectsListView() {
                 <table className="w-full text-sm border-collapse">
                     <thead>
                         <tr className="text-left text-slate-400 border-b border-slate-800">
-                            <th className="py-2">Nombre</th><th className="text-right">Acciones</th>
+                            <th className="py-2">Nombre</th><th>Docente</th><th>Curso</th><th>Juego</th><th className="text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {subjects?.map((s) => (
                             <tr key={s.id} className="border-b border-slate-900 hover:bg-slate-900/50">
                                 <td className="py-3">{s.nombre}</td>
+                                <td>{s.teachers?.map((assignment) => `${assignment.teacher.user.firstName} ${assignment.teacher.user.lastName}`).join(', ') || '—'}</td>
+                                <td>{s.teachers?.map((assignment) => assignment.course.nombre).join(', ') || '—'}</td>
+                                <td>{s.teachers?.map((assignment) => assignment.gameId === 'pig-game' ? 'Pig Game' : assignment.gameId || '—').join(', ') || '—'}</td>
                                 <td className="text-right space-x-2">
                                     <button onClick={() => { setEditing(s); setFormOpen(true); }} className="text-blue-400 hover:underline text-xs">Editar</button>
                                     <button onClick={() => setDeletingId(s.id)} className="text-red-400 hover:underline text-xs">Eliminar</button>
                                 </td>
                             </tr>
                         ))}
-                        {subjects?.length === 0 && <tr><td colSpan={2} className="py-6 text-center text-slate-500">Sin registros.</td></tr>}
+                        {subjects?.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-slate-500">Sin registros.</td></tr>}
                     </tbody>
                 </table>
             )}
 
             <SubjectFormModal open={formOpen} initialData={editing} onSubmit={handleSubmit} onClose={() => setFormOpen(false)}
-                isSaving={createMutation.isPending || updateMutation.isPending} />
+                isSaving={createMutation.isPending || updateMutation.isPending}
+                formError={createMutation.error?.response?.data?.message || updateMutation.error?.response?.data?.message} />
 
             <ConfirmDialog open={Boolean(deletingId)} title="Eliminar materia" message="Esta acción no se puede deshacer. ¿Confirmás?"
                 confirmLabel="Eliminar" onCancel={() => setDeletingId(null)}

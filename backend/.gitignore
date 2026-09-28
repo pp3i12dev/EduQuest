@@ -18,8 +18,6 @@ yarn-error.log*
 logs/
 
 # Archivos generados por Prisma y la base de datos
-prisma/migrations/*
-!prisma/migrations/migration_lock.toml
 
 # Configuración del sistema operativo y editores
 .DS_Store
