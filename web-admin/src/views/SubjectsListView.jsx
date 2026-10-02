@@ -32,7 +32,7 @@ export default function SubjectsListView() {
                 <table className="w-full text-sm border-collapse">
                     <thead>
                         <tr className="text-left text-slate-400 border-b border-slate-800">
-                            <th className="py-2">Nombre</th><th>Docente</th><th>Curso</th><th>Módulo / juego</th><th className="text-right">Acciones</th>
+                            <th className="py-2">Nombre</th><th>Docente</th><th>Curso</th><th className="text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -41,14 +41,13 @@ export default function SubjectsListView() {
                                 <td className="py-3">{s.nombre}</td>
                                 <td>{s.teachers?.map((assignment) => `${assignment.teacher.user.firstName} ${assignment.teacher.user.lastName}`).join(', ') || '—'}</td>
                                 <td>{s.teachers?.map((assignment) => assignment.course.nombre).join(', ') || '—'}</td>
-                                <td>{s.teachers?.flatMap((assignment) => assignment.activities ?? []).map((activity) => `${activity.title} (${activity.gameType === 'pig_game' ? 'Pig Game' : activity.gameType})`).join(', ') || '—'}</td>
                                 <td className="text-right space-x-2">
                                     <button onClick={() => { setEditing(s); setFormOpen(true); }} className="text-blue-400 hover:underline text-xs">Editar</button>
                                     <button onClick={() => setDeletingId(s.id)} className="text-red-400 hover:underline text-xs">Eliminar</button>
                                 </td>
                             </tr>
                         ))}
-                        {subjects?.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-slate-500">Sin registros.</td></tr>}
+                        {subjects?.length === 0 && <tr><td colSpan={4} className="py-6 text-center text-slate-500">Sin registros.</td></tr>}
                     </tbody>
                 </table>
             )}
