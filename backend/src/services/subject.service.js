@@ -28,12 +28,9 @@ export const listSubjectGamesService = (requester) => {
 
 export const createSubjectService = async (body, requester) => {
     assertPermission(requester.roles);
-    const { nombre, teacherId, courseId, moduleTitle, gameType } = body;
-    if (!nombre || !teacherId || !courseId || !moduleTitle?.trim() || !gameType) {
-        throw new ServiceError('Completá el nombre, docente, curso, módulo y juego', 400);
-    }
-    if (!AVAILABLE_GAMES.some((game) => game.id === gameType)) {
-        throw new ServiceError('El juego seleccionado no está disponible', 400);
+    const { nombre, teacherId, courseId } = body;
+    if (!nombre || !teacherId || !courseId) {
+        throw new ServiceError('Completá el nombre, docente y curso', 400);
     }
 
     const subject = await subjectRepository.createSubject({
@@ -41,8 +38,6 @@ export const createSubjectService = async (body, requester) => {
         institutionId: requester.institutionId,
         teacherId: Number(teacherId),
         courseId: Number(courseId),
-        moduleTitle: moduleTitle.trim(),
-        gameType,
     });
     if (!subject) throw new ServiceError('El docente o curso no pertenece a la institución', 400);
     return subject;

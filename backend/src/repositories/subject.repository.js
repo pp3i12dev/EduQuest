@@ -17,7 +17,7 @@ export const listSubjects = (institutionId) => {
     });
 };
 
-export const createSubject = ({ nombre, institutionId, teacherId, courseId, moduleTitle, gameType }) => {
+export const createSubject = ({ nombre, institutionId, teacherId, courseId }) => {
     const prisma = getPrisma();
     return prisma.$transaction(async (tx) => {
         const teacher = await tx.teacherProfile.findFirst({
@@ -42,16 +42,6 @@ export const createSubject = ({ nombre, institutionId, teacherId, courseId, modu
         const assignment = await tx.teacherSubject.create({
             data: { teacherId, subjectId: subject.id, courseId },
             select: { id: true },
-        });
-
-        await tx.activity.create({
-            data: {
-                title: moduleTitle,
-                gameType,
-                content: {},
-                teacherId,
-                teacherSubjectId: assignment.id,
-            },
         });
 
         return tx.subject.findUnique({
