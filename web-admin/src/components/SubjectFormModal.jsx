@@ -14,10 +14,10 @@ export default function SubjectFormModal({ open, initialData, onSubmit, onClose,
         queryKey: ['subject-games'],
         queryFn: subjectAdminService.listGames,
     });
-    const [form, setForm] = useState({ nombre: '', teacherId: '', courseId: '', gameId: '' });
+    const [form, setForm] = useState({ nombre: '', teacherId: '', courseId: '', moduleTitle: '', gameType: '' });
 
     useEffect(() => {
-        setForm({ nombre: initialData?.nombre ?? '', teacherId: '', courseId: '', gameId: '' });
+        setForm({ nombre: initialData?.nombre ?? '', teacherId: '', courseId: '', moduleTitle: '', gameType: '' });
     }, [initialData, open]);
 
     if (!open) return null;
@@ -28,7 +28,8 @@ export default function SubjectFormModal({ open, initialData, onSubmit, onClose,
             nombre: form.nombre,
             teacherId: Number(form.teacherId),
             courseId: Number(form.courseId),
-            gameId: form.gameId,
+            moduleTitle: form.moduleTitle,
+            gameType: form.gameType,
         });
     };
 
@@ -51,7 +52,12 @@ export default function SubjectFormModal({ open, initialData, onSubmit, onClose,
                         <option value="">Seleccionar curso</option>
                         {courses.map((course) => <option key={course.id} value={course.id}>{course.nombre}</option>)}
                     </select>
-                    <select value={form.gameId} onChange={(e) => setForm((current) => ({ ...current, gameId: e.target.value }))} required
+                    <label className="block space-y-1 text-sm">
+                        <span>Módulo</span>
+                        <input value={form.moduleTitle} onChange={(e) => setForm((current) => ({ ...current, moduleTitle: e.target.value }))} placeholder="Nombre del módulo" required
+                            className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm" />
+                    </label>
+                    <select value={form.gameType} onChange={(e) => setForm((current) => ({ ...current, gameType: e.target.value }))} required
                         className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm">
                         <option value="">Seleccionar juego</option>
                         {games.map((game) => <option key={game.id} value={game.id}>{game.nombre}</option>)}

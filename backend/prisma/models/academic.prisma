@@ -56,7 +56,7 @@ model TeacherSubject {
   courseId Int
   course   Course @relation(fields: [courseId], references: [id])
 
-  gameId String?
+  activities Activity[]
 
   @@unique([teacherId, subjectId, courseId])
 }

@@ -1,7 +1,7 @@
 import { canAnyRole } from '../config/permissions.js';
 import * as subjectRepository from '../repositories/subject.repository.js';
 
-const AVAILABLE_GAMES = [{ id: 'pig-game', nombre: 'Pig Game' }];
+const AVAILABLE_GAMES = [{ id: 'pig_game', nombre: 'Pig Game' }];
 
 class ServiceError extends Error {
     constructor(message, status = 400) {
@@ -28,11 +28,11 @@ export const listSubjectGamesService = (requester) => {
 
 export const createSubjectService = async (body, requester) => {
     assertPermission(requester.roles);
-    const { nombre, teacherId, courseId, gameId } = body;
-    if (!nombre || !teacherId || !courseId || !gameId) {
-        throw new ServiceError('Completá el nombre, docente, curso y juego', 400);
+    const { nombre, teacherId, courseId, moduleTitle, gameType } = body;
+    if (!nombre || !teacherId || !courseId || !moduleTitle?.trim() || !gameType) {
+        throw new ServiceError('Completá el nombre, docente, curso, módulo y juego', 400);
     }
-    if (!AVAILABLE_GAMES.some((game) => game.id === gameId)) {
+    if (!AVAILABLE_GAMES.some((game) => game.id === gameType)) {
         throw new ServiceError('El juego seleccionado no está disponible', 400);
     }
 
@@ -41,7 +41,8 @@ export const createSubjectService = async (body, requester) => {
         institutionId: requester.institutionId,
         teacherId: Number(teacherId),
         courseId: Number(courseId),
-        gameId,
+        moduleTitle: moduleTitle.trim(),
+        gameType,
     });
     if (!subject) throw new ServiceError('El docente o curso no pertenece a la institución', 400);
     return subject;

@@ -10,7 +10,12 @@ model Activity {
   teacherId Int
   teacher   TeacherProfile @relation(fields: [teacherId], references: [id])
 
+  teacherSubjectId Int?
+  teacherSubject   TeacherSubject? @relation(fields: [teacherSubjectId], references: [id], onDelete: SetNull)
+
   attempts GameAttempt[]
+
+  @@index([teacherSubjectId])
 }
 
 model GameAttempt {

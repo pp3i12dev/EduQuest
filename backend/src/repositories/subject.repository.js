@@ -9,6 +9,7 @@ export const listSubjects = (institutionId) => {
                 include: {
                     teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
                     course: true,
+                    activities: true,
                 },
             },
         },
@@ -16,7 +17,7 @@ export const listSubjects = (institutionId) => {
     });
 };
 
-export const createSubject = ({ nombre, institutionId, teacherId, courseId, gameId }) => {
+export const createSubject = ({ nombre, institutionId, teacherId, courseId, moduleTitle, gameType }) => {
     const prisma = getPrisma();
     return prisma.$transaction(async (tx) => {
         const teacher = await tx.teacherProfile.findFirst({
@@ -30,15 +31,40 @@ export const createSubject = ({ nombre, institutionId, teacherId, courseId, game
 
         if (!teacher || !course) return null;
 
-        return tx.subject.create({
+        const subject = await tx.subject.create({
             data: {
                 nombre,
                 institutionId,
+            },
+            select: { id: true },
+        });
+
+        const assignment = await tx.teacherSubject.create({
+            data: { teacherId, subjectId: subject.id, courseId },
+            select: { id: true },
+        });
+
+        await tx.activity.create({
+            data: {
+                title: moduleTitle,
+                gameType,
+                content: {},
+                teacherId,
+                teacherSubjectId: assignment.id,
+            },
+        });
+
+        return tx.subject.findUnique({
+            where: { id: subject.id },
+            include: {
                 teachers: {
-                    create: { teacherId, courseId, gameId },
+                    include: {
+                        teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
+                        course: true,
+                        activities: true,
+                    },
                 },
             },
-            include: { teachers: true },
         });
     });
 };
