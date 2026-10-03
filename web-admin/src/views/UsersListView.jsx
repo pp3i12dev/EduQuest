@@ -78,7 +78,7 @@ export default function UsersListView({ role, title }) {
                                     <td className="text-right space-x-2">
                                         <button
                                             onClick={() => openEdit(u)}
-                                            className="text-blue-400 hover:underline text-xs"
+                                            className="text-blue-400 hover:underline text-xs cursor-pointer"
                                         >
                                             Editar
                                         </button>
@@ -90,14 +90,14 @@ export default function UsersListView({ role, title }) {
                                                     isActive: !u.isActive
                                                 })
                                             }
-                                            className="text-amber-400 hover:underline text-xs"
+                                            className="text-amber-400 hover:underline text-xs cursor-pointer"
                                         >
                                             {u.isActive ? 'Desactivar' : 'Activar'}
                                         </button>
 
                                         <button
                                             onClick={() => setDeletingId(u.id)}
-                                            className="text-red-400 hover:underline text-xs"
+                                            className="text-red-400 hover:underline text-xs cursor-pointer"
                                         >
                                             Eliminar
                                         </button>
