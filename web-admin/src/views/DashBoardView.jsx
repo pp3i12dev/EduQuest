@@ -144,8 +144,8 @@ export default function DashboardView() {
     if (!activeSection) {
         return (
             <div>
-                <p className="text-slate-400 text-sm mb-8">
-                    Hola de nuevo, {user?.firstName}.
+                <p className="text-white text-sm lg:text-xl mb-8">
+                    Hola de nuevo, {user?.firstName}!
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -168,8 +168,8 @@ export default function DashboardView() {
                                     }
                                     disabled={!accessible}
                                     className={`text-left bg-slate-900 border border-slate-800 p-6 rounded-xl transition-all group ${accessible
-                                            ? `${section.border} hover:bg-slate-800/60 cursor-pointer`
-                                            : 'opacity-40 cursor-not-allowed'
+                                        ? `${section.border} hover:bg-slate-800/60 cursor-pointer`
+                                        : 'opacity-40 cursor-not-allowed'
                                         }`}
                                 >
                                     <h2
@@ -187,8 +187,8 @@ export default function DashboardView() {
                                     <div className="mt-6">
                                         <span
                                             className={`text-xs ${accessible
-                                                    ? 'text-slate-500 group-hover:text-slate-300'
-                                                    : 'text-slate-600'
+                                                ? 'text-slate-500 group-hover:text-slate-300'
+                                                : 'text-slate-600'
                                                 }`}
                                         >
                                             {accessible
@@ -218,7 +218,7 @@ export default function DashboardView() {
                     onClick={() =>
                         setActiveSection(null)
                     }
-                    className="text-sm text-slate-500 hover:text-slate-300 transition-colors mb-4 cursor-pointer"
+                    className="text-sm md:text-base text-white hover:text-slate-300 transition-colors mb-4 cursor-pointer"
                 >
                     ← Volver al panel principal
                 </button>
