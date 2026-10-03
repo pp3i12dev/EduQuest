@@ -24,3 +24,6 @@ logs/
 Thumbs.db
 .vscode/
 .idea/
+
+# Archivos subidos (storage local de desarrollo)
+uploads/
