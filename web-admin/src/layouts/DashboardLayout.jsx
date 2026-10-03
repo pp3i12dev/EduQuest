@@ -1,8 +1,8 @@
-
 import { useContext } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import BackgroundLayout from './BackgroundLayout';
+import logo from '../assets/images/logo2.png';
 
 export default function DashboardLayout() {
     const { user, logoutContext } = useContext(AuthContext);
@@ -13,8 +13,16 @@ export default function DashboardLayout() {
         <BackgroundLayout>
             <div className="min-h-screen text-white">
 
-                <header className="flex justify-between items-center px-8 py-12 border-b border-slate-800 bg-slate-700">
-                    <div className="flex items-center gap-4">
+                <header className="flex justify-between items-center px-8 py-6 border-b border-slate-800 bg-slate-700">
+                    <div className="flex items-center gap-6">
+                        <Link to="/dashboard" className="shrink-0">
+                            <img
+                                src={logo}
+                                alt="EduQuest"
+                                className="h-16 w-auto object-contain"
+                            />
+                        </Link>
+
                         {!isRoot && (
                             <Link to="/dashboard" className="text-slate-400 hover:text-white text-sm">
                                 ← Volver
@@ -55,4 +63,3 @@ export default function DashboardLayout() {
         </BackgroundLayout>
     );
 }
-
