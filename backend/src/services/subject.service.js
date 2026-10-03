@@ -60,13 +60,26 @@ export const updateSubjectService = async (id, body, requester) => {
     }
 };
 
+export const setSubjectStatusService = async (id, body, requester) => {
+    assertPermission(requester.roles);
+    const { isActive } = body;
+    if (typeof isActive !== 'boolean') throw new ServiceError('Falta el estado de la materia', 400);
+
+    try {
+        return await subjectRepository.setSubjectStatus(Number(id), requester.institutionId, isActive);
+    } catch (error) {
+        if (error.code === 'P2025') throw new ServiceError('Materia no encontrada', 404);
+        throw error;
+    }
+};
+
 export const deleteSubjectService = async (id, requester) => {
     assertPermission(requester.roles);
     try {
         await subjectRepository.deleteSubject(Number(id), requester.institutionId);
     } catch (error) {
         if (error.code === 'P2025') throw new ServiceError('Materia no encontrada', 404);
-        if (error.code === 'P2003') throw new ServiceError('No se puede eliminar: está asignada a docentes', 409);
+        if (error.code === 'P2003') throw new ServiceError('No se puede eliminar: tiene datos asociados', 409);
         throw error;
     }
 };

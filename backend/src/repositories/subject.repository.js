@@ -8,7 +8,7 @@ export const listSubjects = (institutionId) => {
             teachers: {
                 include: {
                     teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
-                    course: true,
+                    course: { include: { career: true } },
                 },
             },
         },
@@ -48,7 +48,15 @@ export const updateSubject = (id, institutionId, data) => {
     return prisma.subject.update({ where: { id, institutionId }, data });
 };
 
+export const setSubjectStatus = (id, institutionId, isActive) => {
+    const prisma = getPrisma();
+    return prisma.subject.update({ where: { id, institutionId }, data: { isActive } });
+};
+
 export const deleteSubject = (id, institutionId) => {
     const prisma = getPrisma();
-    return prisma.subject.delete({ where: { id, institutionId } });
+    return prisma.$transaction(async (tx) => {
+        await tx.teacherSubject.deleteMany({ where: { subjectId: id, subject: { institutionId } } });
+        return tx.subject.delete({ where: { id, institutionId } });
+    });
 };

@@ -1,7 +1,5 @@
-import jwt from 'jsonwebtoken';
 import { canAnyRole } from '../config/permissions.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'estaesmipalabrasecreta';
+import { verifyToken } from '../utils/jwt.js';
 
 export function authenticate(req, res, next) {
     const header = req.headers.authorization;
@@ -10,7 +8,7 @@ export function authenticate(req, res, next) {
     }
 
     try {
-        const payload = jwt.verify(header.split(' ')[1], JWT_SECRET);
+        const payload = verifyToken(header.split(' ')[1]);
         req.user = payload;
         next();
     } catch {

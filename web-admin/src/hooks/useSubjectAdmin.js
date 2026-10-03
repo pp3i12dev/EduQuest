@@ -24,6 +24,14 @@ export function useUpdateSubject() {
     });
 }
 
+export function useToggleSubjectStatus() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, isActive }) => subjectAdminService.setStatus(id, isActive),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['subjects-admin'] }),
+    });
+}
+
 export function useDeleteSubject() {
     const queryClient = useQueryClient();
     return useMutation({

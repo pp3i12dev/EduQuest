@@ -17,6 +17,10 @@ export const subjectAdminService = {
         const { data } = await api.put(`/subjects/${id}`, payload);
         return data;
     },
+    setStatus: async (id, isActive) => {
+        const { data } = await api.patch(`/subjects/${id}/status`, { isActive });
+        return data;
+    },
     remove: async (id) => {
         await api.delete(`/subjects/${id}`);
     },
