@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLogin } from '../hooks/useAuth';
-import logo from '../assets/images/eduquest_logo.png';
+import logo from '../assets/images/logo2.png';
 import BackgroundLayout from '../layouts/BackgroundLayout';
 
 export default function LoginView() {
