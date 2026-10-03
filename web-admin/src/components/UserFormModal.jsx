@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useCareers, useCoursesByCareer } from '../hooks/useAcademic';
@@ -36,6 +37,9 @@ export default function UserFormModal({
     const { user } = useContext(AuthContext);
     const isEditing = Boolean(initialData?.id);
 
+    // Mostrar / ocultar contraseña
+    const [showPassword, setShowPassword] = useState(false);
+
     // Obtener los roles actuales del usuario cuando estamos editando
     const { data: userRoles } = useUserRoles(initialData?.id);
     const updateRolesMutation = useUpdateUserRoles();
@@ -61,15 +65,6 @@ export default function UserFormModal({
     const { data: careers } = useCareers(user?.institutionId);
     const { data: courses } = useCoursesByCareer(careerId);
 
-    /*
-     * IMPORTANTE:
-     * Cuando llegan los roles del usuario, inicializamos
-     * cada checkbox según los roles que realmente posee.
-     *
-     * Si userRoles.profiles.teacher existe -> teacher = true
-     * Si userRoles.profiles.student existe -> student = true
-     * etc.
-     */
     useEffect(() => {
         if (!userRoles) return;
 
@@ -81,12 +76,11 @@ export default function UserFormModal({
         });
     }, [userRoles]);
 
-    /*
-     * Cargar los datos del formulario cuando se abre
-     * la ventana de edición/creación.
-     */
     useEffect(() => {
         if (!open) return;
+
+        // Al abrir el modal, volvemos a ocultar la contraseña
+        setShowPassword(false);
 
         if (initialData) {
             setForm({
@@ -132,8 +126,6 @@ export default function UserFormModal({
 
             setCourseId('');
 
-            // Al crear un usuario nuevo, todos los roles
-            // empiezan destildados.
             setRoleChecks({
                 student: false,
                 teacher: false,
@@ -145,9 +137,6 @@ export default function UserFormModal({
         setCareerId('');
     }, [initialData, open, role]);
 
-    /*
-     * Cambiar manualmente un rol.
-     */
     const toggleRole = (roleKey) => {
         setRoleChecks((prev) => ({
             ...prev,
@@ -155,9 +144,6 @@ export default function UserFormModal({
         }));
     };
 
-    /*
-     * Guardar cambios de roles.
-     */
     const handleSaveRoles = () => {
         const payload = {};
 
@@ -170,7 +156,6 @@ export default function UserFormModal({
                 roleChecks[roleKey]
             );
 
-            // Si no cambió, no hacemos nada.
             if (wasEnabled === isEnabled) continue;
 
             payload[roleKey] = {
@@ -273,19 +258,38 @@ export default function UserFormModal({
                 />
 
                 {/* PASSWORD */}
-                <input
-                    name="password"
-                    type="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    placeholder={
-                        isEditing
-                            ? 'Nueva contraseña (opcional)'
-                            : 'Contraseña'
-                    }
-                    required={!isEditing}
-                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
-                />
+                <div className="relative">
+
+                    <input
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={form.password}
+                        onChange={handleChange}
+                        placeholder={
+                            isEditing
+                                ? 'Nueva contraseña (opcional)'
+                                : 'Contraseña'
+                        }
+                        required={!isEditing}
+                        className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 pr-10 text-sm"
+                    />
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setShowPassword((prev) => !prev)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 cursor-pointer"
+                        aria-label={
+                            showPassword
+                                ? 'Ocultar contraseña'
+                                : 'Mostrar contraseña'
+                        }
+                    >
+                        {showPassword ? '🙈' : '👁️'}
+                    </button>
+
+                </div>
 
                 {/* DATOS DE STUDENT */}
                 {role === 'student' && (
@@ -305,7 +309,7 @@ export default function UserFormModal({
                                 setCareerId(e.target.value);
                                 setCourseId('');
                             }}
-                            className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
+                            className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm cursor-pointer"
                         >
                             <option value="">
                                 Elegí carrera/nivel
@@ -327,7 +331,7 @@ export default function UserFormModal({
                                 setCourseId(e.target.value)
                             }
                             disabled={!careerId}
-                            className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm disabled:opacity-50"
+                            className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                         >
                             <option value="">
                                 Elegí curso
@@ -400,9 +404,7 @@ export default function UserFormModal({
                     />
                 )}
 
-                {/* ================================
-                    CHECKLIST DE ROLES
-                   ================================= */}
+                {/* CHECKLIST DE ROLES */}
                 {isEditing && userRoles && (
                     <div className="border-t border-slate-800 pt-4 mt-2">
 
@@ -413,26 +415,10 @@ export default function UserFormModal({
                         {Object.entries(ROLE_EXTRA_FIELDS).map(
                             ([roleKey]) => {
 
-                                /*
-                                 * wasEnabled:
-                                 * determina si el usuario YA posee
-                                 * este rol en la base de datos.
-                                 */
                                 const wasEnabled = Boolean(
                                     userRoles.profiles?.[roleKey]
                                 );
 
-                                /*
-                                 * isChecked:
-                                 * utiliza el estado actual del checkbox.
-                                 *
-                                 * Si todavía no existe un valor en
-                                 * roleChecks, utiliza wasEnabled.
-                                 *
-                                 * Esto garantiza que el checkbox
-                                 * aparezca inicialmente tildado si
-                                 * el usuario ya posee ese rol.
-                                 */
                                 const isChecked =
                                     roleChecks[roleKey] ??
                                     wasEnabled;
@@ -449,7 +435,7 @@ export default function UserFormModal({
                                         className="mb-2"
                                     >
 
-                                        <label className="flex items-center gap-2 text-sm text-slate-200">
+                                        <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
 
                                             <input
                                                 type="checkbox"
@@ -457,7 +443,7 @@ export default function UserFormModal({
                                                 onChange={() =>
                                                     toggleRole(roleKey)
                                                 }
-                                                className="accent-blue-600"
+                                                className="accent-blue-600 cursor-pointer"
                                             />
 
                                             {roleKey}
@@ -486,9 +472,7 @@ export default function UserFormModal({
                                                                     roleKey
                                                                     ],
                                                                     [field]:
-                                                                        e
-                                                                            .target
-                                                                            .value
+                                                                        e.target.value
                                                                 }
                                                             })
                                                         )
@@ -507,7 +491,7 @@ export default function UserFormModal({
                             disabled={
                                 updateRolesMutation.isPending
                             }
-                            className="mt-2 px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-xs disabled:opacity-50"
+                            className="mt-2 px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-xs disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                         >
                             {updateRolesMutation.isPending
                                 ? 'Guardando roles...'
@@ -523,7 +507,7 @@ export default function UserFormModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 rounded text-slate-300 hover:bg-slate-800"
+                        className="px-4 py-2 rounded text-slate-300 hover:bg-slate-800 cursor-pointer"
                     >
                         Cancelar
                     </button>
@@ -531,7 +515,7 @@ export default function UserFormModal({
                     <button
                         type="submit"
                         disabled={isSaving}
-                        className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+                        className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                     >
                         {isSaving
                             ? 'Guardando...'
