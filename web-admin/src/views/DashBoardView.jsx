@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useDashboardSummary } from '../hooks/useDashboard';
 import { hasAny } from '../config/permissions';
+import BackgroundLayout from '../layouts/BackgroundLayout';
 
 const ROLE_SECTIONS = [
     { key: 'students', label: 'Alumnos', color: 'text-blue-400', path: '/dashboard/students', action: 'student:view' },
@@ -23,7 +24,9 @@ export default function DashboardView() {
     const visibleSections = ROLE_SECTIONS.filter((s) => hasAny(user?.roles, s.action));
 
     return (
+        
         <div>
+            
             <p className="text-slate-400 text-sm mb-6">Hola de nuevo, {user?.firstName}.</p>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 {visibleSections.map((section) => (

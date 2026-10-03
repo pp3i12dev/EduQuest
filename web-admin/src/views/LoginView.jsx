@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLogin } from '../hooks/useAuth';
 import aula from '../assets/images/aula.jpg';
+import BackgroundLayout from '../layouts/BackgroundLayout';
 
 export default function LoginView() {
     const [showPassword, setShowPassword] = useState(false);
@@ -16,14 +17,7 @@ export default function LoginView() {
     return (
         <div className="min-h-screen flex items-center justify-center relative overflow-hidden text-white p-4">
 
-            {/* Fondo */}
-            <div
-                className="absolute inset-0 bg-cover bg-center blur-sm scale-105"
-                style={{ backgroundImage: `url(${aula})` }}
-            />
-
-            {/* Capa oscura sobre la imagen */}
-            <div className="absolute inset-0 bg-slate-900/70" />
+           <BackgroundLayout/>
 
             <div className="relative z-10 bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-slate-700">
                 <h2 className="text-3xl font-bold text-center mb-2 text-blue-400">EduQuest</h2>
