@@ -1,0 +1,12 @@
+model TeacherSubjectContent {
+  id         Int      @id @default(autoincrement())
+  name       String
+  url        String
+  storageKey String
+  mimeType   String
+  sizeBytes  Int
+  createdAt  DateTime @default(now())
+
+  teacherSubjectId Int
+  teacherSubject   TeacherSubject @relation(fields: [teacherSubjectId], references: [id], onDelete: Cascade)
+}

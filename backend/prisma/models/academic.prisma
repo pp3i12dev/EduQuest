@@ -56,7 +56,9 @@ model TeacherSubject {
   courseId Int
   course   Course @relation(fields: [courseId], references: [id])
 
+
   activities Activity[]
+  contents   TeacherSubjectContent[]
 
   @@unique([teacherId, subjectId, courseId])
 }
