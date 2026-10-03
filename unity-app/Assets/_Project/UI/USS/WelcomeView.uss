@@ -1,19 +1,19 @@
 #welcome-container {
+    flex-direction: column;
+    flex-grow: 1;
     justify-content: space-between;
+    align-items: center; /* Para centrar los bloques horizontalmente */
+    width: 100%;
+    height: 100%;
 }
 
 #brand-block {
     margin-top: 80px;
-}
-
-.brand-title {
-    font-size: 40px;
-    -unity-font-style: bold;
-    color: rgb(96, 165, 250);
-    -unity-text-align: middle-center;
-    margin-bottom: 40px;
+    align-items: center;
 }
 
 #actions-block {
     margin-bottom: 40px;
+    width: 80%; /* O un ancho fijo si preferís que los botones no ocupen todo el ancho */
+    max-width: 400px;
 }

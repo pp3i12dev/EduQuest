@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <Style src="../USS/Theme.uss" />
+    <Style src="../USS/Theme.tss" />
     <ui:VisualElement name="games-container" class="screen">
         <ui:Label text="Zona de Juegos" class="title" />
         <ui:Label text="Elegí tu aventura para comenzar" class="subtitle" />

@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <Style src="../USS/Theme.uss" />
+    <Style src="../USS/Theme.tss" />
     <Style src="../USS/RegisterView.uss" />
     <ui:ScrollView name="register-scroll">
         <ui:VisualElement name="register-container" class="screen">

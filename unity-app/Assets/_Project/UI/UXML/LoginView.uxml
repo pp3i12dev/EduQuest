@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <Style src="../USS/Theme.uss" />
+    <Style src="../USS/Theme.tss" />
     <Style src="../USS/LoginView.uss" />
     <ui:VisualElement name="login-container" class="screen">
         <ui:Label text="Iniciar sesión" class="title" />

@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <Style src="../USS/Theme.uss" />
+    <Style src="../USS/Theme.tss" />
     <Style src="../USS/WelcomeView.uss" />
     <ui:VisualElement name="welcome-container" class="screen">
         <ui:VisualElement name="brand-block">
