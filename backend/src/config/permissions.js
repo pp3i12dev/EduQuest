@@ -33,6 +33,7 @@ export const PERMISSIONS = {
     'student:delete': ['DIRECTOR', 'PRECEPTOR'],
 
     'grade:manage': ['TEACHER'],
+    'subjectContent:manage': ['TEACHER'],
     'evaluation:manage': ['TEACHER'],
     'tracking:manage': ['TEACHER'],
     'attendance:take': ['PRECEPTOR', 'TEACHER'],
