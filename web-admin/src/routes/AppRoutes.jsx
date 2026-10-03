@@ -6,6 +6,7 @@ import DashboardView from '../views/DashBoardView';
 import DashboardLayout from '../layouts/DashboardLayout';
 import UsersListView from '../views/UsersListView';
 import InvitationsListView from '../views/InvitationListView';
+import AcceptInvitationView from '../views/AcceptInvitationView';
 import RoleRoute from './RoleRoute';
 import CareersListView from '../views/CareersListView';
 import CoursesListView from '../views/CoursesListView';
@@ -21,8 +22,11 @@ export default function AppRouter() {
     return (
         <BrowserRouter>
             <Routes>
+                {/* Públicas */}
                 <Route path="/login" element={<LoginView />} />
+                <Route path="/aceptar-invitacion/:token" element={<AcceptInvitationView />} />
 
+                {/* Privadas */}
                 <Route
                     path="/dashboard"
                     element={
@@ -77,25 +81,47 @@ export default function AppRouter() {
                             </RoleRoute>
                         }
                     />
+
+                    <Route
+                        path="careers"
+                        element={
+                            <RoleRoute action="career:manage">
+                                <CareersListView />
+                            </RoleRoute>
+                        }
+                    />
+
+                    <Route
+                        path="courses"
+                        element={
+                            <RoleRoute action="course:manage">
+                                <CoursesListView />
+                            </RoleRoute>
+                        }
+                    />
+
+                    <Route
+                        path="subjects"
+                        element={
+                            <RoleRoute action="subject:manage">
+                                <SubjectsListView />
+                            </RoleRoute>
+                        }
+                    />
+
+                    <Route
+                        path="institution"
+                        element={
+                            <RoleRoute action="institution:manage">
+                                <InstitutionView />
+                            </RoleRoute>
+                        }
+                    />
                 </Route>
 
+                {/* Catch-all: siempre al final */}
                 <Route path="*" element={<Navigate to="/login" replace />} />
-
-                <Route path="careers" element={
-                    <RoleRoute action="career:manage"><CareersListView /></RoleRoute>
-                } />
-                <Route path="courses" element={
-                    <RoleRoute action="course:manage"><CoursesListView /></RoleRoute>
-                } />
-                <Route path="subjects" element={
-                    <RoleRoute action="subject:manage"><SubjectsListView /></RoleRoute>
-                } />
-                <Route path="institution" element={
-                    <RoleRoute action="institution:manage"><InstitutionView /></RoleRoute>
-                } />
             </Routes>
         </BrowserRouter>
     );
-
-
 }

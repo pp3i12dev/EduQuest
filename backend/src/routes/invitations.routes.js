@@ -1,10 +1,14 @@
 import { Router } from 'express';
 import { authenticate } from '../middlewares/auth.middleware.js';
-import { listInvitations, createInvitation, cancelInvitation, acceptInvitation } from '../controllers/invitations.controller.js';
+import {
+    listInvitations, createInvitation, cancelInvitation,
+    acceptInvitation, getInvitationByToken,
+} from '../controllers/invitations.controller.js';
 
 const router = Router();
 
-// Público — sin authenticate, lo usa alguien que todavía no tiene cuenta
+// Públicas: las usa alguien que todavía no tiene cuenta
+router.get('/:token', getInvitationByToken);
 router.post('/:token/accept', acceptInvitation);
 
 router.use(authenticate);

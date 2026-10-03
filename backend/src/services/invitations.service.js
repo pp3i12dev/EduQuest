@@ -1,4 +1,5 @@
 import { hashPassword } from '../utils/password.js';
+import { sendInvitationEmail } from '../utils/mailer.js';
 import { canAnyRole, INVITATION_TARGET_PERMISSION } from '../config/permissions.js';
 import * as invitationRepository from '../repositories/invitation.repository.js';
 import * as academicRepository from '../repositories/academic.repository.js';
@@ -20,7 +21,6 @@ export const listInvitationsService = async (requester) => {
     if (!canAnyRole(requester.roles, 'invitation:list')) {
         throw new ServiceError('No tenés permisos para esta acción', 403);
     }
-
     return isOnlyTeacher(requester.roles)
         ? invitationRepository.findInvitationsByInviter(requester.id)
         : invitationRepository.findInvitationsByInstitution(requester.institutionId);
@@ -36,14 +36,11 @@ export const createInvitationService = async ({ email, role, courseId }, request
     }
 
     let resolvedCourseId = null;
-
     if (role === 'STUDENT' && isOnlyTeacher(requester.roles)) {
         if (!courseId) throw new ServiceError('Debés indicar a qué curso invitás al alumno', 400);
-
         const teacherProfile = await academicRepository.findTeacherProfileByUserId(requester.id);
         const assignment = await academicRepository.findTeacherAssignment(teacherProfile.id, Number(courseId));
         if (!assignment) throw new ServiceError('Ese curso no está asignado a tu perfil docente', 403);
-
         resolvedCourseId = Number(courseId);
     }
 
@@ -55,9 +52,27 @@ export const createInvitationService = async ({ email, role, courseId }, request
         expiresAt: new Date(Date.now() + INVITATION_TTL_HOURS * 60 * 60 * 1000),
     });
 
-    console.log(`📧 Invitación creada para ${email} — token: ${invitation.token}`); // TODO: email real
+    try {
+        await sendInvitationEmail({
+            to: invitation.email,
+            token: invitation.token,
+            role: invitation.role,
+            expiresAt: invitation.expiresAt,
+        });
+    } catch (error) {
+        console.error('Error enviando email de invitación:', error);
+        // No dejamos una invitación "Pendiente" que nunca llegó
+        await invitationRepository.deleteInvitation(invitation.id);
+        throw new ServiceError('No se pudo enviar el correo de invitación', 502);
+    }
 
-    return invitation;
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(`📧 Invitación enviada a ${email} — token: ${invitation.token}`);
+    }
+
+    // El token no se devuelve al cliente: solo viaja por email
+    const { token, ...safeInvitation } = invitation;
+    return safeInvitation;
 };
 
 export const cancelInvitationService = async (id, requester) => {
@@ -97,7 +112,9 @@ export const acceptInvitationService = async (token, body) => {
             studentProfile: {
                 create: {
                     legajoStudent: legajo,
-                    ...(invitation.courseId ? { courses: { create: { courseId: invitation.courseId } } } : {}),
+                    ...(invitation.courseId
+                        ? { courses: { create: { courseId: invitation.courseId } } }
+                        : {}),
                 },
             },
         },
@@ -122,4 +139,18 @@ export const acceptInvitationService = async (token, body) => {
         if (error.code === 'P2002') throw new ServiceError('El email, DNI o legajo ya está en uso', 409);
         throw error;
     }
+};
+
+export const getInvitationByTokenService = async (token) => {
+    const invitation = await invitationRepository.findInvitationByToken(token);
+    if (!invitation) throw new ServiceError('Invitación no encontrada', 404);
+    if (invitation.isUsed) throw new ServiceError('Esta invitación ya fue utilizada', 400);
+    if (invitation.expiresAt < new Date()) throw new ServiceError('Esta invitación expiró', 400);
+
+    // Solo lo mínimo que necesita el formulario
+    return {
+        email: invitation.email,
+        role: invitation.role,
+        expiresAt: invitation.expiresAt,
+    };
 };

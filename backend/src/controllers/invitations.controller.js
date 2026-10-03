@@ -1,12 +1,21 @@
 import {
     listInvitationsService, createInvitationService,
     cancelInvitationService, acceptInvitationService,
+    getInvitationByTokenService,
 } from '../services/invitations.service.js';
 import { handleServiceError } from '../utils/handleServiceError.js';
 
 export const listInvitations = async (req, res) => {
     try {
         return res.json(await listInvitationsService(req.user));
+    } catch (error) {
+        return handleServiceError(error, res);
+    }
+};
+
+export const getInvitationByToken = async (req, res) => {
+    try {
+        return res.json(await getInvitationByTokenService(req.params.token));
     } catch (error) {
         return handleServiceError(error, res);
     }

@@ -5,6 +5,7 @@ export const findInvitationsByInviter = (invitedById) => {
     return prisma.invitation.findMany({
         where: { invitedById },
         include: { course: true },
+        omit: { token: true },
         orderBy: { createdAt: 'desc' },
     });
 };
@@ -14,6 +15,7 @@ export const findInvitationsByInstitution = (institutionId) => {
     return prisma.invitation.findMany({
         where: { invitedBy: { institutionId } },
         include: { course: true },
+        omit: { token: true },
         orderBy: { createdAt: 'desc' },
     });
 };
