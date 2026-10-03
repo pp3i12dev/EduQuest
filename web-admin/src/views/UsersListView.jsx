@@ -29,7 +29,7 @@ export default function UsersListView({ role, title }) {
                 <h2 className="text-2xl font-bold">{title}</h2>
                 <button
                     onClick={openCreate}
-                    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium"
+                    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium cursor-pointer"
                 >
                     + Agregar
                 </button>
@@ -67,8 +67,8 @@ export default function UsersListView({ role, title }) {
                                     <td>
                                         <span
                                             className={`px-2 py-1 rounded text-xs ${u.isActive
-                                                    ? 'bg-emerald-600/20 text-emerald-400'
-                                                    : 'bg-slate-700 text-slate-400'
+                                                ? 'bg-emerald-600/20 text-emerald-400'
+                                                : 'bg-slate-700 text-slate-400'
                                                 }`}
                                         >
                                             {u.isActive ? 'Activo' : 'Inactivo'}

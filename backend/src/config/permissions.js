@@ -1,10 +1,15 @@
 export const PERMISSIONS = {
     'user:manageRoles': ['DIRECTOR', 'PRECEPTOR'],
+
     'institution:manage': ['DIRECTOR'],
+
     'course:manage': ['DIRECTOR', 'PRECEPTOR'],
     'career:manage': ['DIRECTOR', 'PRECEPTOR'],
     'subject:manage': ['DIRECTOR', 'PRECEPTOR'],
+
     'teacher:assignSubject': ['DIRECTOR', 'PRECEPTOR'],
+    'student:enroll': ['DIRECTOR', 'PRECEPTOR'],
+    'schedule:manage': ['DIRECTOR', 'PRECEPTOR'],
 
     'director:list': ['DIRECTOR'],
     'director:create': ['DIRECTOR'],
@@ -39,21 +44,18 @@ export const PERMISSIONS = {
 
     'selfSignup:approve': ['DIRECTOR', 'PRECEPTOR'],
 
-    // Invitaciones: quién puede invitar a cada rol destino
     'invitation:sendToDirector': ['DIRECTOR'],
     'invitation:sendToPreceptor': ['DIRECTOR'],
     'invitation:sendToTeacher': ['DIRECTOR', 'PRECEPTOR'],
     'invitation:sendToStudent': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
-    'invitation:list': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'], // docente solo ve las suyas, filtrado en el controller
-    'invitation:cancel': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'], // ídem, con chequeo de ownership
+    'invitation:list': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
+    'invitation:cancel': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
 
     'game:play': ['STUDENT'],
     'stats:viewSelf': ['STUDENT'],
-
     'profile:editSelf': ['DIRECTOR', 'PRECEPTOR', 'TEACHER', 'STUDENT'],
 };
 
-// Mapea cada rol destino de invitación a la acción de permiso correspondiente
 export const INVITATION_TARGET_PERMISSION = {
     DIRECTOR: 'invitation:sendToDirector',
     PRECEPTOR: 'invitation:sendToPreceptor',
