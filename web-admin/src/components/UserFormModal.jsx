@@ -1,7 +1,4 @@
-
-import { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
-import { useCareers, useCoursesByCareer } from '../hooks/useAcademic';
+import { useState, useEffect } from 'react';
 import { useUserRoles, useUpdateUserRoles } from '../hooks/useUsers';
 
 const baseEmpty = {
@@ -9,7 +6,7 @@ const baseEmpty = {
     email: '',
     firstName: '',
     lastName: '',
-    password: ''
+    password: '',
 };
 
 const ROLE_EXTRA_FIELDS = {
@@ -32,39 +29,36 @@ export default function UserFormModal({
     initialData,
     onSubmit,
     onClose,
-    isSaving
+    isSaving,
 }) {
-    const { user } = useContext(AuthContext);
     const isEditing = Boolean(initialData?.id);
 
-    // Mostrar / ocultar contraseña
     const [showPassword, setShowPassword] = useState(false);
 
-    // Obtener los roles actuales del usuario cuando estamos editando
+    /*
+     * Roles actuales del usuario.
+     * Solo se utilizan al editar un usuario.
+     */
     const { data: userRoles } = useUserRoles(initialData?.id);
     const updateRolesMutation = useUpdateUserRoles();
 
-    // Estado de los checkboxes
     const [roleChecks, setRoleChecks] = useState({
         student: false,
         teacher: false,
         preceptor: false,
-        director: false
+        director: false,
     });
 
     const [roleExtraData, setRoleExtraData] = useState({});
 
     const [form, setForm] = useState({
         ...baseEmpty,
-        ...ROLE_EXTRA_FIELDS[role]
+        ...ROLE_EXTRA_FIELDS[role],
     });
 
-    const [careerId, setCareerId] = useState('');
-    const [courseId, setCourseId] = useState('');
-
-    const { data: careers } = useCareers(user?.institutionId);
-    const { data: courses } = useCoursesByCareer(careerId);
-
+    /*
+     * Sincronizar los roles actuales cuando llegan desde backend.
+     */
     useEffect(() => {
         if (!userRoles) return;
 
@@ -72,78 +66,79 @@ export default function UserFormModal({
             student: Boolean(userRoles.profiles?.student),
             teacher: Boolean(userRoles.profiles?.teacher),
             preceptor: Boolean(userRoles.profiles?.preceptor),
-            director: Boolean(userRoles.profiles?.director)
+            director: Boolean(userRoles.profiles?.director),
         });
     }, [userRoles]);
 
+    /*
+     * Inicializar / reinicializar el formulario.
+     */
     useEffect(() => {
         if (!open) return;
 
-        // Al abrir el modal, volvemos a ocultar la contraseña
         setShowPassword(false);
+        setRoleExtraData({});
 
         if (initialData) {
             setForm({
-                dni: initialData.dni,
-                email: initialData.email,
-                firstName: initialData.firstName,
-                lastName: initialData.lastName,
+                dni: initialData.dni ?? '',
+                email: initialData.email ?? '',
+                firstName: initialData.firstName ?? '',
+                lastName: initialData.lastName ?? '',
                 password: '',
 
                 ...(role === 'student' && {
                     legajoStudent:
-                        initialData.profile?.legajoStudent ?? ''
+                        initialData.profile?.legajoStudent ?? '',
                 }),
 
                 ...(role === 'teacher' && {
                     legajoTeacher:
                         initialData.profile?.legajoTeacher ?? '',
                     specialty:
-                        initialData.profile?.specialty ?? ''
+                        initialData.profile?.specialty ?? '',
                 }),
 
                 ...(role === 'preceptor' && {
                     legajoPreceptor:
                         initialData.profile?.legajoPreceptor ?? '',
                     shift:
-                        initialData.profile?.shift ?? ''
+                        initialData.profile?.shift ?? '',
                 }),
 
                 ...(role === 'director' && {
                     position:
-                        initialData.profile?.position ?? ''
+                        initialData.profile?.position ?? '',
                 }),
             });
-
-            setCourseId(
-                initialData.profile?.currentCourseId ?? ''
-            );
         } else {
             setForm({
                 ...baseEmpty,
-                ...ROLE_EXTRA_FIELDS[role]
+                ...ROLE_EXTRA_FIELDS[role],
             });
-
-            setCourseId('');
 
             setRoleChecks({
                 student: false,
                 teacher: false,
                 preceptor: false,
-                director: false
+                director: false,
             });
         }
-
-        setCareerId('');
     }, [initialData, open, role]);
 
+    /*
+     * Cambiar un rol del usuario.
+     */
     const toggleRole = (roleKey) => {
         setRoleChecks((prev) => ({
             ...prev,
-            [roleKey]: !prev[roleKey]
+            [roleKey]: !prev[roleKey],
         }));
     };
 
+    /*
+     * Guardar cambios de roles.
+     */
     const handleSaveRoles = () => {
         const payload = {};
 
@@ -160,7 +155,7 @@ export default function UserFormModal({
 
             payload[roleKey] = {
                 enabled: isEnabled,
-                ...(roleExtraData[roleKey] || {})
+                ...(roleExtraData[roleKey] || {}),
             };
         }
 
@@ -168,33 +163,44 @@ export default function UserFormModal({
 
         updateRolesMutation.mutate({
             id: initialData.id,
-            roles: payload
+            roles: payload,
         });
     };
 
+    /*
+     * Cambios de los campos principales.
+     */
     const handleChange = (e) => {
-        setForm((f) => ({
-            ...f,
-            [e.target.name]: e.target.value
+        setForm((current) => ({
+            ...current,
+            [e.target.name]: e.target.value,
         }));
     };
 
+    /*
+     * Guardar usuario.
+     */
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        const payload = { ...form };
+        const payload = {
+            ...form,
+        };
 
+        /*
+         * Al editar:
+         * contraseña vacía = conservar contraseña actual.
+         */
         if (isEditing && !payload.password) {
             delete payload.password;
         }
 
-        if (role === 'student') {
-            payload.courseId = courseId || null;
-        }
-
         onSubmit(
             isEditing
-                ? { id: initialData.id, ...payload }
+                ? {
+                    id: initialData.id,
+                    ...payload,
+                }
                 : payload
         );
     };
@@ -209,11 +215,18 @@ export default function UserFormModal({
                 className="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-md space-y-4"
             >
 
+                {/* ========================= */}
+                {/* TÍTULO */}
+                {/* ========================= */}
+
                 <h3 className="text-lg font-semibold">
                     {isEditing ? 'Editar' : 'Nuevo'} {role}
                 </h3>
 
+                {/* ========================= */}
                 {/* NOMBRE Y APELLIDO */}
+                {/* ========================= */}
+
                 <div className="grid grid-cols-2 gap-4">
 
                     <input
@@ -236,7 +249,10 @@ export default function UserFormModal({
 
                 </div>
 
+                {/* ========================= */}
                 {/* DNI */}
+                {/* ========================= */}
+
                 <input
                     name="dni"
                     value={form.dni}
@@ -246,7 +262,10 @@ export default function UserFormModal({
                     className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
                 />
 
+                {/* ========================= */}
                 {/* EMAIL */}
+                {/* ========================= */}
+
                 <input
                     name="email"
                     type="email"
@@ -257,7 +276,10 @@ export default function UserFormModal({
                     className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
                 />
 
+                {/* ========================= */}
                 {/* PASSWORD */}
+                {/* ========================= */}
+
                 <div className="relative">
 
                     <input
@@ -291,9 +313,13 @@ export default function UserFormModal({
 
                 </div>
 
-                {/* DATOS DE STUDENT */}
+                {/* ========================= */}
+                {/* DATOS DEL ALUMNO */}
+                {/* ========================= */}
+
                 {role === 'student' && (
-                    <>
+                    <div className="space-y-4">
+
                         <input
                             name="legajoStudent"
                             value={form.legajoStudent}
@@ -303,53 +329,13 @@ export default function UserFormModal({
                             className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
                         />
 
-                        <select
-                            value={careerId}
-                            onChange={(e) => {
-                                setCareerId(e.target.value);
-                                setCourseId('');
-                            }}
-                            className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm cursor-pointer"
-                        >
-                            <option value="">
-                                Elegí carrera/nivel
-                            </option>
-
-                            {careers?.map((c) => (
-                                <option
-                                    key={c.id}
-                                    value={c.id}
-                                >
-                                    {c.nombre} ({c.level})
-                                </option>
-                            ))}
-                        </select>
-
-                        <select
-                            value={courseId}
-                            onChange={(e) =>
-                                setCourseId(e.target.value)
-                            }
-                            disabled={!careerId}
-                            className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            <option value="">
-                                Elegí curso
-                            </option>
-
-                            {courses?.map((c) => (
-                                <option
-                                    key={c.id}
-                                    value={c.id}
-                                >
-                                    {c.nombre}
-                                </option>
-                            ))}
-                        </select>
-                    </>
+                    </div>
                 )}
 
-                {/* DATOS DE TEACHER */}
+                {/* ========================= */}
+                {/* DATOS DEL DOCENTE */}
+                {/* ========================= */}
+
                 {role === 'teacher' && (
                     <>
                         <input
@@ -371,7 +357,10 @@ export default function UserFormModal({
                     </>
                 )}
 
-                {/* DATOS DE PRECEPTOR */}
+                {/* ========================= */}
+                {/* DATOS DEL PRECEPTOR */}
+                {/* ========================= */}
+
                 {role === 'preceptor' && (
                     <>
                         <input
@@ -393,7 +382,10 @@ export default function UserFormModal({
                     </>
                 )}
 
-                {/* DATOS DE DIRECTOR */}
+                {/* ========================= */}
+                {/* DATOS DEL DIRECTOR */}
+                {/* ========================= */}
+
                 {role === 'director' && (
                     <input
                         name="position"
@@ -404,7 +396,10 @@ export default function UserFormModal({
                     />
                 )}
 
-                {/* CHECKLIST DE ROLES */}
+                {/* ========================= */}
+                {/* ROLES */}
+                {/* ========================= */}
+
                 {isEditing && userRoles && (
                     <div className="border-t border-slate-800 pt-4 mt-2">
 
@@ -463,6 +458,7 @@ export default function UserFormModal({
                                                 <input
                                                     key={field}
                                                     placeholder={field}
+                                                    required
                                                     onChange={(e) =>
                                                         setRoleExtraData(
                                                             (prev) => ({
@@ -472,8 +468,8 @@ export default function UserFormModal({
                                                                     roleKey
                                                                     ],
                                                                     [field]:
-                                                                        e.target.value
-                                                                }
+                                                                        e.target.value,
+                                                                },
                                                             })
                                                         )
                                                     }
@@ -501,7 +497,10 @@ export default function UserFormModal({
                     </div>
                 )}
 
+                {/* ========================= */}
                 {/* BOTONES */}
+                {/* ========================= */}
+
                 <div className="flex justify-end gap-3 pt-2">
 
                     <button
@@ -525,6 +524,7 @@ export default function UserFormModal({
                 </div>
 
             </form>
+
         </div>
     );
 }
