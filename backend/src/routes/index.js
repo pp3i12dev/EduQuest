@@ -15,5 +15,6 @@ router.use('/institution', institutionRoutes);
 router.use('/careers', careerRoutes);
 router.use('/courses', courseRoutes);
 router.use('/subjects', subjectRoutes);
+router.use('/teacher-subjects', teacherSubjectRoutes);
 
 export default router;
