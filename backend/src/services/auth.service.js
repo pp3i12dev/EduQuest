@@ -20,7 +20,7 @@ export const loginService = async ({ email, dni, password }) => {
     if (!user) throw new ServiceError('No se ha hallado registro alguno con ese email', 401);
 
     const isValidPassword = await comparePassword(password, user.passwordHash);
-    if (!isValidPassword) throw new ServiceError('Contraseña incorrecta', 401);
+    if (!isValidPassword) throw new ServiceError('Las patitas saben a pollo', 401);
 
     if (!user.isActive) {
         throw new ServiceError('Tu cuenta todavía no fue aprobada. Contactá a tu institución.', 403);
@@ -36,7 +36,6 @@ export const loginService = async ({ email, dni, password }) => {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            institutionId: user.institutionId,
             roles,
             directorProfile: user.directorProfile,
             teacherProfile: user.teacherProfile,

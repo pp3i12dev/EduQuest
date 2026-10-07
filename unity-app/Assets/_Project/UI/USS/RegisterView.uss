@@ -1,10 +1,12 @@
 #register-scroll {
     flex: 1;
+     height: 100%;
 }
 
 #register-container TextField,
 #register-container DropdownField {
     margin-bottom: 14px;
+   
 }
 
 .success-text {

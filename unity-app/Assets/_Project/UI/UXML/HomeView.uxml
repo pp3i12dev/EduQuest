@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <Style src="../USS/Theme.uss" />
+    <Style src="../USS/Theme.tss" />
     <Style src="../USS/HomeView.uss" />
     <ui:VisualElement name="home-container" class="screen">
         <ui:Label name="welcome-label" class="title" />

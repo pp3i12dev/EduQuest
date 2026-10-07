@@ -6,6 +6,7 @@ model Institution {
   provincia String   @default("Buenos Aires")
   direccion String?
   telefono  String?
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

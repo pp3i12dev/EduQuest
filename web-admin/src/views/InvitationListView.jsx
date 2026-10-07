@@ -3,9 +3,20 @@ import { useInvitations, useCreateInvitation, useCancelInvitation } from '../hoo
 import { useCareers, useCoursesByCareer } from '../hooks/useAcademic';
 import { AuthContext } from '../context/AuthContext';
 
-const ROLE_LABELS = { DIRECTOR: 'Directivo', PRECEPTOR: 'Preceptor', TEACHER: 'Docente', STUDENT: 'Alumno' };
+const ROLE_LABELS = {
+    DIRECTOR: 'Directivo',
+    PRECEPTOR: 'Preceptor',
+    TEACHER: 'Docente',
+    STUDENT: 'Alumno',
+};
 
-function InviteForm({ onSubmit, onClose, isSaving }) {
+const getErrorMessage = (error) =>
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    'Ocurrió un error al enviar la invitación';
+
+function InviteForm({ onSubmit, onClose, isSaving, error }) {
     const { user } = useContext(AuthContext);
     const isOnlyTeacher = user?.roles?.length === 1 && user.roles[0] === 'TEACHER';
 
@@ -17,7 +28,9 @@ function InviteForm({ onSubmit, onClose, isSaving }) {
     const { data: careers } = useCareers(user?.institutionId);
     const { data: courses } = useCoursesByCareer(careerId);
 
-    const availableRoles = isOnlyTeacher ? ['STUDENT'] : ['DIRECTOR', 'PRECEPTOR', 'TEACHER', 'STUDENT'];
+    const availableRoles = isOnlyTeacher
+        ? ['STUDENT']
+        : ['DIRECTOR', 'PRECEPTOR', 'TEACHER', 'STUDENT'];
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -66,6 +79,7 @@ function InviteForm({ onSubmit, onClose, isSaving }) {
                             <option key={c.id} value={c.id}>{c.nombre} ({c.level})</option>
                         ))}
                     </select>
+
                     <select
                         value={courseId}
                         onChange={(e) => setCourseId(e.target.value)}
@@ -81,8 +95,18 @@ function InviteForm({ onSubmit, onClose, isSaving }) {
                 </>
             )}
 
+            {error && (
+                <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
+                    {getErrorMessage(error)}
+                </p>
+            )}
+
             <div className="flex justify-end gap-3">
-                <button type="button" onClick={onClose} className="px-4 py-2 rounded text-slate-300 hover:bg-slate-800">
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded text-slate-300 hover:bg-slate-800"
+                >
                     Cancelar
                 </button>
                 <button
@@ -103,12 +127,17 @@ export default function InvitationsListView() {
     const createMutation = useCreateInvitation();
     const [formOpen, setFormOpen] = useState(false);
 
+    const openForm = () => {
+        createMutation.reset();
+        setFormOpen(true);
+    };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">Invitaciones</h2>
                 <button
-                    onClick={() => setFormOpen(true)}
+                    onClick={openForm}
                     className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded text-sm font-medium"
                 >
                     + Invitar
@@ -136,7 +165,9 @@ export default function InvitationsListView() {
                                 <td>{new Date(inv.expiresAt).toLocaleDateString()}</td>
                                 <td>
                                     <span
-                                        className={`px-2 py-1 rounded text-xs ${inv.isUsed ? 'bg-slate-700 text-slate-400' : 'bg-emerald-600/20 text-emerald-400'
+                                        className={`px-2 py-1 rounded text-xs ${inv.isUsed
+                                                ? 'bg-slate-700 text-slate-400'
+                                                : 'bg-emerald-600/20 text-emerald-400'
                                             }`}
                                     >
                                         {inv.isUsed ? 'Usada' : 'Pendiente'}
@@ -169,8 +200,11 @@ export default function InvitationsListView() {
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
                     <InviteForm
                         isSaving={createMutation.isPending}
+                        error={createMutation.error}
                         onClose={() => setFormOpen(false)}
-                        onSubmit={(payload) => createMutation.mutate(payload, { onSuccess: () => setFormOpen(false) })}
+                        onSubmit={(payload) =>
+                            createMutation.mutate(payload, { onSuccess: () => setFormOpen(false) })
+                        }
                     />
                 </div>
             )}

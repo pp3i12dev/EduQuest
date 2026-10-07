@@ -6,3 +6,15 @@ DIRECT_URL="postgresql://neondb_owner:npg_8ToGQxnSPBO6@ep-spring-sky-acbknm3y.sa
 
 PORT=3000
 JWT_SECRET=estaesmipalabrasecreta
+
+
+/*---------------------------------------------------*/
+
+nodemailer:
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=pp3i12.dev@gmail.com
+SMTP_PASS=khroldygsvytwgyi
+MAIL_FROM="Mi Institución <pp3i12.dev@gmail.com>"
+FRONTEND_URL=http://localhost:5173

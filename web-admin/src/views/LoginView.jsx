@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLogin } from '../hooks/useAuth';
+import logo from '../assets/images/logo2.png';
+import BackgroundLayout from '../layouts/BackgroundLayout';
 
 export default function LoginView() {
     const [showPassword, setShowPassword] = useState(false);
@@ -12,10 +14,19 @@ export default function LoginView() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-4">
-            <div className="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-slate-700">
-                <h2 className="text-3xl font-bold text-center mb-2 text-blue-400">EduQuest</h2>
-                <p className="text-slate-400 text-center mb-6">Panel Administrador</p>
+        <div className="min-h-screen flex items-center justify-center relative overflow-hidden text-white p-4">
+
+            <BackgroundLayout />
+
+            <div className="relative z-10 bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-slate-700">
+                <div className="flex flex-col items-center mb-6">
+                    <img
+                        src={logo}
+                        alt="EduQuest - Plataforma de aprendizaje gamificado"
+                        className="w-40 h-auto drop-shadow-[0_0_18px_rgba(56,189,248,0.35)]"
+                    />
+                    <p className="text-slate-400 mt-3">Panel Administrador</p>
+                </div>
 
                 {loginMutation.isError && (
                     <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded mb-4 text-sm text-center">
@@ -41,7 +52,7 @@ export default function LoginView() {
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 {...register('password', { required: 'La contraseña es obligatoria' })}
-                                className="w-full p-2.5 pr-10 rounded bg-slate-900 border border-slate-700 focus:outline-none focus:border-blue-500 "
+                                className="w-full p-2.5 pr-10 rounded bg-slate-900 border border-slate-700 focus:outline-none focus:border-blue-500"
                                 placeholder="••••••••"
                             />
                             <button
