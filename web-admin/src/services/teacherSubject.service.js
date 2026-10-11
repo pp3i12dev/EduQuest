@@ -19,4 +19,8 @@ export const teacherSubjectService = {
         });
         return data;
     },
+        listMine: async () => {
+        const { data } = await api.get('/teacher-subjects');
+        return data;
+    },
 };

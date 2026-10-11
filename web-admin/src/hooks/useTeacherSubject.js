@@ -24,6 +24,10 @@ export function useSaveTeacherSubject() {
         onSuccess: (_data, { id }) => {
             queryClient.invalidateQueries({ queryKey: ['teacher-subject', id] });
             queryClient.invalidateQueries({ queryKey: ['assignable-activities', id] });
+            queryClient.invalidateQueries({ queryKey: ['teacher-subjects'] });
         },
     });
+}
+export function useMyTeacherSubjects() {
+    return useQuery({ queryKey: ['teacher-subjects'], queryFn: teacherSubjectService.listMine });
 }

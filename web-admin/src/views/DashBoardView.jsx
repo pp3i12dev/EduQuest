@@ -86,6 +86,13 @@ const SECTIONS = {
                 path: '/dashboard/subjects',
                 action: 'subject:manage',
             },
+                        {
+                key: 'mySubjects',
+                label: 'Mis materias',
+                color: 'text-lime-400',
+                path: '/dashboard/my-subjects',
+                action: 'subjectContent:manage',
+            },
         ],
     },
 

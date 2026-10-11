@@ -29,6 +29,7 @@ import TeacherSubjectAssignmentsView from '../views/TeacherSubjectAssignmentView
 import SubjectSchedulesView from '../views/SubjectSchedulesView';
 
 import RoleRoute from './RoleRoute';
+import TeacherSubjectsView from '../views/TeacherSubjectsView';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useContext(AuthContext);
@@ -147,6 +148,14 @@ export default function AppRouter() {
                         element={
                             <RoleRoute action="subject:manage">
                                 <SubjectsListView />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="my-subjects"
+                        element={
+                            <RoleRoute action="subjectContent:manage">
+                                <TeacherSubjectsView />
                             </RoleRoute>
                         }
                     />

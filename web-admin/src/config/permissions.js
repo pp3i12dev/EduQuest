@@ -16,6 +16,7 @@ export const FRONTEND_PERMISSIONS = {
     'career:manage': ['DIRECTOR', 'PRECEPTOR'],
     'course:manage': ['DIRECTOR', 'PRECEPTOR'],
     'subject:manage': ['DIRECTOR', 'PRECEPTOR'],
+    'subjectContent:manage': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
 };
 
 export function hasAny(userRoles = [], action) {
