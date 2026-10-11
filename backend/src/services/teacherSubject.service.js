@@ -1,6 +1,7 @@
 import {
     findTeacherProfileByUserId,
     findTeacherSubjectsByTeacher,
+    findTeacherSubjectsByInstitution,
     findTeacherSubjectWithDetails,
     findAssignableActivities,
     findActivitiesByIds,
@@ -15,11 +16,15 @@ import {
     validateContentName,
 } from '../utils/fileValidators.js';
 
+const MANAGER_ROLES = ['DIRECTOR', 'PRECEPTOR'];
+
 const httpError = (status, message) => {
     const error = new Error(message);
     error.status = status;
     return error;
 };
+
+const isManager = (user) => (user.roles ?? []).some((role) => MANAGER_ROLES.includes(role));
 
 const getTeacherProfile = async (userId) => {
     const teacherProfile = await findTeacherProfileByUserId(userId);
@@ -27,15 +32,22 @@ const getTeacherProfile = async (userId) => {
     return teacherProfile;
 };
 
-const getOwnedTeacherSubject = async (userId, teacherSubjectId) => {
-    const teacherProfile = await getTeacherProfile(userId);
+const getEditableTeacherSubject = async (user, teacherSubjectId) => {
     const teacherSubject = await findTeacherSubjectWithDetails(teacherSubjectId);
-
     if (!teacherSubject) throw httpError(404, 'La materia no existe');
+
+    if (isManager(user)) {
+        if (teacherSubject.subject.institutionId !== user.institutionId) {
+            throw httpError(403, 'No tenés permiso para editar esta materia');
+        }
+        return teacherSubject;
+    }
+
+    const teacherProfile = await getTeacherProfile(user.id);
     if (teacherSubject.teacherId !== teacherProfile.id) {
         throw httpError(403, 'No tenés permiso para editar esta materia');
     }
-    return { teacherProfile, teacherSubject };
+    return teacherSubject;
 };
 
 const toIdList = (value, fieldName) => {
@@ -48,22 +60,23 @@ const toIdList = (value, fieldName) => {
     }
     return [...new Set(ids)];
 };
-export const getTeacherSubjects = async (userId) => {
-    const teacherProfile = await getTeacherProfile(userId);
+
+export const getTeacherSubjects = async (user) => {
+    if (isManager(user)) return findTeacherSubjectsByInstitution(user.institutionId);
+    const teacherProfile = await getTeacherProfile(user.id);
     return findTeacherSubjectsByTeacher(teacherProfile.id);
 };
 
-export const getTeacherSubjectDetail = async (userId, teacherSubjectId) => {
-    const { teacherSubject } = await getOwnedTeacherSubject(userId, teacherSubjectId);
-    return teacherSubject;
+export const getTeacherSubjectDetail = (user, teacherSubjectId) =>
+    getEditableTeacherSubject(user, teacherSubjectId);
+
+export const getAssignableActivities = async (user, teacherSubjectId) => {
+    const teacherSubject = await getEditableTeacherSubject(user, teacherSubjectId);
+    return findAssignableActivities(teacherSubject.teacherId);
 };
 
-export const getAssignableActivities = async (userId, teacherSubjectId) => {
-    const { teacherProfile } = await getOwnedTeacherSubject(userId, teacherSubjectId);
-    return findAssignableActivities(teacherProfile.id);
-};
-export const editTeacherSubject = async (userId, teacherSubjectId, changes = {}, files = []) => {
-    const { teacherProfile, teacherSubject } = await getOwnedTeacherSubject(userId, teacherSubjectId);
+export const editTeacherSubject = async (user, teacherSubjectId, changes = {}, files = []) => {
+    const teacherSubject = await getEditableTeacherSubject(user, teacherSubjectId);
 
     const contentIdsToDelete = toIdList(changes.deletedContentIds, 'deletedContentIds');
     const activityIdsToAdd = toIdList(changes.activityIdsToAdd, 'activityIdsToAdd');
@@ -126,8 +139,8 @@ export const editTeacherSubject = async (userId, teacherSubjectId, changes = {},
             throw httpError(404, 'Alguna de las actividades no existe');
         }
         for (const activity of activities) {
-            if (activity.teacherId !== teacherProfile.id) {
-                throw httpError(403, 'No podés asignar actividades de otro profesor');
+            if (activity.teacherId !== teacherSubject.teacherId) {
+                throw httpError(403, 'Solo podés asignar juegos del docente titular de la materia');
             }
             if (activity.status !== 'ACTIVE') {
                 throw httpError(400, `El juego "${activity.title}" no está en funcionamiento`);

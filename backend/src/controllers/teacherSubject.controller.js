@@ -29,7 +29,7 @@ const parseChanges = (raw) => {
 
 export const listMine = async (req, res) => {
     try {
-        return res.json(await getTeacherSubjects(req.user.id));
+        return res.json(await getTeacherSubjects(req.user));
     } catch (error) {
         return handleServiceError(error, res);
     }
@@ -37,7 +37,7 @@ export const listMine = async (req, res) => {
 
 export const getDetail = async (req, res) => {
     try {
-        return res.json(await getTeacherSubjectDetail(req.user.id, parseId(req.params.id)));
+        return res.json(await getTeacherSubjectDetail(req.user, parseId(req.params.id)));
     } catch (error) {
         return handleServiceError(error, res);
     }
@@ -45,7 +45,7 @@ export const getDetail = async (req, res) => {
 
 export const listAssignable = async (req, res) => {
     try {
-        return res.json(await getAssignableActivities(req.user.id, parseId(req.params.id)));
+        return res.json(await getAssignableActivities(req.user, parseId(req.params.id)));
     } catch (error) {
         return handleServiceError(error, res);
     }
@@ -55,7 +55,7 @@ export const edit = async (req, res) => {
     try {
         const changes = parseChanges(req.body?.changes);
         const result = await editTeacherSubject(
-            req.user.id,
+            req.user,
             parseId(req.params.id),
             changes,
             req.files ?? []

@@ -12,7 +12,16 @@ export const findTeacherSubjectsByTeacher = (teacherId) => {
     const prisma = getPrisma();
     return prisma.teacherSubject.findMany({
         where: { teacherId },
-        include: { subject: true, course: true },
+        include: { subject: true, course: true, activities: true },
+        orderBy: { subject: { nombre: 'asc' } },
+    });
+};
+
+export const findTeacherSubjectsByInstitution = (institutionId) => {
+    const prisma = getPrisma();
+    return prisma.teacherSubject.findMany({
+        where: { subject: { institutionId } },
+        include: { subject: true, course: true, activities: true },
         orderBy: { subject: { nombre: 'asc' } },
     });
 };
