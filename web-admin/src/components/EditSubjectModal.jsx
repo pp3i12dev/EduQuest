@@ -4,6 +4,7 @@ import {
     useAssignableActivities,
     useSaveTeacherSubject,
 } from '../hooks/useTeacherSubject';
+import ConfirmDialog from './ConfirmDialog';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx'];
@@ -43,6 +44,15 @@ function EditSubjectForm({ teacherSubjectId, onClose }) {
     const [editingText, setEditingText] = useState('');
     const [showAssign, setShowAssign] = useState(false);
     const [localError, setLocalError] = useState('');
+    const [pendingAction, setPendingAction] = useState(null);
+        const askDelete = (content) => setPendingAction({ type: 'content', item: content });
+    const askRemoveActivity = (activity) => setPendingAction({ type: 'activity', item: activity });
+
+    const confirmPending = () => {
+        if (pendingAction?.type === 'content') markContentForDelete(pendingAction.item.id);
+        if (pendingAction?.type === 'activity') removeActivity(pendingAction.item);
+        setPendingAction(null);
+    };
         const visibleContents = (data?.contents ?? []).filter((c) => !deletedContentIds.includes(c.id));
 
     const visibleActivities = [
@@ -190,7 +200,7 @@ function EditSubjectForm({ teacherSubjectId, onClose }) {
                                         <PencilIcon />
                                       </button>
                                     )}
-                                    <button onClick={() => markContentForDelete(content.id)}
+                                    <button onClick={() => askDelete(content)}
                                         className="border border-red-500 text-red-400 rounded px-2 py-1 text-xs">
                                         Eliminar
                                     </button>
@@ -225,10 +235,10 @@ function EditSubjectForm({ teacherSubjectId, onClose }) {
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                                         En funcionamiento
                                     </span>
-                                    <button onClick={() => removeActivity(activity)}
+                                    <button onClick={() => askRemoveActivity(activity)}
                                         className="border border-red-500 text-red-400 rounded px-2 py-1 text-xs">
                                         Quitar
-                                    </button>
+</                                  button>
                                 </div>
                             ))}
                             {visibleActivities.length === 0 && (
@@ -273,6 +283,16 @@ function EditSubjectForm({ teacherSubjectId, onClose }) {
                     </button>
                 </div>
             </div>
+                <ConfirmDialog
+                open={Boolean(pendingAction)}
+                title={pendingAction?.type === 'content' ? 'Eliminar contenido' : 'Quitar juego'}
+                message={pendingAction?.type === 'content'
+                    ? `¿Confirmás eliminar "${renamed[pendingAction.item.id] ?? pendingAction.item.name}"?`
+                    : `¿Confirmás quitar "${pendingAction?.item?.title}" de la materia?`}
+                confirmLabel={pendingAction?.type === 'content' ? 'Eliminar' : 'Quitar'}
+                onConfirm={confirmPending}
+                onCancel={() => setPendingAction(null)}
+                />
         </div>
     );
 }
