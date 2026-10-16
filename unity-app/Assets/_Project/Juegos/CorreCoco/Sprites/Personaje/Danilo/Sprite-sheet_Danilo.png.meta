@@ -1,0 +1,1556 @@
+fileFormatVersion: 2
+guid: 167902f1c8f0dd9448ffe809b993a133
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 4077652288203354732
+    second: Sprite-sheet_Danilo_0
+  - first:
+      213: 5584228842003976584
+    second: Sprite-sheet_Danilo_1
+  - first:
+      213: -3657695494840174688
+    second: Sprite-sheet_Danilo_2
+  - first:
+      213: 5424889830243810176
+    second: Sprite-sheet_Danilo_3
+  - first:
+      213: 6156136102940834738
+    second: Sprite-sheet_Danilo_4
+  - first:
+      213: 6993611089256909936
+    second: Sprite-sheet_Danilo_5
+  - first:
+      213: 3312315140014161608
+    second: Sprite-sheet_Danilo_6
+  - first:
+      213: -5003188569280147597
+    second: Sprite-sheet_Danilo_7
+  - first:
+      213: 5074618913935360174
+    second: Sprite-sheet_Danilo_8
+  - first:
+      213: 1883828383809143186
+    second: Sprite-sheet_Danilo_9
+  - first:
+      213: 54261177843610437
+    second: Sprite-sheet_Danilo_10
+  - first:
+      213: -4271014756184385194
+    second: Sprite-sheet_Danilo_11
+  - first:
+      213: 523463202918238817
+    second: Sprite-sheet_Danilo_12
+  - first:
+      213: -1505617840673726511
+    second: Sprite-sheet_Danilo_13
+  - first:
+      213: -65591924993487944
+    second: Sprite-sheet_Danilo_14
+  - first:
+      213: 8192040923447825703
+    second: Sprite-sheet_Danilo_15
+  - first:
+      213: 3962914250329131160
+    second: Sprite-sheet_Danilo_16
+  - first:
+      213: 6523322749897512961
+    second: Sprite-sheet_Danilo_17
+  - first:
+      213: -4807920656002254882
+    second: Sprite-sheet_Danilo_18
+  - first:
+      213: 5800280402297882598
+    second: Sprite-sheet_Danilo_19
+  - first:
+      213: -2148145634404245593
+    second: Sprite-sheet_Danilo_20
+  - first:
+      213: -4855426001610076758
+    second: Sprite-sheet_Danilo_21
+  - first:
+      213: 6763288828055339243
+    second: Sprite-sheet_Danilo_22
+  - first:
+      213: -4319073782421352425
+    second: Sprite-sheet_Danilo_23
+  - first:
+      213: -8224050240395511493
+    second: Sprite-sheet_Danilo_24
+  - first:
+      213: 8592887991915848309
+    second: Sprite-sheet_Danilo_25
+  - first:
+      213: 1905702196897610543
+    second: Sprite-sheet_Danilo_26
+  - first:
+      213: -7202680404447154466
+    second: Sprite-sheet_Danilo_27
+  - first:
+      213: -6946100396781379935
+    second: Sprite-sheet_Danilo_28
+  - first:
+      213: 2653602612726283919
+    second: Sprite-sheet_Danilo_29
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_0
+      rect:
+        serializedVersion: 2
+        x: 261
+        y: 1866
+        width: 320
+        height: 662
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c627bebd62bb69830800000000000000
+      internalID: 4077652288203354732
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_1
+      rect:
+        serializedVersion: 2
+        x: 438
+        y: 2504
+        width: 4
+        height: 6
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 88153289b8a2f7d40800000000000000
+      internalID: 5584228842003976584
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_2
+      rect:
+        serializedVersion: 2
+        x: 604
+        y: 1866
+        width: 175
+        height: 372
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0a73185a3514d3dc0800000000000000
+      internalID: -3657695494840174688
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_3
+      rect:
+        serializedVersion: 2
+        x: 613
+        y: 1939
+        width: 31
+        height: 10
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 08bbf4dee84194b40800000000000000
+      internalID: 5424889830243810176
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_4
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1510
+        width: 296
+        height: 387
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2bbfeb44b2dfe6550800000000000000
+      internalID: 6156136102940834738
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_5
+      rect:
+        serializedVersion: 2
+        x: 619
+        y: 1897
+        width: 11
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 07c04606b3c4e0160800000000000000
+      internalID: 6993611089256909936
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_6
+      rect:
+        serializedVersion: 2
+        x: 1407
+        y: 1516
+        width: 267
+        height: 382
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8ce31b80215b7fd20800000000000000
+      internalID: 3312315140014161608
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_7
+      rect:
+        serializedVersion: 2
+        x: 467
+        y: 1859
+        width: 52
+        height: 37
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37f03c7118a119ab0800000000000000
+      internalID: -5003188569280147597
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_8
+      rect:
+        serializedVersion: 2
+        x: 619
+        y: 1874
+        width: 49
+        height: 22
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea08897040bac6640800000000000000
+      internalID: 5074618913935360174
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_9
+      rect:
+        serializedVersion: 2
+        x: 619
+        y: 1870
+        width: 25
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2910eb22fe3b42a10800000000000000
+      internalID: 1883828383809143186
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_10
+      rect:
+        serializedVersion: 2
+        x: 778
+        y: 1875
+        width: 24
+        height: 15
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5437676f046c0c000800000000000000
+      internalID: 54261177843610437
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_11
+      rect:
+        serializedVersion: 2
+        x: 873
+        y: 1502
+        width: 244
+        height: 380
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6599d2345be4ab4c0800000000000000
+      internalID: -4271014756184385194
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_12
+      rect:
+        serializedVersion: 2
+        x: 1132
+        y: 1502
+        width: 271
+        height: 388
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 16a0ee67207b34700800000000000000
+      internalID: 523463202918238817
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_13
+      rect:
+        serializedVersion: 2
+        x: 311
+        y: 1502
+        width: 250
+        height: 365
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1dfd62f0d88fa1be0800000000000000
+      internalID: -1505617840673726511
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_14
+      rect:
+        serializedVersion: 2
+        x: 575
+        y: 1520
+        width: 277
+        height: 349
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8bb01a2ed78f61ff0800000000000000
+      internalID: -65591924993487944
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_15
+      rect:
+        serializedVersion: 2
+        x: 1059
+        y: 1859
+        width: 15
+        height: 10
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 725129b01d9ffa170800000000000000
+      internalID: 8192040923447825703
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_16
+      rect:
+        serializedVersion: 2
+        x: 574
+        y: 1620
+        width: 33
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8988336a3891ff630800000000000000
+      internalID: 3962914250329131160
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_17
+      rect:
+        serializedVersion: 2
+        x: 847
+        y: 1615
+        width: 5
+        height: 8
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1089dde9a7f778a50800000000000000
+      internalID: 6523322749897512961
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_18
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 1524
+        width: 12
+        height: 31
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed7f8b603a5d64db0800000000000000
+      internalID: -4807920656002254882
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_19
+      rect:
+        serializedVersion: 2
+        x: 591
+        y: 1167
+        width: 247
+        height: 366
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6e700a07b4cbe7050800000000000000
+      internalID: 5800280402297882598
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_20
+      rect:
+        serializedVersion: 2
+        x: 946
+        y: 1502
+        width: 54
+        height: 53
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7af57874de04032e0800000000000000
+      internalID: -2148145634404245593
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_21
+      rect:
+        serializedVersion: 2
+        x: 1075
+        y: 1515
+        width: 4
+        height: 25
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aad06d4d6cf0e9cb0800000000000000
+      internalID: -4855426001610076758
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_22
+      rect:
+        serializedVersion: 2
+        x: 170
+        y: 1502
+        width: 8
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be04b9d0b570cdd50800000000000000
+      internalID: 6763288828055339243
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_23
+      rect:
+        serializedVersion: 2
+        x: 185
+        y: 1506
+        width: 8
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 710921047419f04c0800000000000000
+      internalID: -4319073782421352425
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_24
+      rect:
+        serializedVersion: 2
+        x: 489
+        y: 1506
+        width: 11
+        height: 12
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b39724611ed4edd80800000000000000
+      internalID: -8224050240395511493
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_25
+      rect:
+        serializedVersion: 2
+        x: 1052
+        y: 1506
+        width: 10
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5722dd00a12104770800000000000000
+      internalID: 8592887991915848309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_26
+      rect:
+        serializedVersion: 2
+        x: 1600
+        y: 1507
+        width: 7
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2b73cd1d0a627a10800000000000000
+      internalID: 1905702196897610543
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_27
+      rect:
+        serializedVersion: 2
+        x: 286
+        y: 1148
+        width: 265
+        height: 290
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: edea2466550fa0c90800000000000000
+      internalID: -7202680404447154466
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_28
+      rect:
+        serializedVersion: 2
+        x: 577
+        y: 1311
+        width: 30
+        height: 22
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1ae55abbd7e7a9f90800000000000000
+      internalID: -6946100396781379935
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_29
+      rect:
+        serializedVersion: 2
+        x: 888
+        y: 1125
+        width: 226
+        height: 320
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f8e3992548d73d420800000000000000
+      internalID: 2653602612726283919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_30
+      rect:
+        serializedVersion: 2
+        x: 711
+        y: 1185
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 991de31fd755e6f4aa03f1be3eb32c5f
+      internalID: -1627468247
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_31
+      rect:
+        serializedVersion: 2
+        x: 295
+        y: 347
+        width: 254
+        height: 801
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e12e3de2c07f58743ada0cefc1e2f0ab
+      internalID: 1697547185
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_32
+      rect:
+        serializedVersion: 2
+        x: 349
+        y: 1126
+        width: 14
+        height: 29
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 470b1eecc7754f64da8514a95a526e70
+      internalID: 625602100
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_33
+      rect:
+        serializedVersion: 2
+        x: 592
+        y: 736
+        width: 259
+        height: 422
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cd43a1ad3ac3add499585d4cb3ce0a46
+      internalID: 1338951337
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_34
+      rect:
+        serializedVersion: 2
+        x: 666
+        y: 1131
+        width: 38
+        height: 39
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0b33a53f7d260d8439c47d0bd0333960
+      internalID: 251238341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_35
+      rect:
+        serializedVersion: 2
+        x: 990
+        y: 1125
+        width: 72
+        height: 45
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 704eb8492e5d4554c8d671718a595c4b
+      internalID: -1412940035
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_36
+      rect:
+        serializedVersion: 2
+        x: 298
+        y: 1023
+        width: 28
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ef1b2c465e552ba4aacc31b8f976758f
+      internalID: 188545206
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_37
+      rect:
+        serializedVersion: 2
+        x: 298
+        y: 1015
+        width: 28
+        height: 6
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 437c8bd2e318c9244818a4f3efe32547
+      internalID: -1750754144
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_38
+      rect:
+        serializedVersion: 2
+        x: 556
+        y: 1000
+        width: 14
+        height: 21
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 984c92309b14aa24aacdd6bacc8b59c8
+      internalID: 1496202930
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_39
+      rect:
+        serializedVersion: 2
+        x: 298
+        y: 1007
+        width: 28
+        height: 6
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ffd1b115544e9c24d81f97dffa957544
+      internalID: -720736072
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_40
+      rect:
+        serializedVersion: 2
+        x: 299
+        y: 1000
+        width: 27
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e44cd528f6e3ca54d84213984ae2fbda
+      internalID: -1166056564
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_41
+      rect:
+        serializedVersion: 2
+        x: 541
+        y: 951
+        width: 25
+        height: 12
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b81f0ae378ca5f1489fe082ced23bc8e
+      internalID: -511659538
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_42
+      rect:
+        serializedVersion: 2
+        x: 533
+        y: 933
+        width: 15
+        height: 17
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f1fa230e7c81d964981907fd891e5778
+      internalID: 399303921
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_43
+      rect:
+        serializedVersion: 2
+        x: 577
+        y: 348
+        width: 266
+        height: 415
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 36b116635b3ea42449ccf8fb0c80e5e4
+      internalID: 870123078
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_44
+      rect:
+        serializedVersion: 2
+        x: 756
+        y: 730
+        width: 11
+        height: 18
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d8f5bd77f044a414fa255a6d1da1d72b
+      internalID: -970209892
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_45
+      rect:
+        serializedVersion: 2
+        x: 584
+        y: 704
+        width: 14
+        height: 8
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1f74f5a06b849e846a73d91445c264e3
+      internalID: 212729921
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_46
+      rect:
+        serializedVersion: 2
+        x: 599
+        y: 705
+        width: 16
+        height: 6
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 667b99bbb6c4bbd4c98c0d00ea88df3a
+      internalID: 429633495
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_47
+      rect:
+        serializedVersion: 2
+        x: 572
+        y: 681
+        width: 35
+        height: 18
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4cb1bfcd8066a394d992b3b0cf849a26
+      internalID: -1972178847
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_48
+      rect:
+        serializedVersion: 2
+        x: 815
+        y: 618
+        width: 26
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fb3f4077740e4194790ecd3fe47fa12e
+      internalID: 1122653977
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_49
+      rect:
+        serializedVersion: 2
+        x: 594
+        y: 570
+        width: 28
+        height: 8
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fd2009b9f8064c74984aa71323567a42
+      internalID: -195394733
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_50
+      rect:
+        serializedVersion: 2
+        x: 541
+        y: 393
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d83f09104833bd445a1c90bd8a33fb82
+      internalID: -1440866604
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_51
+      rect:
+        serializedVersion: 2
+        x: 311
+        y: 0
+        width: 212
+        height: 369
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ecadce072d204ed438a34addbdc974d6
+      internalID: 1487178928
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_52
+      rect:
+        serializedVersion: 2
+        x: 577
+        y: 0
+        width: 240
+        height: 363
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a4762e700b7c1664fb4a02ea7dc48632
+      internalID: 1790853030
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_53
+      rect:
+        serializedVersion: 2
+        x: 584
+        y: 290
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8f0d0ce33bd7ee840845d04b32844f2d
+      internalID: 1359614912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_54
+      rect:
+        serializedVersion: 2
+        x: 596
+        y: 296
+        width: 11
+        height: 9
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4633e1203a99c924789820df3ef9b868
+      internalID: -183385281
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_55
+      rect:
+        serializedVersion: 2
+        x: 310
+        y: 286
+        width: 31
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4e40e75c8b7f5f64faef512d5db75784
+      internalID: 2019481634
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_56
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 267
+        width: 28
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9ce6a3a308f275247a08ee7ff6b7d340
+      internalID: 1347534833
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite-sheet_Danilo_57
+      rect:
+        serializedVersion: 2
+        x: 589
+        y: 189
+        width: 4
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1220c5f8e75b2ef45b0661852734d4b4
+      internalID: -1093969816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: fa722f37916d21c4abeafd447cc43143
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      Sprite-sheet_Danilo_0: 4077652288203354732
+      Sprite-sheet_Danilo_1: 5584228842003976584
+      Sprite-sheet_Danilo_10: 54261177843610437
+      Sprite-sheet_Danilo_11: -4271014756184385194
+      Sprite-sheet_Danilo_12: 523463202918238817
+      Sprite-sheet_Danilo_13: -1505617840673726511
+      Sprite-sheet_Danilo_14: -65591924993487944
+      Sprite-sheet_Danilo_15: 8192040923447825703
+      Sprite-sheet_Danilo_16: 3962914250329131160
+      Sprite-sheet_Danilo_17: 6523322749897512961
+      Sprite-sheet_Danilo_18: -4807920656002254882
+      Sprite-sheet_Danilo_19: 5800280402297882598
+      Sprite-sheet_Danilo_2: -3657695494840174688
+      Sprite-sheet_Danilo_20: -2148145634404245593
+      Sprite-sheet_Danilo_21: -4855426001610076758
+      Sprite-sheet_Danilo_22: 6763288828055339243
+      Sprite-sheet_Danilo_23: -4319073782421352425
+      Sprite-sheet_Danilo_24: -8224050240395511493
+      Sprite-sheet_Danilo_25: 8592887991915848309
+      Sprite-sheet_Danilo_26: 1905702196897610543
+      Sprite-sheet_Danilo_27: -7202680404447154466
+      Sprite-sheet_Danilo_28: -6946100396781379935
+      Sprite-sheet_Danilo_29: 2653602612726283919
+      Sprite-sheet_Danilo_3: 5424889830243810176
+      Sprite-sheet_Danilo_30: -1627468247
+      Sprite-sheet_Danilo_31: 1697547185
+      Sprite-sheet_Danilo_32: 625602100
+      Sprite-sheet_Danilo_33: 1338951337
+      Sprite-sheet_Danilo_34: 251238341
+      Sprite-sheet_Danilo_35: -1412940035
+      Sprite-sheet_Danilo_36: 188545206
+      Sprite-sheet_Danilo_37: -1750754144
+      Sprite-sheet_Danilo_38: 1496202930
+      Sprite-sheet_Danilo_39: -720736072
+      Sprite-sheet_Danilo_4: 6156136102940834738
+      Sprite-sheet_Danilo_40: -1166056564
+      Sprite-sheet_Danilo_41: -511659538
+      Sprite-sheet_Danilo_42: 399303921
+      Sprite-sheet_Danilo_43: 870123078
+      Sprite-sheet_Danilo_44: -970209892
+      Sprite-sheet_Danilo_45: 212729921
+      Sprite-sheet_Danilo_46: 429633495
+      Sprite-sheet_Danilo_47: -1972178847
+      Sprite-sheet_Danilo_48: 1122653977
+      Sprite-sheet_Danilo_49: -195394733
+      Sprite-sheet_Danilo_5: 6993611089256909936
+      Sprite-sheet_Danilo_50: -1440866604
+      Sprite-sheet_Danilo_51: 1487178928
+      Sprite-sheet_Danilo_52: 1790853030
+      Sprite-sheet_Danilo_53: 1359614912
+      Sprite-sheet_Danilo_54: -183385281
+      Sprite-sheet_Danilo_55: 2019481634
+      Sprite-sheet_Danilo_56: 1347534833
+      Sprite-sheet_Danilo_57: -1093969816
+      Sprite-sheet_Danilo_6: 3312315140014161608
+      Sprite-sheet_Danilo_7: -5003188569280147597
+      Sprite-sheet_Danilo_8: 5074618913935360174
+      Sprite-sheet_Danilo_9: 1883828383809143186
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
