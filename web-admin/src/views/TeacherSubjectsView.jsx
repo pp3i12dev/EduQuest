@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMyTeacherSubjects } from '../hooks/useTeacherSubject';
 import EditSubjectModal from '../components/EditSubjectModal';
+import { Link } from 'react-router-dom';
 
 const PencilIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -43,6 +44,12 @@ export default function TeacherSubjectsView() {
                                     <td>{game ? game.title : 'Sin juego'}</td>
                                     <td className="text-right">
                                         <div className="inline-flex items-center gap-3">
+                                            <Link
+                                                to={`/dashboard/my-subjects/${row.id}/units`}
+                                                className="border border-slate-600 text-slate-300 hover:bg-slate-800 rounded px-3 py-2 text-sm"
+                                            >
+                                                Unidades
+                                            </Link>
                                             <span className={`px-4 py-1.5 rounded border text-sm ${active
                                                 ? 'border-emerald-500/60 text-emerald-400 bg-emerald-500/10'
                                                 : 'border-slate-600 text-slate-400'}`}>

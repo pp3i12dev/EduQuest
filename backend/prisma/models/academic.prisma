@@ -70,6 +70,7 @@ model TeacherSubject {
 
   activities Activity[]
   contents   TeacherSubjectContent[]
+  units Unit[]
 
   @@unique([teacherId, subjectId, courseId])
 }

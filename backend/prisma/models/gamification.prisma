@@ -21,6 +21,7 @@ model Activity {
   teacherSubject   TeacherSubject? @relation(fields: [teacherSubjectId], references: [id], onDelete: SetNull)
 
   attempts GameAttempt[]
+  unitLinks UnitActivity[]
 
   @@index([teacherSubjectId])
 }
