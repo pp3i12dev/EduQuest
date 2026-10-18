@@ -17,31 +17,36 @@ export const notificationService = {
         if (notice.status === 'CONFIRMED' || notice.status === 'REJECTED') {
             await emailRepo.cancelPendingForNotice(notice.id);
         }
-        const base = `${notice.subject?.nombre ?? 'Materia'} · ${notice.course?.nombre ?? 'Curso'}`;
+        const affected = await repo.findNoticeClasses(notice.id);
+        const courseIds = [...new Set(affected.map(c => c.teacherSubject.courseId))];
+        if (!courseIds.length) courseIds.push(notice.courseId);
+        const allRows = (await Promise.all(courseIds.map(id => repo.findStudentsByCourse(id)))).flat();
+        const students = [...new Map(allRows.map(r => r.student.user).map(u => [u.id, u])).values()];
+        const lines = affected.map(c => {
+            const d = c.classDate.toISOString().slice(0, 10);
+            return `${d} ${c.startTime}-${c.endTime} · ${c.teacherSubject.subject.nombre} · ${c.teacherSubject.course.nombre}`;
+        });
+        const base = `${notice.teacherSubject?.teacher?.user?.firstName ?? 'Docente'} ${notice.teacherSubject?.teacher?.user?.lastName ?? ''}`.trim();
+        const detail = `${base}\nClases afectadas:\n${lines.join('\n') || 'Consultar aviso'}${notice.virtualMeetingUrl ? `\nVideollamada: ${notice.virtualMeetingUrl}` : ''}${notice.virtualInstructions ? `\nMaterial: ${notice.virtualInstructions}` : ''}`;
+        const kinds = { ABSENCE: 'ausencia', LATE_ARRIVAL: 'llegada tarde', ATTENDANCE_CONFIRMED: 'asistencia confirmada', VIRTUAL_SYNCHRONOUS: 'clase virtual sincrónica', VIRTUAL_ASYNCHRONOUS: 'clase virtual asincrónica' };
+        const kind = kinds[notice.type] || 'aviso';
         if (notice.status === 'PENDING') {
             const teacher = await repo.findTeacher(notice.teacherUserId);
             if (!teacher?.isActive) return 0;
-            const rows = await repo.findStudentsByCourse(notice.courseId);
-            const students = rows.map(row => row.student.user);
             return repo.publish(notice, 'EARLY_NOTICE_PENDING',
                 'Aviso temprano pendiente de revisión',
-                `El aviso de ${base} espera confirmación del docente.`, [teacher, ...students]);
+                `PENDIENTE DE CONFIRMACIÓN DOCENTE. Las clases siguen programadas hasta confirmación.\n${detail}`, [teacher, ...students]);
         }
         if (notice.status === 'CONFIRMED') {
-            const rows = await repo.findStudentsByCourse(notice.courseId);
-            const students = rows.map(row => row.student.user);
-            const kind = notice.type === 'ABSENCE' ? 'ausencia' : 'llegada tarde';
             return repo.publish(notice, 'EARLY_NOTICE_CONFIRMED',
                 'Aviso temprano confirmado',
-                `Se informó una ${kind} docente para ${base}. Revisá la fecha y el horario en Avisos Tempranos.`, students);
+                `Se confirmó ${kind}.\n${detail}`, students);
         }
         if (notice.status === 'REJECTED') {
             const creator = await repo.findTeacher(notice.createdById);
-            const rows = await repo.findStudentsByCourse(notice.courseId);
-            const students = rows.map(row => row.student.user);
             return repo.publish(notice, 'EARLY_NOTICE_REJECTED',
                 'Aviso temprano rechazado',
-                `El docente rechazó el aviso de ${base}.`, [...(creator?.isActive ? [creator] : []), ...students]);
+                `Aviso rechazado: las clases continúan según el horario oficial.\n${detail}`, [...(creator?.isActive ? [creator] : []), ...students]);
         }
         return 0;
     },

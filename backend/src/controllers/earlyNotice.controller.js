@@ -35,6 +35,10 @@ const execute = (res, callback, successStatus = 200) => {
 };
 
 export const earlyNoticeController = {
+    createMultiple(req, res) {
+        execute(res, () => service.createMultiple(req.user, req.body), 201);
+    },
+
     /**
      * GET /api/early-notices/options
      *

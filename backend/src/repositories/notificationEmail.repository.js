@@ -24,6 +24,13 @@ export const notificationEmailRepository = {
           select: {
             title: true, message: true, type: true,
             earlyNotice: { include: {
+              classes: {
+                orderBy: [{ classDate: 'asc' }, { startTime: 'asc' }],
+                include: { teacherSubject: { select: {
+                  subject: { select: { nombre: true } },
+                  course: { select: { nombre: true } },
+                } } },
+              },
               subject: { select: { nombre: true } },
               course: { select: { nombre: true } },
               createdBy: { select: { firstName: true, lastName: true, directorProfile: { select: { id: true } }, preceptorProfile: { select: { id: true } }, teacherProfile: { select: { id: true } } } },

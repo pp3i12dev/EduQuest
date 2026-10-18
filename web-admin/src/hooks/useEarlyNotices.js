@@ -136,6 +136,11 @@ export function useEarlyNoticeActions(token) {
         onSuccess: invalidate,
     });
 
+    const createMultiple = useMutation({
+        mutationFn: (data) => earlyNoticeService.createMultiple(token, data),
+        onSuccess: invalidate,
+    });
+
     /**
      * Editar aviso.
      */
@@ -195,6 +200,7 @@ export function useEarlyNoticeActions(token) {
 
     return {
         create,
+        createMultiple,
         update,
         confirm,
         reject,

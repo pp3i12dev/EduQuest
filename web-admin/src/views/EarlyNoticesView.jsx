@@ -56,6 +56,9 @@ const STATUS = {
 const TYPES = {
     ABSENCE: 'Ausencia',
     LATE_ARRIVAL: 'Llegada tarde',
+    ATTENDANCE_CONFIRMED: 'Asistencia confirmada',
+    VIRTUAL_SYNCHRONOUS: 'Clase virtual sincrónica',
+    VIRTUAL_ASYNCHRONOUS: 'Clase virtual asincrónica',
 };
 
 const DAYS = {
@@ -191,8 +194,25 @@ function StatusBadge({ status, compact = false }) {
     );
 }
 
+const getAffectedClasses = (notice) => Array.isArray(notice?.classes) ? notice.classes : [];
+const noticePeriod = (notice) => {
+    const classes = getAffectedClasses(notice);
+    const start = notice.periodStart || classes[0]?.classDate || notice.classDate;
+    const end = notice.periodEnd || classes[classes.length - 1]?.classDate || notice.classDate;
+    return start && end && new Date(start).getTime() !== new Date(end).getTime()
+        ? `${formatClassDate(start)} al ${formatClassDate(end)}`
+        : formatClassDate(start);
+};
+
 function ClassSchedule({ notice }) {
     const isLate = notice.type === 'LATE_ARRIVAL';
+    const classes = getAffectedClasses(notice);
+    if (classes.length > 1) return (
+        <div className="space-y-1">
+            <p className="text-sm font-semibold text-blue-300">{classes.length} clases afectadas</p>
+            <p className="text-xs text-slate-400">Ver detalle de fechas y horarios</p>
+        </div>
+    );
 
     return (
         <div className="space-y-1">
@@ -340,28 +360,27 @@ function NoticeDetails({ notice, onClose }) {
                         </DetailItem>
                     </DetailSection>
 
-                    <DetailSection
-                        title="Fecha y horario del aviso"
-                        icon={CalendarDays}
-                    >
-                        <DetailItem label="Fecha de clase">
-                            {formatClassDate(notice.classDate)}
-                        </DetailItem>
-
-                        <DetailItem label="Horario de clase">
-                            {notice.startTime || '—'} a{' '}
-                            {notice.endTime || '—'}
-                        </DetailItem>
-
-                        {isLateArrival && (
-                            <DetailItem label="Llegada estimada">
-                                <span className="text-amber-400">
-                                    {notice.estimatedArrivalTime ||
-                                        'No informada'}
-                                </span>
-                            </DetailItem>
-                        )}
-                    </DetailSection>
+                    <section className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 sm:p-5">
+                        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white"><CalendarDays size={18} className="text-blue-400" />Período y clases afectadas</h3>
+                        <p className="text-sm text-slate-200">{noticePeriod(notice)}</p>
+                        <p className="mt-1 text-sm font-semibold text-blue-300">{getAffectedClasses(notice).length || 1} clase(s) afectada(s)</p>
+                        <div className="mt-4 overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="border-b border-slate-700 text-xs uppercase text-slate-400"><tr><th className="py-2 pr-4">Fecha</th><th className="py-2 pr-4">Horario</th><th className="py-2 pr-4">Materia</th><th className="py-2">Curso</th></tr></thead>
+                                <tbody className="divide-y divide-slate-800">
+                                    {(getAffectedClasses(notice).length ? getAffectedClasses(notice) : [{ classDate: notice.classDate, startTime: notice.startTime, endTime: notice.endTime }]).map((cls, i) => (
+                                        <tr key={cls.id ?? i} className="text-slate-200">
+                                            <td className="py-2 pr-4 whitespace-nowrap">{formatClassDate(cls.classDate)}</td>
+                                            <td className="py-2 pr-4 whitespace-nowrap">{cls.startTime} a {cls.endTime}</td>
+                                            <td className="py-2 pr-4">{cls.teacherSubject?.subject?.nombre || notice.subject?.nombre || '—'}</td>
+                                            <td className="py-2">{cls.teacherSubject?.course?.nombre || notice.course?.nombre || '—'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        {isLateArrival && <p className="mt-3 text-sm text-amber-400">Llegada estimada: {notice.estimatedArrivalTime || 'No informada'}</p>}
+                    </section>
 
                     <DetailSection
                         title="Registro y seguimiento"
@@ -627,6 +646,7 @@ export default function EarlyNoticesView({
 
     const isSaving =
         actions.create.isPending ||
+        actions.createMultiple.isPending ||
         actions.update.isPending;
 
     const isBusy =
@@ -674,7 +694,9 @@ export default function EarlyNoticesView({
                     'El aviso se actualizó correctamente.'
                 );
             } else {
-                await actions.create.mutateAsync(payload);
+                await (payload.classes
+                    ? actions.createMultiple.mutateAsync(payload)
+                    : actions.create.mutateAsync(payload));
 
                 setActionSuccess(
                     'El aviso se creó correctamente.'
@@ -995,9 +1017,7 @@ export default function EarlyNoticesView({
                                             </p>
 
                                             <p className="mt-1 text-sm font-medium text-slate-200">
-                                                {formatClassDate(
-                                                    notice.classDate
-                                                )}
+                                                {noticePeriod(notice)}
                                             </p>
                                         </div>
                                     </div>
@@ -1130,9 +1150,7 @@ export default function EarlyNoticesView({
 
                                         <td className="px-3 py-5">
                                             <p className="font-medium text-slate-200">
-                                                {formatClassDate(
-                                                    notice.classDate
-                                                )}
+                                                {noticePeriod(notice)}
                                             </p>
 
                                             <p className="mt-1 text-xs text-blue-400">

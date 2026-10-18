@@ -43,6 +43,10 @@ const formatDate = (value, options) => value
 const fullName = (u) => [u?.firstName, u?.lastName].filter(Boolean).join(' ') || 'No informado';
 const hour = (value) => value ? String(value).slice(0, 5) : '—';
 
+const noticeDate = (value) => value
+  ? new Intl.DateTimeFormat('es-AR', { timeZone: 'UTC', weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value))
+  : '—';
+
 export const sendEarlyNoticeEmail = ({ to, title, message, notificationType, notice }) => {
   const url = `${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')}/dashboard/early-notices`;
   const status = notificationType === 'EARLY_NOTICE_PENDING' ? 'ESPERANDO CONFIRMACIÓN DEL DOCENTE'
@@ -53,26 +57,32 @@ export const sendEarlyNoticeEmail = ({ to, title, message, notificationType, not
   const teacher = fullName(notice?.teacherSubject?.teacher?.user);
   const creator = fullName(notice?.createdBy);
   const creatorRole = notice?.createdBy?.directorProfile ? 'directivo' : notice?.createdBy?.preceptorProfile ? 'preceptor' : notice?.createdBy?.teacherProfile ? 'docente' : 'usuario';
-  const subject = notice?.subject?.nombre || 'materia no especificada';
-  const course = notice?.course?.nombre || 'curso no especificado';
-  // classDate se guarda como fecha UTC sin hora: no convertirla a huso horario local.
-  const classDate = notice?.classDate
-    ? new Intl.DateTimeFormat('es-AR', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(notice.classDate))
-    : 'fecha no especificada';
-  const slot = `de ${hour(notice?.startTime)} a ${hour(notice?.endTime)} hs`;
-  const action = notice?.type === 'LATE_ARRIVAL'
-    ? `llegará tarde a la clase de ${subject} de ${course} del ${classDate}, ${slot}, con llegada estimada a las ${hour(notice?.estimatedArrivalTime)} hs.`
-    : `se ausentará de la clase de ${subject} de ${course} del ${classDate}, ${slot}.`;
-  const sentence = !notice ? message
-    : status === 'RECHAZADO' ? `El docente ${teacher} rechazó el aviso relativo a ${subject} de ${course} del ${classDate}, ${slot}.`
-    : status === 'ESPERANDO CONFIRMACIÓN DEL DOCENTE' ? `Se informó que el docente ${teacher} ${action}`
-    : `El docente ${teacher} ${action}`;
-  const reason = notice?.reason || 'No especificado';
-  const generated = notice ? `Este aviso fue generado por el ${creatorRole} ${creator} el ${formatDate(notice.createdAt, { dateStyle: 'long' })} a las ${formatDate(notice.createdAt, { hour: '2-digit', minute: '2-digit', hour12: false })} hs.` : '';
+  const typeNames = { ABSENCE: 'Ausencia', LATE_ARRIVAL: 'Llegada tarde', ATTENDANCE_CONFIRMED: 'Asistencia confirmada', VIRTUAL_SYNCHRONOUS: 'Clase virtual sincrónica', VIRTUAL_ASYNCHRONOUS: 'Clase virtual asincrónica' };
+  const kind = typeNames[notice?.type] || 'Aviso temprano';
+  const classes = notice?.classes?.length ? notice.classes : notice ? [{
+    classDate: notice.classDate, startTime: notice.startTime, endTime: notice.endTime,
+    teacherSubject: { subject: notice.subject, course: notice.course },
+  }] : [];
+  const start = notice?.periodStart || classes[0]?.classDate || notice?.classDate;
+  const end = notice?.periodEnd || classes[classes.length - 1]?.classDate || notice?.classDate;
+  const period = start && end && new Date(start).getTime() !== new Date(end).getTime()
+    ? `Del ${noticeDate(start)} al ${noticeDate(end)} (inclusive)` : noticeDate(start);
+  const rows = classes.map((item) => ({
+    date: noticeDate(item.classDate),
+    time: `${hour(item.startTime)} a ${hour(item.endTime)}`,
+    subject: item.teacherSubject?.subject?.nombre || notice?.subject?.nombre || 'Materia no especificada',
+    course: item.teacherSubject?.course?.nombre || notice?.course?.nombre || 'Curso no especificado',
+  }));
+  const summary = `${kind} del docente ${teacher}. Período: ${period}. ${rows.length} clase${rows.length === 1 ? '' : 's'} afectada${rows.length === 1 ? '' : 's'}.`;
   const caution = status === 'ESPERANDO CONFIRMACIÓN DEL DOCENTE'
-    ? 'Información provisoria: el docente todavía puede confirmar o rechazar este aviso.'
-    : status === 'RECHAZADO' ? 'El docente rechazó el aviso anterior. No debe considerarse vigente.' : '';
-  const text = `${status}\n\n${sentence}\n\nMotivo: ${reason}\n\n${generated}\n${caution}\n\nConsultá EduQuest: ${url}`;
-  const html = `<div style="background:#f1f5f9;padding:24px 12px;font-family:Arial,sans-serif;color:#0f172a"><div style="max-width:600px;margin:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden"><div style="background:#173c78;padding:22px;color:#fff"><b>EduQuest · Avisos Tempranos</b><h2 style="color:#fff;margin:10px 0 0">${escapeHtml(title)}</h2></div><div style="padding:24px"><div style="background:${background};color:${color};font-weight:bold;font-size:19px;padding:16px;border-radius:8px;text-align:center">${escapeHtml(status)}</div><p style="font-size:16px;line-height:1.7">${escapeHtml(sentence)}</p><div style="background:#f8fafc;padding:16px;border-left:4px solid #173c78"><b>Motivo:</b><p style="margin:8px 0 0;white-space:pre-wrap">${escapeHtml(reason)}</p></div><p style="color:#475569;font-size:13px;line-height:1.6">${escapeHtml(generated)}</p>${caution ? `<p style="color:${color};font-weight:bold">${escapeHtml(caution)}</p>` : ''}<a href="${escapeHtml(url)}" style="display:inline-block;margin-top:14px;padding:12px 18px;background:#173c78;color:white;text-decoration:none;border-radius:7px">Ver aviso en EduQuest</a><p style="color:#64748b;font-size:12px;margin-top:28px">Correo automático de EduQuest.</p></div></div></div>`;
-  return getTransporter().sendMail({ from: process.env.MAIL_FROM, to, subject: `[EduQuest] ${status} — ${subject}`, text, html });
+    ? 'INFORMACIÓN PROVISORIA: el docente todavía no confirmó el aviso. Las clases continúan oficialmente programadas hasta su confirmación.'
+    : status === 'RECHAZADO' ? 'El docente rechazó el aviso. Las clases continúan según el horario oficial.' : '';
+  // El motivo puede contener datos médicos o personales. No se incluye en correos a estudiantes.
+  const generated = notice ? `Generado por ${creatorRole} ${creator} el ${formatDate(notice.createdAt, { dateStyle: 'long', timeStyle: 'short' })}.` : '';
+  const lines = rows.map((r) => `${r.date} | ${r.time} | ${r.subject} | ${r.course}`);
+  const text = `${status}\n\n${summary}\n\nClases afectadas:\n${lines.join('\n') || 'Consultar EduQuest'}\n\n${generated}\n${caution}\n\nConsultá EduQuest: ${url}`;
+  const tableRows = rows.map((r) => `<tr><td style="padding:10px;border-bottom:1px solid #e2e8f0">${escapeHtml(r.date)}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0">${escapeHtml(r.time)}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0">${escapeHtml(r.subject)}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0">${escapeHtml(r.course)}</td></tr>`).join('');
+  const html = `<div style="background:#f1f5f9;padding:24px 12px;font-family:Arial,sans-serif;color:#0f172a"><div style="max-width:760px;margin:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden"><div style="background:#173c78;padding:22px;color:#fff"><b>EduQuest · Avisos Tempranos</b><h2 style="color:#fff;margin:10px 0 0">${escapeHtml(title)}</h2></div><div style="padding:24px"><div style="background:${background};color:${color};font-weight:bold;font-size:18px;padding:16px;border-radius:8px;text-align:center">${escapeHtml(status)}</div><p style="font-size:16px;line-height:1.7">${escapeHtml(summary)}</p><h3 style="font-size:16px">Clases afectadas (${rows.length})</h3><div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:13px"><thead><tr style="background:#e2e8f0"><th style="padding:10px;text-align:left">Fecha</th><th style="padding:10px;text-align:left">Horario</th><th style="padding:10px;text-align:left">Materia</th><th style="padding:10px;text-align:left">Curso</th></tr></thead><tbody>${tableRows}</tbody></table></div><p style="color:#475569;font-size:13px;line-height:1.6">${escapeHtml(generated)}</p>${caution ? `<p style="color:${color};font-weight:bold">${escapeHtml(caution)}</p>` : ''}<a href="${escapeHtml(url)}" style="display:inline-block;margin-top:14px;padding:12px 18px;background:#173c78;color:white;text-decoration:none;border-radius:7px">Ver aviso en EduQuest</a><p style="color:#64748b;font-size:12px;margin-top:28px">Correo automático de EduQuest.</p></div></div></div>`;
+  const subjectName = rows.length === 1 ? rows[0].subject : `${rows.length} clases afectadas`;
+  return getTransporter().sendMail({ from: process.env.MAIL_FROM, to, subject: `[EduQuest] ${status} — ${subjectName}`, text, html });
 };

@@ -1,6 +1,6 @@
 import { notificationService } from './notification.service.js';
 
-import { earlyNoticeRepository as repo } from '../repositories/earlyNotice.repository.js';
+import { earlyNoticeRepository as repo, createNoticeWithClasses } from '../repositories/earlyNotice.repository.js';
 
 class HttpError extends Error {
     constructor(status, message) {
@@ -26,7 +26,7 @@ const integer = (value, field) => {
 const has = (obj, key) =>
     Object.prototype.hasOwnProperty.call(obj, key);
 
-const TYPES = ['ABSENCE', 'LATE_ARRIVAL'];
+const TYPES = ['ABSENCE', 'LATE_ARRIVAL', 'ATTENDANCE_CONFIRMED', 'VIRTUAL_SYNCHRONOUS', 'VIRTUAL_ASYNCHRONOUS'];
 const STATUSES = ['PENDING', 'CONFIRMED', 'REJECTED'];
 
 const DAYS = [
@@ -78,7 +78,7 @@ const cleanReason = (value) => {
  * Se guarda como texto HH:mm para conservar el formato del horario.
  */
 const validateEstimatedArrival = (type, value, startTime, endTime) => {
-    if (type === 'ABSENCE') {
+    if (type !== 'LATE_ARRIVAL') {
         return null;
     }
 
@@ -328,6 +328,94 @@ const validateAssignment = async (
 };
 
 export const earlyNoticeService = {
+    /** Crea un aviso para clases concretas del mismo docente, en varios cursos/materias. */
+    async createMultiple(jwtUser, body) {
+        const user = await getContext(jwtUser);
+        if (!canCreateNotices(user)) fail(403, 'No tenés permisos para crear avisos');
+        if (!TYPES.includes(body?.type)) fail(400, 'Tipo de aviso inválido');
+        if (!Array.isArray(body?.classes) || !body.classes.length || body.classes.length > 120) {
+            fail(400, 'Seleccioná entre 1 y 120 clases');
+        }
+        const periodStart = parseDate(body.periodStart);
+        const periodEnd = parseDate(body.periodEnd || body.periodStart);
+        const span = Math.round((periodEnd - periodStart) / 86400000);
+        if (span < 0 || span > 90) fail(400, 'El período debe tener entre 1 y 91 días inclusive');
+        const reason = cleanReason(body.reason);
+        const classes = [];
+        const seen = new Set();
+        let teacherId = null;
+        let teacherUserId = null;
+        let institutionId = null;
+        const assignmentById = new Map();
+        for (const row of body.classes) {
+            if (!row || typeof row !== 'object') fail(400, 'Clase inválida');
+            const teacherSubjectId = integer(row.teacherSubjectId ?? body.teacherSubjectId, 'teacherSubjectId');
+            const { assignment, schedule, date, institutionId: inst } = await validateAssignment(
+                user, teacherSubjectId, row.scheduleId, row.classDate
+            );
+            if (date < periodStart || date > periodEnd) fail(400, 'Hay clases fuera del período indicado');
+            if (teacherId !== null && teacherId !== assignment.teacherId) {
+                fail(400, 'Todas las clases deben pertenecer al mismo docente');
+            }
+            if (institutionId !== null && institutionId !== inst) {
+                fail(400, 'No se pueden combinar instituciones');
+            }
+            teacherId = assignment.teacherId;
+            teacherUserId = assignment.teacher.userId;
+            institutionId = inst;
+            assignmentById.set(assignment.id, assignment);
+            const key = `${assignment.id}:${schedule.id}:${row.classDate}`;
+            if (seen.has(key)) fail(400, 'Hay clases duplicadas');
+            seen.add(key);
+            classes.push({
+                teacherSubjectId: assignment.id, scheduleId: schedule.id,
+                classDate: date, day: schedule.day, shift: schedule.shift,
+                startTime: schedule.startTime, endTime: schedule.endTime,
+            });
+        }
+        classes.sort((a, b) => a.classDate - b.classDate || a.startTime.localeCompare(b.startTime));
+        const first = classes[0];
+        const firstAssignment = assignmentById.get(first.teacherSubjectId);
+        const isOwnTeacher = user.roles.includes('TEACHER') && user.teacherProfileId === teacherId;
+        const status = isOwnTeacher ? 'CONFIRMED' : 'PENDING';
+        let estimatedArrivalTime = null;
+        if (body.type === 'LATE_ARRIVAL') {
+            for (const item of classes) {
+                estimatedArrivalTime = validateEstimatedArrival(
+                    body.type, body.estimatedArrivalTime, item.startTime, item.endTime
+                );
+            }
+        }
+        const virtualMeetingUrl = body.type === 'VIRTUAL_SYNCHRONOUS'
+            ? String(body.virtualMeetingUrl || '').trim() : null;
+        const virtualInstructions = body.type === 'VIRTUAL_ASYNCHRONOUS'
+            ? String(body.virtualInstructions || '').trim() : null;
+        if (body.type === 'VIRTUAL_SYNCHRONOUS') {
+            try {
+                const url = new URL(virtualMeetingUrl);
+                if (!['https:', 'http:'].includes(url.protocol)) throw new Error();
+            } catch { fail(400, 'Ingresá un enlace válido de videollamada (https://...)'); }
+        }
+        if (body.type === 'VIRTUAL_ASYNCHRONOUS' && !virtualInstructions) {
+            fail(400, 'Indicá el material o las instrucciones de la clase virtual');
+        }
+        if (virtualInstructions?.length > 5000) fail(400, 'Instrucciones demasiado extensas');
+        const data = {
+            type: body.type, status, reason, estimatedArrivalTime,
+            virtualMeetingUrl, virtualInstructions,
+            institutionId, teacherSubjectId: first.teacherSubjectId,
+            subjectId: firstAssignment.subjectId, courseId: firstAssignment.courseId,
+            teacherUserId, createdById: user.id, updatedById: user.id,
+            classDate: first.classDate, periodStart, periodEnd,
+            scheduleId: first.scheduleId, day: first.day, shift: first.shift,
+            startTime: first.startTime, endTime: first.endTime,
+            ...(status === 'CONFIRMED' ? { confirmedById: user.id, confirmedAt: new Date() } : {}),
+        };
+        const notice = await createNoticeWithClasses(data, classes, user.id);
+        await notificationService.safePublish(notice);
+        return { ...notice, affectedClasses: classes, revision: 1 };
+    },
+
     /**
      * Opciones para el formulario de creación.
      *
@@ -448,9 +536,10 @@ export const earlyNoticeService = {
             }
 
             where.status = 'CONFIRMED';
-            where.course = {
-                students: { some: { student: { userId: user.id } } },
-            };
+            where.OR = [
+                { course: { students: { some: { student: { userId: user.id } } } } },
+                { affectedClasses: { some: { teacherSubject: { course: { students: { some: { student: { userId: user.id } } } } } } } },
+            ];
         }
 
         if (query.courseId) {
@@ -522,7 +611,8 @@ export const earlyNoticeService = {
         if (
             isStudentOnly(user) &&
             (notice.status !== 'CONFIRMED' ||
-                !(await repo.isStudentEnrolled(notice.courseId, user.id)))
+                !(await repo.isStudentEnrolled(notice.courseId, user.id)) &&
+                !(await Promise.all((notice.classes || []).map((c) => repo.isStudentEnrolled(c.teacherSubject.course.id, user.id)))).some(Boolean))
         ) {
             fail(404, 'Aviso no encontrado');
         }

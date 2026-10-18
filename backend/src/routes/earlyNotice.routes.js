@@ -7,6 +7,8 @@ import {
     earlyNoticeController as controller,
 } from '../controllers/earlyNotice.controller.js';
 
+import { earlyNoticeHistoryController } from '../controllers/earlyNoticeHistory.controller.js';
+
 const router = Router();
 
 /**
@@ -51,6 +53,11 @@ router.get(
  * Consultar un aviso específico.
  */
 router.get(
+    '/:id/history',
+    earlyNoticeHistoryController.getHistory
+);
+
+router.get(
     '/:id',
     controller.getById
 );
@@ -60,6 +67,8 @@ router.get(
  *
  * Crear un aviso temprano.
  */
+router.post('/multi', controller.createMultiple);
+
 router.post(
     '/',
     controller.create

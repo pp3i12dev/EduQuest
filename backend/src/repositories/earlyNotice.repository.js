@@ -47,7 +47,26 @@ export const noticeInclude = {
     createdBy: {
         select: userSummary,
     },
+    affectedClasses: {
+        orderBy: [{ classDate: 'asc' }, { startTime: 'asc' }],
+        include: {
+            teacherSubject: {
+                select: {
+                    id: true,
+                    subject: { select: { id: true, nombre: true } },
+                    course: { select: { id: true, nombre: true } },
+                },
+            },
+        },
+    },
 };
+
+// Prisma usa affectedClasses; la API pública existente expone classes.
+const normalizeNotice = (notice) => notice
+    ? { ...notice, classes: notice.affectedClasses ?? [] }
+    : notice;
+
+const normalizeNotices = (notices) => notices.map(normalizeNotice);
 
 /**
  * Repositorio de Avisos Tempranos.
@@ -56,6 +75,50 @@ export const noticeInclude = {
  * Este repositorio aplica los filtros institucionales y
  * de asignaciones que recibe.
  */
+export const createNoticeWithClasses = (data, classes, creatorId) =>
+    prisma.$transaction(async (tx) => {
+        const notice = await tx.earlyNotice.create({ data });
+        await tx.earlyNoticeClass.createMany({
+            data: classes.map((item) => ({
+                earlyNoticeId: notice.id,
+                teacherSubjectId: item.teacherSubjectId,
+                scheduleId: item.scheduleId,
+                classDate: item.classDate,
+                day: item.day,
+                shift: item.shift,
+                startTime: item.startTime,
+                endTime: item.endTime,
+            })),
+        });
+        await tx.earlyNoticeRevision.create({
+            data: {
+                earlyNoticeId: notice.id,
+                version: 1,
+                action: 'CREATED',
+                createdById: creatorId,
+                snapshot: {
+                    type: data.type,
+                    status: data.status,
+                    reason: data.reason,
+                    periodStart: data.periodStart?.toISOString().slice(0, 10),
+                    periodEnd: data.periodEnd?.toISOString().slice(0, 10),
+                    virtualMeetingUrl: data.virtualMeetingUrl,
+                    virtualInstructions: data.virtualInstructions,
+                    classes: classes.map((c) => ({
+                        teacherSubjectId: c.teacherSubjectId,
+                        scheduleId: c.scheduleId,
+                        classDate: c.classDate.toISOString().slice(0, 10),
+                        day: c.day,
+                        shift: c.shift,
+                        startTime: c.startTime,
+                        endTime: c.endTime,
+                    })),
+                },
+            },
+        });
+        return normalizeNotice(await tx.earlyNotice.findUnique({ where: { id: notice.id }, include: noticeInclude }));
+    });
+
 export const earlyNoticeRepository = {
     findUser(id) {
         return prisma.user.findUnique({
@@ -457,15 +520,15 @@ export const earlyNoticeRepository = {
         });
     },
 
-    findById(id) {
-        return prisma.earlyNotice.findUnique({
+    async findById(id) {
+        return normalizeNotice(await prisma.earlyNotice.findUnique({
             where: { id },
             include: noticeInclude,
-        });
+        }));
     },
 
-    findMany(where, skip, take) {
-        return prisma.earlyNotice.findMany({
+    async findMany(where, skip, take) {
+        return normalizeNotices(await prisma.earlyNotice.findMany({
             where,
 
             include: noticeInclude,
@@ -481,7 +544,7 @@ export const earlyNoticeRepository = {
 
             skip,
             take,
-        });
+        }));
     },
 
     count(where) {
@@ -490,23 +553,23 @@ export const earlyNoticeRepository = {
         });
     },
 
-    create(data) {
-        return prisma.earlyNotice.create({
+    async create(data) {
+        return normalizeNotice(await prisma.earlyNotice.create({
             data,
             include: noticeInclude,
-        });
+        }));
     },
 
-    update(id, data) {
-        return prisma.earlyNotice.update({
+    async update(id, data) {
+        return normalizeNotice(await prisma.earlyNotice.update({
             where: { id },
             data,
             include: noticeInclude,
-        });
+        }));
     },
 
-    deactivate(id) {
-        return prisma.earlyNotice.update({
+    async deactivate(id) {
+        return normalizeNotice(await prisma.earlyNotice.update({
             where: { id },
 
             data: {
@@ -514,6 +577,6 @@ export const earlyNoticeRepository = {
             },
 
             include: noticeInclude,
-        });
+        }));
     },
 };

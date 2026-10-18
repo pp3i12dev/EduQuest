@@ -139,6 +139,13 @@ export const earlyNoticeService = {
         );
     },
 
+    createMultiple(token, data) {
+        return request('/early-notices/multi', token, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
     /**
      * PATCH /api/early-notices/:id
      *

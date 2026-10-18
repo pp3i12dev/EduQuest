@@ -3,6 +3,16 @@ import { getPrisma } from '../config/prisma.js';
 const prisma = getPrisma();
 
 export const notificationRepository = {
+    findNoticeClasses(earlyNoticeId) {
+        return prisma.earlyNoticeClass.findMany({
+            where: { earlyNoticeId },
+            include: { teacherSubject: { include: {
+                course: { select: { id: true, nombre: true } },
+                subject: { select: { id: true, nombre: true } },
+            } } },
+            orderBy: [{ classDate: 'asc' }, { startTime: 'asc' }],
+        });
+    },
     findTeacher(userId) {
         return prisma.user.findUnique({
             where: { id: userId },
@@ -17,15 +27,16 @@ export const notificationRepository = {
             } } } },
         });
     },
-    async publish(notice, type, title, message, users) {
+    async publish(notice, type, title, message, users, revision = 1) {
+        if (!Number.isSafeInteger(revision) || revision < 1) throw new Error("Revisión inválida");
         const recipients = [...new Map(users.filter(u => u?.isActive !== false).map(u => [u.id, u])).values()];
         return prisma.$transaction(async (tx) => {
             for (const user of recipients) {
                 const notification = await tx.notification.upsert({
-                    where: { userId_earlyNoticeId_type: {
-                        userId: user.id, earlyNoticeId: notice.id, type,
+                    where: { userId_earlyNoticeId_type_revision: {
+                        userId: user.id, earlyNoticeId: notice.id, type, revision,
                     } },
-                    create: { userId: user.id, earlyNoticeId: notice.id, type, title, message },
+                    create: { userId: user.id, earlyNoticeId: notice.id, type, title, message, revision },
                     update: {},
                 });
                 const channels = [
@@ -49,7 +60,7 @@ export const notificationRepository = {
         return prisma.notification.findMany({
             where: { userId }, orderBy: { createdAt: 'desc' }, skip, take,
             select: { id: true, type: true, title: true, message: true,
-                isRead: true, readAt: true, createdAt: true, earlyNoticeId: true },
+                isRead: true, readAt: true, createdAt: true, earlyNoticeId: true, institutionEventId: true, revision: true },
         });
     },
     countUnread(userId) {
