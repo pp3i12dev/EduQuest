@@ -30,6 +30,7 @@ import {
 } from '../hooks/useEarlyNotices';
 
 import EarlyNoticeFormModal from '../components/EarlyNoticeFormModal';
+import EarlyNoticeNotifications from '../components/EarlyNoticeNotifications';
 
 const STATUS = {
     CONFIRMED: {
@@ -830,6 +831,8 @@ export default function EarlyNoticesView({
                     </button>
                 )}
             </div>
+
+            <EarlyNoticeNotifications enabled={Boolean(currentUser)} />
 
             {/* INFORMACIÓN */}
             <div className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/10 p-4">

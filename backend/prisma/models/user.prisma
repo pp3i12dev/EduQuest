@@ -1,42 +1,47 @@
 model User {
-  id Int @id @default(autoincrement())
-  dni String @unique
-  email String @unique
-  telefono String?
+  id           Int      @id @default(autoincrement())
+  dni          String   @unique
+  email        String   @unique
+  telefono     String?
   passwordHash String
-  firstName String
-  lastName String
-  isActive Boolean @default(true)
-  isSuperAdmin Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  firstName    String
+  lastName     String
+  isActive     Boolean  @default(true)
+  isSuperAdmin Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Nullable solo para el SUPER_ADMIN global; enforce en los services.
   institutionId Int?
-  institution Institution? @relation(fields: [institutionId], references: [id])
+  institution   Institution? @relation(fields: [institutionId], references: [id])
 
-  studentProfile StudentProfile?
-  teacherProfile TeacherProfile?
+  studentProfile   StudentProfile?
+  teacherProfile   TeacherProfile?
   preceptorProfile PreceptorProfile?
-  directorProfile DirectorProfile?
-  refreshTokens RefreshToken[]
-  sentInvitations Invitation[] @relation("SentInvitations")
+  directorProfile  DirectorProfile?
+
+  refreshTokens       RefreshToken[]
+  sentInvitations     Invitation[]         @relation("SentInvitations")
   passwordResetTokens PasswordResetToken[]
-  createdEarlyNotices EarlyNotice[] @relation("EarlyNoticeCreator")
-  updatedEarlyNotices EarlyNotice[] @relation("EarlyNoticeUpdater")
+
+  createdEarlyNotices     EarlyNotice[] @relation("EarlyNoticeCreator")
+  updatedEarlyNotices     EarlyNotice[] @relation("EarlyNoticeUpdater")
   responsibleEarlyNotices EarlyNotice[] @relation("EarlyNoticeTeacher")
-  confirmedEarlyNotices EarlyNotice[] @relation("EarlyNoticeConfirmer")
+  confirmedEarlyNotices   EarlyNotice[] @relation("EarlyNoticeConfirmer")
+
+  // Notificaciones recibidas por el usuario.
+  notifications Notification[] @relation("UserNotifications")
 }
 
-
-
 model PasswordResetToken {
-  id Int @id @default(autoincrement())
-  tokenHash String @unique
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique
   expiresAt DateTime
-  usedAt DateTime?
-  createdAt DateTime @default(now())
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
   userId Int
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, expiresAt])
 }

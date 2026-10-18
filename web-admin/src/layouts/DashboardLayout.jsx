@@ -1,5 +1,6 @@
 
 import { useContext, useState } from 'react';
+import { useUnreadNotifications } from '../hooks/useNotifications';
 
 import {
     Link,
@@ -93,6 +94,7 @@ function SidebarLink({
     end = false,
     collapsed = false,
     onNavigate,
+    unreadCount = 0,
 }) {
     return (
         <NavLink
@@ -122,11 +124,23 @@ function SidebarLink({
                             }`}
                     />
 
+                    {collapsed && unreadCount > 0 && (
+                        <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                    )}
+
                     {!collapsed && (
                         <>
                             <span className="min-w-0 flex-1 truncate">
                                 {label}
                             </span>
+
+                            {unreadCount > 0 && (
+                                <span aria-label={`${unreadCount} notificaciones sin leer`} className="inline-flex min-w-6 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-xs font-bold text-white">
+                                    {unreadCount > 99 ? '99+' : unreadCount}
+                                </span>
+                            )}
 
                             {isActive && (
                                 <ChevronRight
@@ -158,6 +172,7 @@ function UserAvatar({ user, size = 'normal' }) {
 export default function DashboardLayout() {
     const { user, logoutContext } = useContext(AuthContext);
     const location = useLocation();
+    const unreadCount = useUnreadNotifications(Boolean(user));
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -438,6 +453,7 @@ export default function DashboardLayout() {
                                     <SidebarLink
                                         key={item.to}
                                         {...item}
+                                        unreadCount={item.to === '/dashboard/early-notices' ? unreadCount : 0}
                                         collapsed={sidebarCollapsed}
                                     />
                                 ))}
@@ -574,6 +590,7 @@ export default function DashboardLayout() {
                                         <SidebarLink
                                             key={item.to}
                                             {...item}
+                                            unreadCount={item.to === '/dashboard/early-notices' ? unreadCount : 0}
                                             onNavigate={closeMobileMenu}
                                         />
                                     ))}

@@ -60,6 +60,9 @@ model EarlyNotice {
   confirmedById Int?
   confirmedBy   User? @relation("EarlyNoticeConfirmer", fields: [confirmedById], references: [id])
 
+  // Notificaciones asociadas a este aviso temprano.
+  notifications Notification[] @relation("EarlyNoticeNotifications")
+
   @@index([institutionId, classDate, status])
   @@index([teacherUserId, status])
   @@index([courseId, classDate])

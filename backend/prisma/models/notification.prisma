@@ -1,0 +1,73 @@
+enum NotificationType {
+  EARLY_NOTICE_PENDING
+  EARLY_NOTICE_CONFIRMED
+  EARLY_NOTICE_REJECTED
+  EARLY_NOTICE_UPDATED
+  EARLY_NOTICE_CANCELLED
+}
+
+enum NotificationChannel {
+  EMAIL
+  WHATSAPP
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  PROCESSING
+  SENT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+model Notification {
+  id Int @id @default(autoincrement())
+
+  type NotificationType
+
+  title   String
+  message String @db.Text
+
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  userId Int
+  user   User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  earlyNoticeId Int
+  earlyNotice   EarlyNotice @relation("EarlyNoticeNotifications", fields: [earlyNoticeId], references: [id], onDelete: Cascade)
+
+  deliveries NotificationDelivery[]
+
+  @@unique([userId, earlyNoticeId, type])
+  @@index([userId, isRead, createdAt])
+  @@index([earlyNoticeId])
+}
+
+model NotificationDelivery {
+  id Int @id @default(autoincrement())
+
+  channel NotificationChannel
+  status  NotificationDeliveryStatus @default(PENDING)
+
+  recipient String
+
+  providerMessageId String?
+
+  attempts  Int     @default(0)
+  lastError String? @db.Text
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  sentAt      DateTime?
+  deliveredAt DateTime?
+
+  notificationId Int
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, channel])
+  @@index([status, createdAt])
+  @@index([providerMessageId])
+}

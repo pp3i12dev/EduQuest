@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 
 import authRoutes from './auth.routes.js';
@@ -10,12 +11,13 @@ import teacherSubjectRoutes from './teacherSubject.routes.js';
 import assignmentsRoutes from './assignment.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 
+// Notificaciones
+import notificationRoutes from './notification.routes.js';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
-
 
 router.use('/institutions', institutionsRoutes);
 
@@ -26,5 +28,8 @@ router.use('/teacher-subjects', teacherSubjectRoutes);
 
 router.use('/assignments', assignmentsRoutes);
 router.use('/dashboard', dashboardRoutes);
+
+// Notificaciones
+router.use('/notifications', notificationRoutes);
 
 export default router;

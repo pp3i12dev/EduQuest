@@ -1,3 +1,4 @@
+import { notificationService } from './notification.service.js';
 
 import { earlyNoticeRepository as repo } from '../repositories/earlyNotice.repository.js';
 
@@ -447,6 +448,9 @@ export const earlyNoticeService = {
             }
 
             where.status = 'CONFIRMED';
+            where.course = {
+                students: { some: { student: { userId: user.id } } },
+            };
         }
 
         if (query.courseId) {
@@ -517,7 +521,8 @@ export const earlyNoticeService = {
 
         if (
             isStudentOnly(user) &&
-            notice.status !== 'CONFIRMED'
+            (notice.status !== 'CONFIRMED' ||
+                !(await repo.isStudentEnrolled(notice.courseId, user.id)))
         ) {
             fail(404, 'Aviso no encontrado');
         }
@@ -569,7 +574,7 @@ export const earlyNoticeService = {
             ? 'CONFIRMED'
             : 'PENDING';
 
-        return repo.create({
+        const createdNotice = await repo.create({
             type: body.type,
             status,
             classDate: date,
@@ -607,6 +612,10 @@ export const earlyNoticeService = {
                 }
                 : {}),
         });
+
+        // El registro del aviso no se pierde si falla la creación de notificaciones.
+        await notificationService.safePublish(createdNotice);
+        return createdNotice;
     },
 
     /**
@@ -793,7 +802,7 @@ export const earlyNoticeService = {
             );
         }
 
-        return repo.update(notice.id, {
+        const confirmedNotice = await repo.update(notice.id, {
             status: 'CONFIRMED',
 
             confirmedAt: new Date(),
@@ -804,6 +813,8 @@ export const earlyNoticeService = {
 
             updatedById: user.id,
         });
+        await notificationService.safePublish(confirmedNotice);
+        return confirmedNotice;
     },
 
     /**
@@ -830,7 +841,7 @@ export const earlyNoticeService = {
             );
         }
 
-        return repo.update(notice.id, {
+        const rejectedNotice = await repo.update(notice.id, {
             status: 'REJECTED',
 
             rejectionReason: cleanReason(
@@ -844,6 +855,8 @@ export const earlyNoticeService = {
 
             updatedById: user.id,
         });
+        await notificationService.safePublish(rejectedNotice);
+        return rejectedNotice;
     },
 
     /**

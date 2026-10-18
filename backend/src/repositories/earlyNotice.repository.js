@@ -435,6 +435,28 @@ export const earlyNoticeRepository = {
         };
     },
 
+    findStudentsByCourse(courseId) {
+        return prisma.studentCourse.findMany({
+            where: { courseId, student: { user: { isActive: true } } },
+            select: {
+                student: {
+                    select: {
+                        user: {
+                            select: { id: true, firstName: true, lastName: true, email: true, telefono: true },
+                        },
+                    },
+                },
+            },
+        });
+    },
+
+    isStudentEnrolled(courseId, userId) {
+        return prisma.studentCourse.findFirst({
+            where: { courseId, student: { userId } },
+            select: { id: true },
+        });
+    },
+
     findById(id) {
         return prisma.earlyNotice.findUnique({
             where: { id },
