@@ -760,6 +760,11 @@ export const earlyNoticeService = {
             );
         }
 
+        // El formulario heredado no debe cambiar solo la primera clase de un aviso multiclase.
+        if (has(body, 'classDate') || has(body, 'scheduleId')) {
+            fail(409, 'La edición de fechas u horarios requiere el editor de clases afectadas; esta versión permite editar los demás datos');
+        }
+
         const data = {
             updatedById: user.id,
         };
@@ -862,10 +867,11 @@ export const earlyNoticeService = {
             );
         }
 
-        return repo.update(
-            notice.id,
-            data
+        const { notice: updated, version } = await repo.updateWithRevision(
+            notice.id, data, 'UPDATED', user.id
         );
+        await notificationService.safePublish(updated, { event: 'UPDATED', revision: version });
+        return updated;
     },
 
     /**
@@ -892,7 +898,7 @@ export const earlyNoticeService = {
             );
         }
 
-        const confirmedNotice = await repo.update(notice.id, {
+        const { notice: confirmedNotice, version } = await repo.updateWithRevision(notice.id, {
             status: 'CONFIRMED',
 
             confirmedAt: new Date(),
@@ -902,8 +908,8 @@ export const earlyNoticeService = {
             rejectionReason: null,
 
             updatedById: user.id,
-        });
-        await notificationService.safePublish(confirmedNotice);
+        }, 'CONFIRMED', user.id);
+        await notificationService.safePublish(confirmedNotice, { event: 'CONFIRMED', revision: version });
         return confirmedNotice;
     },
 
@@ -931,7 +937,7 @@ export const earlyNoticeService = {
             );
         }
 
-        const rejectedNotice = await repo.update(notice.id, {
+        const { notice: rejectedNotice, version } = await repo.updateWithRevision(notice.id, {
             status: 'REJECTED',
 
             rejectionReason: cleanReason(
@@ -944,8 +950,8 @@ export const earlyNoticeService = {
             confirmedById: null,
 
             updatedById: user.id,
-        });
-        await notificationService.safePublish(rejectedNotice);
+        }, 'REJECTED', user.id);
+        await notificationService.safePublish(rejectedNotice, { event: 'REJECTED', revision: version });
         return rejectedNotice;
     },
 

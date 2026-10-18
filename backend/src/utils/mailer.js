@@ -59,10 +59,10 @@ export const sendEarlyNoticeEmail = ({ to, title, message, notificationType, not
   const creatorRole = notice?.createdBy?.directorProfile ? 'directivo' : notice?.createdBy?.preceptorProfile ? 'preceptor' : notice?.createdBy?.teacherProfile ? 'docente' : 'usuario';
   const typeNames = { ABSENCE: 'Ausencia', LATE_ARRIVAL: 'Llegada tarde', ATTENDANCE_CONFIRMED: 'Asistencia confirmada', VIRTUAL_SYNCHRONOUS: 'Clase virtual sincrónica', VIRTUAL_ASYNCHRONOUS: 'Clase virtual asincrónica' };
   const kind = typeNames[notice?.type] || 'Aviso temprano';
-  const classes = notice?.classes?.length ? notice.classes : notice ? [{
+  const classes = (notice?.affectedClasses?.length ? notice.affectedClasses : notice?.classes?.length ? notice.classes : null) || (notice ? [{
     classDate: notice.classDate, startTime: notice.startTime, endTime: notice.endTime,
     teacherSubject: { subject: notice.subject, course: notice.course },
-  }] : [];
+  }] : []);
   const start = notice?.periodStart || classes[0]?.classDate || notice?.classDate;
   const end = notice?.periodEnd || classes[classes.length - 1]?.classDate || notice?.classDate;
   const period = start && end && new Date(start).getTime() !== new Date(end).getTime()
@@ -74,7 +74,7 @@ export const sendEarlyNoticeEmail = ({ to, title, message, notificationType, not
     course: item.teacherSubject?.course?.nombre || notice?.course?.nombre || 'Curso no especificado',
   }));
   const summary = `${kind} del docente ${teacher}. Período: ${period}. ${rows.length} clase${rows.length === 1 ? '' : 's'} afectada${rows.length === 1 ? '' : 's'}.`;
-  const caution = status === 'ESPERANDO CONFIRMACIÓN DEL DOCENTE'
+  const caution = (status === 'ESPERANDO CONFIRMACIÓN DEL DOCENTE' || (status === 'ACTUALIZACIÓN' && notice?.status === 'PENDING'))
     ? 'INFORMACIÓN PROVISORIA: el docente todavía no confirmó el aviso. Las clases continúan oficialmente programadas hasta su confirmación.'
     : status === 'RECHAZADO' ? 'El docente rechazó el aviso. Las clases continúan según el horario oficial.' : '';
   // El motivo puede contener datos médicos o personales. No se incluye en correos a estudiantes.

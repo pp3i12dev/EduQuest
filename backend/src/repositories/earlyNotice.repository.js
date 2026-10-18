@@ -568,6 +568,51 @@ export const earlyNoticeRepository = {
         }));
     },
 
+    /** Actualiza estado/datos y registra una revisión en una misma transacción. */
+    async updateWithRevision(id, data, action, actorId) {
+        return prisma.$transaction(async (tx) => {
+            const current = await tx.earlyNotice.findUnique({
+                where: { id },
+                include: { affectedClasses: { orderBy: [{ classDate: 'asc' }, { startTime: 'asc' }] } },
+            });
+            if (!current) {
+                const error = new Error('Aviso no encontrado');
+                error.status = 404;
+                throw error;
+            }
+            const latest = await tx.earlyNoticeRevision.findFirst({
+                where: { earlyNoticeId: id },
+                orderBy: { version: 'desc' },
+                select: { version: true },
+            });
+            const version = (latest?.version ?? 0) + 1;
+            const updated = await tx.earlyNotice.update({ where: { id }, data, include: noticeInclude });
+            await tx.earlyNoticeRevision.create({
+                data: {
+                    earlyNoticeId: id, version, action, createdById: actorId,
+                    snapshot: {
+                        type: updated.type,
+                        status: updated.status,
+                        reason: updated.reason,
+                        periodStart: updated.periodStart?.toISOString().slice(0, 10) ?? null,
+                        periodEnd: updated.periodEnd?.toISOString().slice(0, 10) ?? null,
+                        estimatedArrivalTime: updated.estimatedArrivalTime,
+                        virtualMeetingUrl: updated.virtualMeetingUrl,
+                        virtualInstructions: updated.virtualInstructions,
+                        rejectionReason: updated.rejectionReason,
+                        classes: updated.affectedClasses.map((c) => ({
+                            teacherSubjectId: c.teacherSubjectId,
+                            scheduleId: c.scheduleId,
+                            classDate: c.classDate.toISOString().slice(0, 10),
+                            day: c.day, shift: c.shift, startTime: c.startTime, endTime: c.endTime,
+                        })),
+                    },
+                },
+            });
+            return { notice: normalizeNotice(updated), version };
+        });
+    },
+
     async deactivate(id) {
         return normalizeNotice(await prisma.earlyNotice.update({
             where: { id },
