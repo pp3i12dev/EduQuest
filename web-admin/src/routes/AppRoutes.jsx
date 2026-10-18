@@ -33,6 +33,7 @@ import SubjectSchedulesView from '../views/SubjectSchedulesView';
 import RoleRoute from './RoleRoute';
 import TeacherSubjectsView from '../views/TeacherSubjectsView';
 import EarlyNoticesView from '../views/EarlyNoticesView';
+import TeacherConfirmationsView from '../views/TeacherConfirmationsView';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useContext(AuthContext);
@@ -91,6 +92,11 @@ export default function AppRoutes() {
                     <Route
                         path="profile"
                         element={<ProfileView />}
+                    />
+
+                    <Route
+                        path="teacher-confirmations"
+                        element={<TeacherConfirmationsView />}
                     />
 
                     <Route

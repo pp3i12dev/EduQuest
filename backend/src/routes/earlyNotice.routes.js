@@ -1,5 +1,6 @@
 
 import { Router } from 'express';
+import { teacherConfirmationsController } from '../controllers/teacherConfirmations.controller.js';
 
 import { authenticate } from '../middlewares/auth.middleware.js';
 
@@ -32,6 +33,9 @@ router.use(authenticate);
  * IMPORTANTE:
  * Esta ruta debe declararse antes de /:id.
  */
+// Debe estar antes de /:id para no tratar 'pending-mine' como ID.
+router.get('/pending-mine', teacherConfirmationsController.list);
+
 router.get(
     '/options',
     controller.getCreationOptions

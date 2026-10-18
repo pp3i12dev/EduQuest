@@ -12,6 +12,7 @@ import {
 import {
     BookOpen,
     ClipboardList,
+    ClipboardCheck,
     LogOut,
     UserRound,
     ArrowLeft,
@@ -66,6 +67,12 @@ const NAVIGATION = [
         to: '/dashboard/my-subjects',
         label: 'Mis materias',
         Icon: BookOpen,
+        teacherOnly: true,
+    },
+    {
+        to: '/dashboard/teacher-confirmations',
+        label: 'Confirmaciones pendientes',
+        Icon: ClipboardCheck,
         teacherOnly: true,
     },
     {
