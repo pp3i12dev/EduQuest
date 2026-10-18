@@ -1,6 +1,8 @@
+
 import { hashPassword, comparePassword } from '../utils/password.js';
 import { generateToken } from '../utils/jwt.js';
 import { getRolesFromUser } from '../utils/rols.js';
+
 import * as userRepository from '../repositories/user.repository.js';
 import * as academicRepository from '../repositories/academic.repository.js';
 
@@ -13,21 +15,58 @@ class ServiceError extends Error {
 
 export const loginService = async ({ email, dni, password }) => {
     if (!password || (!email && !dni)) {
-        throw new ServiceError('Debe ingresar email/DNI y contraseña', 400);
+        throw new ServiceError(
+            'Debe ingresar email/DNI y contraseña',
+            400
+        );
     }
 
-    const user = await userRepository.findUserByEmailOrDni({ email, dni });
-    if (!user) throw new ServiceError('No se ha hallado registro alguno con ese email', 401);
+    const user = await userRepository.findUserByEmailOrDni({
+        email,
+        dni,
+    });
 
-    const isValidPassword = await comparePassword(password, user.passwordHash);
-    if (!isValidPassword) throw new ServiceError('Las patitas saben a pollo', 401);
+    if (!user) {
+        throw new ServiceError(
+            'Credenciales incorrectas',
+            401
+        );
+    }
+
+    const isValidPassword = await comparePassword(
+        password,
+        user.passwordHash
+    );
+
+    if (!isValidPassword) {
+        throw new ServiceError(
+            'Credenciales incorrectas',
+            401
+        );
+    }
 
     if (!user.isActive) {
-        throw new ServiceError('Tu cuenta todavía no fue aprobada. Contactá a tu institución.', 403);
+        throw new ServiceError(
+            'Tu cuenta todavía no fue aprobada. Contactá a tu institución.',
+            403
+        );
     }
 
-    const roles = getRolesFromUser(user);
-    const token = generateToken({ id: user.id, email: user.email, institutionId: user.institutionId, roles });
+    const isSuperAdmin = user.isSuperAdmin === true;
+
+    const profileRoles = getRolesFromUser(user);
+
+    const roles = isSuperAdmin
+        ? [...new Set(['SUPER_ADMIN', ...profileRoles])]
+        : profileRoles;
+
+    const token = generateToken({
+        id: user.id,
+        email: user.email,
+        institutionId: user.institutionId,
+        isSuperAdmin,
+        roles,
+    });
 
     return {
         token,
@@ -36,6 +75,8 @@ export const loginService = async ({ email, dni, password }) => {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
+            institutionId: user.institutionId,
+            isSuperAdmin,
             roles,
             directorProfile: user.directorProfile,
             teacherProfile: user.teacherProfile,
@@ -46,24 +87,62 @@ export const loginService = async ({ email, dni, password }) => {
 };
 
 export const registerStudentService = async (data) => {
-    const { dni, email, password, firstName, lastName, institutionId, courseId } = data;
+    const {
+        dni,
+        email,
+        password,
+        firstName,
+        lastName,
+        institutionId,
+        courseId,
+    } = data;
 
-    if (!dni || !email || !password || !firstName || !lastName || !institutionId || !courseId) {
-        throw new ServiceError('Faltan campos obligatorios', 400);
+    if (
+        !dni ||
+        !email ||
+        !password ||
+        !firstName ||
+        !lastName ||
+        !institutionId ||
+        !courseId
+    ) {
+        throw new ServiceError(
+            'Faltan campos obligatorios',
+            400
+        );
     }
 
-    const course = await academicRepository.findCourseInInstitution(Number(courseId), Number(institutionId));
-    if (!course) throw new ServiceError('El curso indicado no pertenece a esa institución', 400);
+    const course =
+        await academicRepository.findCourseInInstitution(
+            Number(courseId),
+            Number(institutionId)
+        );
+
+    if (!course) {
+        throw new ServiceError(
+            'El curso indicado no pertenece a esa institución',
+            400
+        );
+    }
 
     const passwordHash = await hashPassword(password);
 
-    const user = await userRepository.createStudentSelfSignup({
-        userData: { dni, email, passwordHash, firstName, lastName, institutionId: Number(institutionId) },
-        courseId: Number(courseId),
-    });
+    const user =
+        await userRepository.createStudentSelfSignup({
+            userData: {
+                dni,
+                email,
+                passwordHash,
+                firstName,
+                lastName,
+                institutionId: Number(institutionId),
+            },
+            courseId: Number(courseId),
+        });
 
     return {
-        message: 'Registro exitoso. Tu cuenta queda pendiente de aprobación por la institución.',
+        message:
+            'Registro exitoso. Tu cuenta queda pendiente de aprobación por la institución.',
         userId: user.id,
     };
 };

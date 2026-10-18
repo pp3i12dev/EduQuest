@@ -1,3 +1,4 @@
+
 import {
     useQuery,
     useMutation,
@@ -6,10 +7,11 @@ import {
 
 import { institutionService } from '../services/institution.service';
 
-export function useMyInstitution() {
+export function useMyInstitution(enabled = true) {
     return useQuery({
-        queryKey: ['institution'],
+        queryKey: ['institution', 'mine'],
         queryFn: institutionService.getMine,
+        enabled,
     });
 }
 
@@ -30,19 +32,19 @@ export function useUpdateInstitution() {
     });
 }
 
-export function useInstitutions() {
+export function useInstitutions(enabled = true) {
     return useQuery({
         queryKey: ['institutions'],
         queryFn: institutionService.list,
+        enabled,
     });
 }
 
-export function useInstitution(id) {
+export function useInstitution(id, enabled = true) {
     return useQuery({
         queryKey: ['institution', id],
-        queryFn: () =>
-            institutionService.getById(id),
-        enabled: Boolean(id),
+        queryFn: () => institutionService.getById(id),
+        enabled: enabled && Boolean(id),
     });
 }
 
@@ -68,20 +70,18 @@ export function useUpdateInstitutionAdmin() {
 
     return useMutation({
         mutationFn: ({ id, ...payload }) =>
-            institutionService.updateAdmin(
-                id,
-                payload
-            ),
+            institutionService.updateAdmin(id, payload),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ['institutions'],
             });
 
             queryClient.invalidateQueries({
-                queryKey: [
-                    'institution',
-                    variables.id,
-                ],
+                queryKey: ['institution', variables.id],
+            });
+
+            queryClient.invalidateQueries({
+                queryKey: ['institution', 'mine'],
             });
 
             queryClient.invalidateQueries({
@@ -96,13 +96,14 @@ export function useToggleInstitutionActive() {
 
     return useMutation({
         mutationFn: ({ id, isActive }) =>
-            institutionService.toggleStatus(
-                id,
-                isActive
-            ),
+            institutionService.toggleStatus(id, isActive),
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ['institutions'],
+            });
+
+            queryClient.invalidateQueries({
+                queryKey: ['institution'],
             });
 
             queryClient.invalidateQueries({
@@ -120,6 +121,10 @@ export function useDeleteInstitution() {
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ['institutions'],
+            });
+
+            queryClient.invalidateQueries({
+                queryKey: ['institution'],
             });
 
             queryClient.invalidateQueries({

@@ -1,12 +1,17 @@
-import { useEffect, useState } from 'react';
+
+import { useContext, useEffect, useState } from 'react';
 import {
     useNavigate,
     useParams,
 } from 'react-router-dom';
 
+import { AuthContext } from '../context/AuthContext';
+
 import {
     useInstitution,
+    useMyInstitution,
     useCreateInstitution,
+    useUpdateInstitution,
     useUpdateInstitutionAdmin,
 } from '../hooks/useInstitution';
 
@@ -22,40 +27,71 @@ const EMPTY_FORM = {
 export default function InstitutionFormView() {
     const navigate = useNavigate();
     const { id } = useParams();
+    const { user } = useContext(AuthContext);
 
     const editing = Boolean(id);
 
-    const {
-        data: institution,
-        isLoading,
-    } = useInstitution(id);
+    const isSuperAdmin =
+        user?.isSuperAdmin === true &&
+        user?.roles?.includes('SUPER_ADMIN');
 
-    const createMutation =
-        useCreateInstitution();
+    const isDirector =
+        user?.roles?.includes('DIRECTOR') === true;
 
-    const updateMutation =
-        useUpdateInstitutionAdmin();
+    const canAccess =
+        isSuperAdmin || (isDirector && editing);
 
-    const [form, setForm] =
-        useState(EMPTY_FORM);
+    const globalQuery = useInstitution(
+        id,
+        editing && isSuperAdmin
+    );
+
+    const ownQuery = useMyInstitution(
+        editing && !isSuperAdmin && isDirector
+    );
+
+    const institution = isSuperAdmin
+        ? globalQuery.data
+        : ownQuery.data;
+
+    const isLoading = isSuperAdmin
+        ? globalQuery.isLoading
+        : ownQuery.isLoading;
+
+    const isError = isSuperAdmin
+        ? globalQuery.isError
+        : ownQuery.isError;
+
+    const createMutation = useCreateInstitution();
+    const updateOwnMutation = useUpdateInstitution();
+    const updateAdminMutation = useUpdateInstitutionAdmin();
+
+    const mutation = !editing
+        ? createMutation
+        : isSuperAdmin
+            ? updateAdminMutation
+            : updateOwnMutation;
+
+    const [form, setForm] = useState(EMPTY_FORM);
+
+    const isOwnInstitution =
+        institution &&
+        Number(institution.id) === Number(id);
+
+    const canEditTarget =
+        isSuperAdmin || isOwnInstitution;
 
     useEffect(() => {
-        if (institution) {
-            setForm({
-                nombre:
-                    institution.nombre ?? '',
-                cue:
-                    institution.cue ?? '',
-                distrito:
-                    institution.distrito ?? '',
-                provincia:
-                    institution.provincia ?? '',
-                direccion:
-                    institution.direccion ?? '',
-                telefono:
-                    institution.telefono ?? '',
-            });
-        }
+        if (!institution) return;
+
+        setForm({
+            nombre: institution.nombre ?? '',
+            cue: institution.cue ?? '',
+            distrito: institution.distrito ?? '',
+            provincia: institution.provincia ?? '',
+            direccion: institution.direccion ?? '',
+            telefono: institution.telefono ?? '',
+        });
     }, [institution]);
 
     const handleChange = (e) => {
@@ -68,35 +104,52 @@ export default function InstitutionFormView() {
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        if (!canAccess) return;
+
         if (editing) {
-            updateMutation.mutate(
-                {
-                    id: Number(id),
-                    ...form,
-                },
-                {
-                    onSuccess: () =>
-                        navigate(
-                            '/dashboard/institution'
-                        ),
-                }
-            );
+            if (!canEditTarget) return;
+
+            const { cue, ...updatePayload } = form;
+
+            if (isSuperAdmin) {
+                updateAdminMutation.mutate(
+                    {
+                        id: Number(id),
+                        ...updatePayload,
+                    },
+                    {
+                        onSuccess: () =>
+                            navigate('/dashboard/institution'),
+                    }
+                );
+            } else {
+                updateOwnMutation.mutate(
+                    updatePayload,
+                    {
+                        onSuccess: () =>
+                            navigate('/dashboard/institution'),
+                    }
+                );
+            }
 
             return;
         }
 
+        if (!isSuperAdmin) return;
+
         createMutation.mutate(form, {
             onSuccess: () =>
-                navigate(
-                    '/dashboard/institution'
-                ),
+                navigate('/dashboard/institution'),
         });
     };
 
-    const mutation =
-        editing
-            ? updateMutation
-            : createMutation;
+    if (!canAccess) {
+        return (
+            <div className="text-red-400">
+                No tenés permisos para realizar esta operación.
+            </div>
+        );
+    }
 
     if (editing && isLoading) {
         return (
@@ -106,8 +159,36 @@ export default function InstitutionFormView() {
         );
     }
 
+    if (editing && isError) {
+        return (
+            <p className="text-red-400">
+                No se pudo cargar la institución.
+            </p>
+        );
+    }
+
+    if (editing && !institution) {
+        return (
+            <p className="text-red-400">
+                No se encontró la institución.
+            </p>
+        );
+    }
+
+    if (editing && !canEditTarget) {
+        return (
+            <p className="text-red-400">
+                No podés editar una institución distinta de la tuya.
+            </p>
+        );
+    }
+
     const errorMessage =
-        mutation.error?.response?.data?.message;
+        mutation.error?.response?.data?.message ||
+        mutation.error?.response?.data?.error ||
+        (mutation.isError
+            ? 'No se pudo guardar la institución.'
+            : null);
 
     return (
         <div>
@@ -115,9 +196,7 @@ export default function InstitutionFormView() {
                 <button
                     type="button"
                     onClick={() =>
-                        navigate(
-                            '/dashboard/institution'
-                        )
+                        navigate('/dashboard/institution')
                     }
                     className="text-sm text-slate-500 hover:text-slate-300 mb-4 cursor-pointer"
                 >
@@ -240,9 +319,7 @@ export default function InstitutionFormView() {
                     <button
                         type="button"
                         onClick={() =>
-                            navigate(
-                                '/dashboard/institution'
-                            )
+                            navigate('/dashboard/institution')
                         }
                         className="px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 text-sm cursor-pointer"
                     >

@@ -2,6 +2,11 @@ enum EducationLevel {
   JARDIN
   PRIMARIO
   SECUNDARIO
+  TERCIARIO
+  UNIVERSITARIO
+  POSTGRADO
+  CURSO
+  OTRO
 }
 
 enum ScheduleDay {
@@ -36,71 +41,73 @@ model Course {
   createdAt     DateTime    @default(now())
   institutionId Int
   institution   Institution @relation(fields: [institutionId], references: [id])
+  // Temporalmente opcional hasta asignar carrera a los cursos existentes.
   careerId      Int?
   career        Career?     @relation(fields: [careerId], references: [id])
 
-  students    StudentCourse[]
-  teachers    TeacherSubject[]
-  schedules   SubjectSchedule[]
-  invitations Invitation[]
+  students     StudentCourse[]
+  teachers     TeacherSubject[]
+  schedules    SubjectSchedule[]
+  invitations  Invitation[]
+  earlyNotices EarlyNotice[]
 }
 
 model Subject {
   id            Int         @id @default(autoincrement())
   nombre        String
   createdAt     DateTime    @default(now())
+  isActive      Boolean     @default(true)
   institutionId Int
   institution   Institution @relation(fields: [institutionId], references: [id])
 
-  teachers  TeacherSubject[]
-  schedules SubjectSchedule[]
+  teachers     TeacherSubject[]
+  schedules    SubjectSchedule[]
+  earlyNotices EarlyNotice[]
 }
 
 model TeacherSubject {
   id        Int            @id @default(autoincrement())
   teacherId Int
   teacher   TeacherProfile @relation(fields: [teacherId], references: [id])
-
   subjectId Int
-  subject   Subject @relation(fields: [subjectId], references: [id])
+  subject   Subject        @relation(fields: [subjectId], references: [id])
+  courseId  Int
+  course    Course         @relation(fields: [courseId], references: [id])
 
-  courseId Int
-  course   Course @relation(fields: [courseId], references: [id])
+  // Indica si esta asignación docente sigue vigente.
+  // Las asignaciones anteriores se conservan como historial.
+  isActive Boolean @default(true)
 
-
-  activities Activity[]
-  contents   TeacherSubjectContent[]
+  activities   Activity[]
+  contents     TeacherSubjectContent[]
+  earlyNotices EarlyNotice[]
 
   @@unique([teacherId, subjectId, courseId])
+  @@index([subjectId, courseId, isActive])
 }
 
 model StudentCourse {
   id        Int            @id @default(autoincrement())
   studentId Int
   student   StudentProfile @relation(fields: [studentId], references: [id])
-
-  courseId Int
-  course   Course @relation(fields: [courseId], references: [id])
+  courseId  Int
+  course    Course         @relation(fields: [courseId], references: [id])
 
   @@unique([studentId, courseId])
 }
 
 model SubjectSchedule {
-  id Int @id @default(autoincrement())
-
-  subjectId Int
-  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-
-  courseId Int
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  day   ScheduleDay
-  shift Shift
-
-  startTime String
-  endTime   String
-
-  createdAt DateTime @default(now())
+  id           Int           @id @default(autoincrement())
+  subjectId    Int
+  subject      Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  courseId     Int
+  course       Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  day          ScheduleDay
+  shift        Shift
+  startTime    String
+  endTime      String
+  createdAt    DateTime      @default(now())
+  earlyNotices EarlyNotice[]
 
   @@index([courseId, subjectId])
   @@index([courseId, day])

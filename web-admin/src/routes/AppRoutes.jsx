@@ -1,3 +1,4 @@
+
 import { useContext } from 'react';
 
 import {
@@ -30,6 +31,7 @@ import SubjectSchedulesView from '../views/SubjectSchedulesView';
 
 import RoleRoute from './RoleRoute';
 import TeacherSubjectsView from '../views/TeacherSubjectsView';
+import EarlyNoticesView from '../views/EarlyNoticesView';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useContext(AuthContext);
@@ -39,7 +41,25 @@ const ProtectedRoute = ({ children }) => {
         : <Navigate to="/login" replace />;
 };
 
-export default function AppRouter() {
+/**
+ * Conecta la vista de Avisos Tempranos
+ * con la sesión autenticada.
+ *
+ * La autorización de cada operación
+ * sigue correspondiendo al backend.
+ */
+function EarlyNoticesRoute() {
+    const { token, user } = useContext(AuthContext);
+
+    return (
+        <EarlyNoticesView
+            token={token}
+            currentUser={user}
+        />
+    );
+}
+
+export default function AppRoutes() {
     return (
         <BrowserRouter>
             <Routes>
@@ -50,9 +70,7 @@ export default function AppRouter() {
 
                 <Route
                     path="/aceptar-invitacion/:token"
-                    element={
-                        <AcceptInvitationView />
-                    }
+                    element={<AcceptInvitationView />}
                 />
 
                 <Route
@@ -66,6 +84,11 @@ export default function AppRouter() {
                     <Route
                         index
                         element={<DashboardView />}
+                    />
+
+                    <Route
+                        path="early-notices"
+                        element={<EarlyNoticesRoute />}
                     />
 
                     <Route
@@ -151,6 +174,7 @@ export default function AppRouter() {
                             </RoleRoute>
                         }
                     />
+
                     <Route
                         path="my-subjects"
                         element={
@@ -217,12 +241,7 @@ export default function AppRouter() {
 
                 <Route
                     path="*"
-                    element={
-                        <Navigate
-                            to="/login"
-                            replace
-                        />
-                    }
+                    element={<Navigate to="/login" replace />}
                 />
             </Routes>
         </BrowserRouter>

@@ -1,3 +1,4 @@
+
 import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -5,11 +6,31 @@ import { AuthContext } from '../context/AuthContext';
 import { useDashboardSummary } from '../hooks/useDashboard';
 import { hasAny } from '../config/permissions';
 
+import EarlyNoticesView from './EarlyNoticesView';
+
 const SECTIONS = {
+    notices: {
+        label: 'Avisos Tempranos',
+        description:
+            'Consultá ausencias, llegadas tarde y avisos de docentes.',
+        color: 'text-yellow-400',
+        border: 'hover:border-yellow-500/50',
+        items: [
+            {
+                key: 'earlyNotices',
+                label: 'Ver Avisos Tempranos',
+                color: 'text-yellow-400',
+                path: '/dashboard/early-notices',
+                publicToAuthenticated: true,
+                hideCount: true,
+            },
+        ],
+    },
+
     users: {
         label: 'Gestión de usuarios',
         description:
-            'Administra los usuarios y sus roles dentro de la institución.',
+            'Administra usuarios, roles e inscripciones dentro de la institución.',
         color: 'text-blue-400',
         border: 'hover:border-blue-500/50',
         items: [
@@ -54,7 +75,7 @@ const SECTIONS = {
     academic: {
         label: 'Gestión académica',
         description:
-            'Configura la estructura académica de la institución.',
+            'Configura instituciones, carreras, cursos, materias y sus asignaciones.',
         color: 'text-cyan-400',
         border: 'hover:border-cyan-500/50',
         items: [
@@ -86,7 +107,7 @@ const SECTIONS = {
                 path: '/dashboard/subjects',
                 action: 'subject:manage',
             },
-                        {
+            {
                 key: 'mySubjects',
                 label: 'Mis materias',
                 color: 'text-lime-400',
@@ -95,41 +116,29 @@ const SECTIONS = {
             },
         ],
     },
-
-    assignments: {
-        label: 'Asignaciones',
-        description:
-            'Relaciona alumnos, docentes, materias, cursos y horarios.',
-        color: 'text-violet-400',
-        border: 'hover:border-violet-500/50',
-        items: [
-            {
-                key: 'studentAssignments',
-                label: 'Alumnos por curso',
-                color: 'text-blue-400',
-                path: '/dashboard/assignments/students',
-                action: 'student:enroll',
-            },
-            {
-                key: 'teacherAssignments',
-                label: 'Docentes y materias',
-                color: 'text-emerald-400',
-                path: '/dashboard/assignments/teachers',
-                action: 'teacher:assignSubject',
-            },
-            {
-                key: 'schedules',
-                label: 'Horarios y turnos',
-                color: 'text-violet-400',
-                path: '/dashboard/assignments/schedules',
-                action: 'schedule:manage',
-            },
-        ],
-    },
 };
 
+function getRoles(user) {
+    if (!Array.isArray(user?.roles)) {
+        return [];
+    }
+
+    return user.roles.map(role => {
+        if (typeof role === 'string') {
+            return role.toUpperCase();
+        }
+
+        return String(
+            role?.name || role?.role || ''
+        ).toUpperCase();
+    });
+}
+
 export default function DashboardView() {
-    const { user } = useContext(AuthContext);
+    const auth = useContext(AuthContext);
+    const { user } = auth;
+
+    const [activeSection, setActiveSection] = useState(null);
 
     const {
         data: summary,
@@ -137,46 +146,73 @@ export default function DashboardView() {
         isError,
     } = useDashboardSummary();
 
-    const [activeSection, setActiveSection] =
-        useState(null);
+    const roles = getRoles(user);
 
-    const getVisibleItems = (section) =>
-        section.items.filter((item) =>
-            hasAny(user?.roles, item.action)
-        );
+    const isSuperAdmin =
+        user?.isSuperAdmin === true ||
+        roles.includes('SUPER_ADMIN');
 
-    const canAccessSection = (section) =>
+    const isStudentOnly =
+        !isSuperAdmin &&
+        roles.length === 1 &&
+        roles.includes('STUDENT');
+
+    // Utilizamos el token expuesto por AuthContext.
+    // El nombre exacto debe coincidir con su implementación.
+    const token = auth.token ?? auth.accessToken;
+
+    const getVisibleItems = section =>
+        section.items.filter(item => {
+            if (item.publicToAuthenticated) {
+                return Boolean(user);
+            }
+
+            if (isSuperAdmin) {
+                return true;
+            }
+
+            return hasAny(user?.roles, item.action);
+        });
+
+    const canAccessSection = section =>
         getVisibleItems(section).length > 0;
+
+    // Los alumnos acceden directamente al listado.
+    if (isStudentOnly) {
+        return (
+            <EarlyNoticesView
+                token={token}
+                currentUser={user}
+            />
+        );
+    }
 
     if (!activeSection) {
         return (
             <div>
-                <p className="text-white text-sm lg:text-xl mb-8">
-                    Hola de nuevo, {user?.firstName}!
+                <p className="mb-8 text-sm text-white lg:text-xl">
+                    ¡Hola de nuevo, {user?.firstName || 'Usuario'}!
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     {Object.entries(SECTIONS).map(
                         ([key, section]) => {
                             const accessible =
-                                canAccessSection(
-                                    section
-                                );
+                                canAccessSection(section);
 
                             return (
                                 <button
                                     key={key}
                                     type="button"
-                                    onClick={() =>
-                                        accessible &&
-                                        setActiveSection(
-                                            key
-                                        )
-                                    }
+                                    onClick={() => {
+                                        if (accessible) {
+                                            setActiveSection(key);
+                                        }
+                                    }}
                                     disabled={!accessible}
-                                    className={`text-left bg-slate-900 border border-slate-800 p-6 rounded-xl transition-all group ${accessible
-                                        ? `${section.border} hover:bg-slate-800/60 cursor-pointer`
-                                        : 'opacity-40 cursor-not-allowed'
+                                    className={`group rounded-xl border border-slate-800 bg-slate-900 p-6 text-left transition-all ${accessible
+                                            ? `${section.border} cursor-pointer hover:bg-slate-800/60`
+                                            : 'cursor-not-allowed opacity-40'
                                         }`}
                                 >
                                     <h2
@@ -185,17 +221,15 @@ export default function DashboardView() {
                                         {section.label}
                                     </h2>
 
-                                    <p className="text-sm text-slate-400 mt-3 leading-relaxed">
-                                        {
-                                            section.description
-                                        }
+                                    <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                                        {section.description}
                                     </p>
 
                                     <div className="mt-6">
                                         <span
                                             className={`text-xs ${accessible
-                                                ? 'text-slate-500 group-hover:text-slate-300'
-                                                : 'text-slate-600'
+                                                    ? 'text-slate-500 group-hover:text-slate-300'
+                                                    : 'text-slate-600'
                                                 }`}
                                         >
                                             {accessible
@@ -213,19 +247,15 @@ export default function DashboardView() {
     }
 
     const section = SECTIONS[activeSection];
-
-    const visibleItems =
-        getVisibleItems(section);
+    const visibleItems = getVisibleItems(section);
 
     return (
         <div>
             <div className="mb-8">
                 <button
                     type="button"
-                    onClick={() =>
-                        setActiveSection(null)
-                    }
-                    className="text-sm md:text-base text-white hover:text-slate-300 transition-colors mb-4 cursor-pointer"
+                    onClick={() => setActiveSection(null)}
+                    className="mb-4 cursor-pointer text-sm text-white transition-colors hover:text-slate-300 md:text-base"
                 >
                     ← Volver al panel principal
                 </button>
@@ -236,18 +266,18 @@ export default function DashboardView() {
                     {section.label}
                 </h1>
 
-                <p className="text-slate-400 text-sm mt-2">
+                <p className="mt-2 text-sm text-slate-400">
                     {section.description}
                 </p>
             </div>
 
             {visibleItems.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {visibleItems.map((item) => (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                    {visibleItems.map(item => (
                         <Link
                             key={item.key}
                             to={item.path}
-                            className="bg-slate-900 border border-slate-800 p-6 rounded-xl hover:border-slate-600 hover:bg-slate-800/60 transition-colors group cursor-pointer"
+                            className="group cursor-pointer rounded-xl border border-slate-800 bg-slate-900 p-6 transition-colors hover:border-slate-600 hover:bg-slate-800/60"
                         >
                             <h3
                                 className={`text-lg font-semibold ${item.color}`}
@@ -255,29 +285,31 @@ export default function DashboardView() {
                                 {item.label}
                             </h3>
 
-                            <p className="text-3xl font-extrabold mt-2">
-                                {isLoading
-                                    ? '...'
-                                    : isError
-                                        ? '—'
-                                        : summary?.[
-                                        item.key
-                                        ] ?? 0}
-                            </p>
+                            {!item.hideCount && (
+                                <p className="mt-2 text-3xl font-extrabold">
+                                    {isLoading
+                                        ? '...'
+                                        : isError
+                                            ? '—'
+                                            : summary?.[item.key] ?? 0}
+                                </p>
+                            )}
 
-                            <span className="text-xs text-slate-500 mt-3 inline-block group-hover:text-slate-300">
-                                Ver y administrar →
+                            <span className="mt-3 inline-block text-xs text-slate-500 group-hover:text-slate-300">
+                                {item.hideCount
+                                    ? 'Ver avisos →'
+                                    : 'Ver y administrar →'}
                             </span>
                         </Link>
                     ))}
                 </div>
             ) : (
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center">
+                <div className="rounded-xl border border-slate-800 bg-slate-900 p-8 text-center">
                     <h2 className="text-lg font-semibold text-slate-300">
                         Sin opciones disponibles
                     </h2>
 
-                    <p className="text-sm text-slate-500 mt-2">
+                    <p className="mt-2 text-sm text-slate-500">
                         No tenés permisos para administrar los
                         elementos de esta sección.
                     </p>

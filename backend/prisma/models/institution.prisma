@@ -1,0 +1,18 @@
+model Institution {
+  id Int @id @default(autoincrement())
+  nombre String
+  cue String @unique
+  distrito String @default("La Plata")
+  provincia String @default("Buenos Aires")
+  direccion String?
+  telefono String?
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users User[]
+  careers Career[]
+  courses Course[]
+  subjects Subject[]
+  invitations Invitation[]
+  earlyNotices EarlyNotice[]
+}

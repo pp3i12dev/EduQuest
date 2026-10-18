@@ -1,0 +1,66 @@
+enum EarlyNoticeType {
+  ABSENCE
+  LATE_ARRIVAL
+}
+
+enum EarlyNoticeStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+model EarlyNotice {
+  id        Int               @id @default(autoincrement())
+  type      EarlyNoticeType
+  status    EarlyNoticeStatus @default(PENDING)
+  classDate DateTime          @db.Date
+
+  // Hora estimada de llegada (HH:mm).
+  // Solo se utiliza para LATE_ARRIVAL.
+  estimatedArrivalTime String?
+
+  reason          String    @db.Text
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  confirmedAt     DateTime?
+  rejectedAt      DateTime?
+  rejectionReason String?   @db.Text
+
+  institutionId Int
+  institution   Institution @relation(fields: [institutionId], references: [id])
+
+  teacherSubjectId Int
+  teacherSubject   TeacherSubject @relation(fields: [teacherSubjectId], references: [id])
+
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id])
+
+  scheduleId Int?
+  schedule   SubjectSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+
+  // Snapshot: el horario original permanece legible si cambia la grilla.
+  day       ScheduleDay
+  shift     Shift
+  startTime String
+  endTime   String
+
+  teacherUserId Int
+  teacherUser   User @relation("EarlyNoticeTeacher", fields: [teacherUserId], references: [id])
+
+  createdById Int
+  createdBy   User @relation("EarlyNoticeCreator", fields: [createdById], references: [id])
+
+  updatedById Int?
+  updatedBy   User? @relation("EarlyNoticeUpdater", fields: [updatedById], references: [id])
+
+  confirmedById Int?
+  confirmedBy   User? @relation("EarlyNoticeConfirmer", fields: [confirmedById], references: [id])
+
+  @@index([institutionId, classDate, status])
+  @@index([teacherUserId, status])
+  @@index([courseId, classDate])
+}

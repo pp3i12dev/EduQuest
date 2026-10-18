@@ -1,3 +1,4 @@
+
 import { hashPassword } from '../utils/password.js';
 import { canAnyRole } from '../config/permissions.js';
 
@@ -14,16 +15,28 @@ class ServiceError extends Error {
 
 function assertRoleConfig(role) {
     const config = getRoleConfig(role);
-    if (!config) throw new ServiceError('Rol inválido', 400);
+
+    if (!config) {
+        throw new ServiceError('Rol inválido', 400);
+    }
+
     return config;
 }
 
 function assertPermission(requesterRoles, permissionKey) {
-    if (!permissionKey || !canAnyRole(requesterRoles, permissionKey)) {
-        throw new ServiceError('No tenés permisos para esta acción', 403);
+    if (
+        !permissionKey ||
+        !canAnyRole(requesterRoles, permissionKey)
+    ) {
+        throw new ServiceError(
+            'No tenés permisos para esta acción',
+            403
+        );
     }
 }
 
+// Incluimos institutionId para que el frontend pueda
+// filtrar usuarios por institución.
 function serializeUser(user, profileField) {
     return {
         id: user.id,
@@ -31,6 +44,7 @@ function serializeUser(user, profileField) {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        institutionId: user.institutionId,
         isActive: user.isActive,
         createdAt: user.createdAt,
         profile: user[profileField] ?? null,
@@ -39,73 +53,170 @@ function serializeUser(user, profileField) {
 
 export const listUsersService = async (role, requester) => {
     const config = assertRoleConfig(role);
-    assertPermission(requester.roles, config.permissions.list);
+
+    assertPermission(
+        requester.roles,
+        config.permissions.list
+    );
+
+    const isSuperAdmin =
+        requester.isSuperAdmin === true ||
+        requester.roles?.includes('SUPER_ADMIN');
+
+    // SUPER_ADMIN puede consultar usuarios de todas
+    // las instituciones.
+    // Los demás usuarios quedan limitados a la propia.
+    const institutionId = isSuperAdmin
+        ? null
+        : requester.institutionId;
+
+    if (!isSuperAdmin && institutionId == null) {
+        throw new ServiceError(
+            'El usuario no tiene una institución asignada',
+            403
+        );
+    }
 
     const users = await userRepository.listUsersByProfile({
-        institutionId: requester.institutionId,
+        institutionId,
         profileField: config.profileField,
     });
 
-    return users.map((u) => serializeUser(u, config.profileField));
+    return users.map((user) =>
+        serializeUser(user, config.profileField)
+    );
 };
 
 export const createUserService = async (role, body, requester) => {
     const config = assertRoleConfig(role);
-    if (!config.permissions.create) {
-        throw new ServiceError('Este rol se crea mediante invitación, no directamente', 400);
-    }
-    assertPermission(requester.roles, config.permissions.create);
 
-    const { dni, email, password, firstName, lastName, ...rest } = body;
-    if (!dni || !email || !password || !firstName || !lastName) {
-        throw new ServiceError('Faltan campos obligatorios', 400);
+    if (!config.permissions.create) {
+        throw new ServiceError(
+            'Este rol se crea mediante invitación, no directamente',
+            400
+        );
     }
+
+    assertPermission(
+        requester.roles,
+        config.permissions.create
+    );
+
+    const {
+        dni,
+        email,
+        password,
+        firstName,
+        lastName,
+        ...rest
+    } = body;
+
+    if (
+        !dni ||
+        !email ||
+        !password ||
+        !firstName ||
+        !lastName
+    ) {
+        throw new ServiceError(
+            'Faltan campos obligatorios',
+            400
+        );
+    }
+
     for (const field of config.requiredCreateFields ?? []) {
-        if (!rest[field]) throw new ServiceError(`Falta el campo "${field}"`, 400);
+        if (!rest[field]) {
+            throw new ServiceError(
+                `Falta el campo "${field}"`,
+                400
+            );
+        }
     }
 
     const passwordHash = await hashPassword(password);
 
     try {
         const user = await userRepository.createUserWithProfile({
-            userData: { dni, email, passwordHash, firstName, lastName, institutionId: requester.institutionId },
+            userData: {
+                dni,
+                email,
+                passwordHash,
+                firstName,
+                lastName,
+                institutionId: requester.institutionId,
+            },
             profileField: config.profileField,
             profileData: config.buildProfileCreate(rest),
         });
 
         if (role === 'student' && rest.courseId !== undefined) {
             if (!canAnyRole(requester.roles, 'student:enroll')) {
-                throw new ServiceError('No tenés permisos para matricular alumnos', 403);
+                throw new ServiceError(
+                    'No tenés permisos para matricular alumnos',
+                    403
+                );
             }
+
             await userRepository.assignStudentCourse({
                 studentProfileId: user.studentProfile.id,
-                courseId: rest.courseId ? Number(rest.courseId) : null,
+                courseId: rest.courseId
+                    ? Number(rest.courseId)
+                    : null,
             });
         }
 
         return serializeUser(user, config.profileField);
     } catch (error) {
-        if (error.code === 'P2002') throw new ServiceError('El email, DNI o legajo ya está en uso', 409);
+        if (error.code === 'P2002') {
+            throw new ServiceError(
+                'El email, DNI o legajo ya está en uso',
+                409
+            );
+        }
+
         throw error;
     }
 };
 
-export const updateUserService = async (role, id, body, requester) => {
+export const updateUserService = async (
+    role,
+    id,
+    body,
+    requester
+) => {
     const config = assertRoleConfig(role);
-    assertPermission(requester.roles, config.permissions.edit);
 
-    const { dni, email, firstName, lastName, password, ...rest } = body;
+    assertPermission(
+        requester.roles,
+        config.permissions.edit
+    );
+
+    const {
+        dni,
+        email,
+        firstName,
+        lastName,
+        password,
+        ...rest
+    } = body;
 
     const userData = {};
+
     if (dni) userData.dni = dni;
     if (email) userData.email = email;
     if (firstName) userData.firstName = firstName;
     if (lastName) userData.lastName = lastName;
-    if (password) userData.passwordHash = await hashPassword(password);
+
+    if (password) {
+        userData.passwordHash = await hashPassword(password);
+    }
 
     const profileData = {};
+
     for (const field of config.allowedProfileEdit ?? []) {
-        if (rest[field] !== undefined) profileData[field] = rest[field];
+        if (rest[field] !== undefined) {
+            profileData[field] = rest[field];
+        }
     }
 
     try {
@@ -119,26 +230,53 @@ export const updateUserService = async (role, id, body, requester) => {
 
         if (role === 'student' && rest.courseId !== undefined) {
             if (!canAnyRole(requester.roles, 'student:enroll')) {
-                throw new ServiceError('No tenés permisos para matricular alumnos', 403);
+                throw new ServiceError(
+                    'No tenés permisos para matricular alumnos',
+                    403
+                );
             }
+
             await userRepository.assignStudentCourse({
                 studentProfileId: user.studentProfile.id,
-                courseId: rest.courseId ? Number(rest.courseId) : null,
+                courseId: rest.courseId
+                    ? Number(rest.courseId)
+                    : null,
             });
         }
 
         return serializeUser(user, config.profileField);
     } catch (error) {
-        if (error.code === 'P2002') throw new ServiceError('El email o DNI ya está en uso', 409);
-        if (error.code === 'P2025') throw new ServiceError('Usuario no encontrado', 404);
+        if (error.code === 'P2002') {
+            throw new ServiceError(
+                'El email o DNI ya está en uso',
+                409
+            );
+        }
+
+        if (error.code === 'P2025') {
+            throw new ServiceError(
+                'Usuario no encontrado',
+                404
+            );
+        }
+
         throw error;
     }
 };
 
-export const toggleUserStatusService = async (role, id, isActive, requester) => {
+export const toggleUserStatusService = async (
+    role,
+    id,
+    isActive,
+    requester
+) => {
     const config = assertRoleConfig(role);
+
     const permissionKey = isActive
-        ? (config.permissions.reactivate ?? config.permissions.toggle)
+        ? (
+            config.permissions.reactivate ??
+            config.permissions.toggle
+        )
         : config.permissions.toggle;
 
     assertPermission(requester.roles, permissionKey);
@@ -149,25 +287,51 @@ export const toggleUserStatusService = async (role, id, isActive, requester) => 
             institutionId: requester.institutionId,
             isActive: Boolean(isActive),
         });
-        return { id: user.id, isActive: user.isActive };
+
+        return {
+            id: user.id,
+            isActive: user.isActive,
+        };
     } catch (error) {
-        if (error.code === 'P2025') throw new ServiceError('Usuario no encontrado', 404);
+        if (error.code === 'P2025') {
+            throw new ServiceError(
+                'Usuario no encontrado',
+                404
+            );
+        }
+
         throw error;
     }
 };
 
-export const deleteUserService = async (role, id, requester) => {
+export const deleteUserService = async (
+    role,
+    id,
+    requester
+) => {
     const config = assertRoleConfig(role);
-    assertPermission(requester.roles, config.permissions.delete);
+
+    assertPermission(
+        requester.roles,
+        config.permissions.delete
+    );
 
     try {
-        await userRepository.deleteUserById({ id: Number(id), institutionId: requester.institutionId });
+        await userRepository.deleteUserById({
+            id: Number(id),
+            institutionId: requester.institutionId,
+        });
     } catch (error) {
-        if (error.code === 'P2025') throw new ServiceError('Usuario no encontrado', 404);
+        if (error.code === 'P2025') {
+            throw new ServiceError(
+                'Usuario no encontrado',
+                404
+            );
+        }
+
         throw error;
     }
 };
-
 
 function serializeUserWithRoles(user) {
     return {
@@ -187,44 +351,94 @@ function serializeUserWithRoles(user) {
     };
 }
 
-export const getUserWithRolesService = async (id, requester) => {
-    assertPermission(requester.roles, 'user:manageRoles');
+export const getUserWithRolesService = async (
+    id,
+    requester
+) => {
+    assertPermission(
+        requester.roles,
+        'user:manageRoles'
+    );
 
     const user = await userRepository.findUserWithAllProfiles({
         id: Number(id),
         institutionId: requester.institutionId,
     });
-    if (!user) throw new ServiceError('Usuario no encontrado', 404);
+
+    if (!user) {
+        throw new ServiceError(
+            'Usuario no encontrado',
+            404
+        );
+    }
 
     return serializeUserWithRoles(user);
 };
 
-// rolesPayload: { student?: { enabled, legajoStudent }, teacher?: { enabled, legajoTeacher, specialty }, ... }
-// Solo se tocan las claves presentes; una clave ausente = "no cambiar ese rol".
-export const updateUserRolesService = async (id, rolesPayload, requester) => {
-    assertPermission(requester.roles, 'user:manageRoles');
+// rolesPayload:
+// {
+//   student?: { enabled, legajoStudent },
+//   teacher?: { enabled, legajoTeacher, specialty },
+//   ...
+// }
+//
+// Solo se tocan las claves presentes.
+// Una clave ausente significa "no cambiar ese rol".
+export const updateUserRolesService = async (
+    id,
+    rolesPayload,
+    requester
+) => {
+    assertPermission(
+        requester.roles,
+        'user:manageRoles'
+    );
 
     const user = await userRepository.findUserWithAllProfiles({
         id: Number(id),
         institutionId: requester.institutionId,
     });
-    if (!user) throw new ServiceError('Usuario no encontrado', 404);
+
+    if (!user) {
+        throw new ServiceError(
+            'Usuario no encontrado',
+            404
+        );
+    }
 
     for (const role of Object.keys(ROLE_CONFIG)) {
         const desired = rolesPayload[role];
-        if (desired === undefined) continue;
+
+        if (desired === undefined) {
+            continue;
+        }
 
         const config = getRoleConfig(role);
-        const currentlyHas = Boolean(user[config.profileField]);
+
+        const currentlyHas = Boolean(
+            user[config.profileField]
+        );
 
         if (desired.enabled && !currentlyHas) {
             if (!config.permissions.create) {
-                throw new ServiceError(`El rol "${role}" no se asigna directamente (usa invitación)`, 400);
+                throw new ServiceError(
+                    `El rol "${role}" no se asigna directamente (usa invitación)`,
+                    400
+                );
             }
-            assertPermission(requester.roles, config.permissions.create);
+
+            assertPermission(
+                requester.roles,
+                config.permissions.create
+            );
 
             for (const field of config.requiredCreateFields ?? []) {
-                if (!desired[field]) throw new ServiceError(`Falta "${field}" para asignar el rol ${role}`, 400);
+                if (!desired[field]) {
+                    throw new ServiceError(
+                        `Falta "${field}" para asignar el rol ${role}`,
+                        400
+                    );
+                }
             }
 
             await userRepository.addProfileToUser({
@@ -235,8 +449,15 @@ export const updateUserRolesService = async (id, rolesPayload, requester) => {
         }
 
         if (!desired.enabled && currentlyHas) {
-            assertPermission(requester.roles, config.permissions.delete);
-            await userRepository.removeProfileFromUser({ id: Number(id), profileField: config.profileField });
+            assertPermission(
+                requester.roles,
+                config.permissions.delete
+            );
+
+            await userRepository.removeProfileFromUser({
+                id: Number(id),
+                profileField: config.profileField,
+            });
         }
     }
 
@@ -244,5 +465,6 @@ export const updateUserRolesService = async (id, rolesPayload, requester) => {
         id: Number(id),
         institutionId: requester.institutionId,
     });
+
     return serializeUserWithRoles(updated);
 };

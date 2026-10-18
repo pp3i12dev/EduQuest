@@ -1,23 +1,42 @@
 model User {
-  id           Int      @id @default(autoincrement())
-  dni          String   @unique
-  email        String   @unique
+  id Int @id @default(autoincrement())
+  dni String @unique
+  email String @unique
+  telefono String?
   passwordHash String
-  firstName    String
-  lastName     String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  firstName String
+  lastName String
+  isActive Boolean @default(true)
+  isSuperAdmin Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  institutionId Int
-  institution   Institution @relation(fields: [institutionId], references: [id])
+  // Nullable solo para el SUPER_ADMIN global; enforce en los services.
+  institutionId Int?
+  institution Institution? @relation(fields: [institutionId], references: [id])
 
-  // Un usuario puede poseer múltiples perfiles a la vez (ej: Docente + Preceptor)
-  studentProfile   StudentProfile?
-  teacherProfile   TeacherProfile?
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
   preceptorProfile PreceptorProfile?
-  directorProfile  DirectorProfile?
+  directorProfile DirectorProfile?
+  refreshTokens RefreshToken[]
+  sentInvitations Invitation[] @relation("SentInvitations")
+  passwordResetTokens PasswordResetToken[]
+  createdEarlyNotices EarlyNotice[] @relation("EarlyNoticeCreator")
+  updatedEarlyNotices EarlyNotice[] @relation("EarlyNoticeUpdater")
+  responsibleEarlyNotices EarlyNotice[] @relation("EarlyNoticeTeacher")
+  confirmedEarlyNotices EarlyNotice[] @relation("EarlyNoticeConfirmer")
+}
 
-  refreshTokens   RefreshToken[]
-  sentInvitations Invitation[]   @relation("SentInvitations")
+
+
+model PasswordResetToken {
+  id Int @id @default(autoincrement())
+  tokenHash String @unique
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+  userId Int
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, expiresAt])
 }
