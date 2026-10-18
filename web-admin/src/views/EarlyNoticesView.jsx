@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 
 import { useContext, useState } from 'react';
 import {
@@ -176,8 +177,8 @@ function StatusBadge({ status, compact = false }) {
     return (
         <span
             className={`inline-flex items-center gap-1.5 rounded-full border font-medium ${compact
-                    ? 'px-2.5 py-1 text-xs'
-                    : 'px-3 py-1.5 text-sm'
+                ? 'px-2.5 py-1 text-xs'
+                : 'px-3 py-1.5 text-sm'
                 } ${config.className}`}
         >
             <Icon
@@ -233,7 +234,7 @@ function DetailSection({ title, icon: Icon, children }) {
                 {title}
             </h3>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {children}
             </div>
         </section>
@@ -250,13 +251,13 @@ function NoticeDetails({ notice, onClose }) {
     const isLateArrival =
         notice.type === 'LATE_ARRIVAL';
 
-    return (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-3 backdrop-blur-sm sm:p-4">
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950/80 px-3 pb-3 pt-20 backdrop-blur-sm sm:px-5 sm:pb-5 sm:pt-24">
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="notice-details-title"
-                className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl shadow-black/50"
+                className="flex max-h-[calc(100dvh-6rem)] w-full max-w-[1400px] flex-col overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl shadow-black/50"
             >
                 {/* ENCABEZADO */}
                 <div className="flex items-start justify-between gap-4 border-b border-slate-800 px-5 py-5 sm:px-6">
@@ -290,7 +291,7 @@ function NoticeDetails({ notice, onClose }) {
                 </div>
 
                 {/* CONTENIDO */}
-                <div className="space-y-5 overflow-y-auto p-5 sm:p-6">
+                <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-6 lg:p-8">
                     <div className="flex flex-wrap items-center gap-2">
                         <StatusBadge status={notice.status} />
 
@@ -439,7 +440,8 @@ function NoticeDetails({ notice, onClose }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 
 import {
     useContext,
@@ -791,16 +792,16 @@ export default function EarlyNoticeFormModal({
 
     if (!open) return null;
 
-    return (
+    return createPortal(
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2 sm:p-4 lg:p-6"
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/75 px-2 pb-3 pt-20 sm:px-4 sm:pb-5 sm:pt-24 lg:px-6 lg:pb-6 lg:pt-24"
             role="presentation"
         >
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="early-notice-title"
-                className="flex max-h-[96vh] w-full max-w-[1600px] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 text-white shadow-2xl lg:max-h-[94vh] lg:w-[96vw]"
+                className="flex max-h-[calc(100dvh-6rem)] w-full max-w-[1600px] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 text-white shadow-2xl lg:max-h-[calc(100dvh-7rem)] lg:w-[96vw]"
             >
                 {/* Encabezado fijo */}
                 <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-700 bg-slate-900 px-5 py-5 sm:px-7 lg:px-10">
@@ -951,8 +952,8 @@ export default function EarlyNoticeFormModal({
                                                         )
                                                     }
                                                     className={`${FIELD_CLASS} ${lockTeacher
-                                                            ? ''
-                                                            : 'cursor-pointer'
+                                                        ? ''
+                                                        : 'cursor-pointer'
                                                         }`}
                                                 >
                                                     <option value="">
@@ -1367,6 +1368,7 @@ export default function EarlyNoticeFormModal({
                         </div>
                     )}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
