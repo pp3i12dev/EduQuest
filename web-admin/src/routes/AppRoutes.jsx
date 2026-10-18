@@ -17,6 +17,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import UsersListView from '../views/UsersListView';
 import InvitationsListView from '../views/InvitationListView';
 import AcceptInvitationView from '../views/AcceptInvitationView';
+import ProfileView from '../views/ProfileView';
 
 import CareersListView from '../views/CareersListView';
 import CoursesListView from '../views/CoursesListView';
@@ -84,6 +85,12 @@ export default function AppRoutes() {
                     <Route
                         index
                         element={<DashboardView />}
+                    />
+
+                    {/* Perfil: disponible para todo usuario autenticado */}
+                    <Route
+                        path="profile"
+                        element={<ProfileView />}
                     />
 
                     <Route

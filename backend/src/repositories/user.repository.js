@@ -19,7 +19,7 @@ export const findUserByEmailOrDni = ({ email, dni }) => {
 
 // SUPER_ADMIN: institutionId null permite listar usuarios
 // de todas las instituciones.
-// Otros roles: se filtra por la institución asignada.
+// Otros roles: se filtran por la institución asignada.
 export const listUsersByProfile = ({ institutionId, profileField }) => {
   const prisma = getPrisma();
 
@@ -244,6 +244,78 @@ export const removeProfileFromUser = ({
       [profileField]: {
         delete: true,
       },
+    },
+  });
+};
+
+// ======================================================
+// MI PERFIL - OPERACIONES DEL USUARIO AUTENTICADO
+// ======================================================
+
+/**
+ * Obtiene los datos del usuario autenticado.
+ *
+ * La identidad se obtiene desde req.user.id
+ * en el servicio/controlador, nunca desde
+ * un ID proporcionado por el cliente.
+ *
+ * Incluye perfiles para poder mostrar
+ * información correspondiente a todos sus roles.
+ */
+export const findOwnUserProfile = (userId) => {
+  const prisma = getPrisma();
+
+  return prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    include: ALL_PROFILES_INCLUDE,
+  });
+};
+
+/**
+ * Actualiza únicamente los campos personales
+ * que el servicio haya autorizado previamente.
+ *
+ * No acepta modificaciones de roles,
+ * institución, estado de cuenta o perfiles.
+ */
+export const updateOwnUserProfile = ({
+  userId,
+  data,
+}) => {
+  const prisma = getPrisma();
+
+  return prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data,
+    include: ALL_PROFILES_INCLUDE,
+  });
+};
+
+/**
+ * Actualiza exclusivamente el hash de contraseña.
+ *
+ * La comprobación de la contraseña actual
+ * corresponde al servicio.
+ */
+export const updateOwnPasswordHash = ({
+  userId,
+  passwordHash,
+  previousPasswordHash,
+}) => {
+  const prisma = getPrisma();
+
+  return prisma.user.updateMany({
+    where: {
+      id: userId,
+      passwordHash: previousPasswordHash,
+      isActive: true,
+    },
+    data: {
+      passwordHash,
     },
   });
 };

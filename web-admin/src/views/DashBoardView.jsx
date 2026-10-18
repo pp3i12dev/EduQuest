@@ -1,6 +1,13 @@
 
 import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+    ArrowRight,
+    BookOpen,
+    ClipboardList,
+    GraduationCap,
+    Users,
+} from 'lucide-react';
 
 import { AuthContext } from '../context/AuthContext';
 import { useDashboardSummary } from '../hooks/useDashboard';
@@ -13,13 +20,14 @@ const SECTIONS = {
         label: 'Avisos Tempranos',
         description:
             'Consultá ausencias, llegadas tarde y avisos de docentes.',
-        color: 'text-yellow-400',
-        border: 'hover:border-yellow-500/50',
+        color: 'text-amber-400',
+        border: 'hover:border-amber-500/50',
+        Icon: ClipboardList,
         items: [
             {
                 key: 'earlyNotices',
                 label: 'Ver Avisos Tempranos',
-                color: 'text-yellow-400',
+                color: 'text-amber-400',
                 path: '/dashboard/early-notices',
                 publicToAuthenticated: true,
                 hideCount: true,
@@ -30,9 +38,10 @@ const SECTIONS = {
     users: {
         label: 'Gestión de usuarios',
         description:
-            'Administra usuarios, roles e inscripciones dentro de la institución.',
+            'Administrá usuarios, roles e inscripciones dentro de la institución.',
         color: 'text-blue-400',
         border: 'hover:border-blue-500/50',
+        Icon: Users,
         items: [
             {
                 key: 'directors',
@@ -75,9 +84,10 @@ const SECTIONS = {
     academic: {
         label: 'Gestión académica',
         description:
-            'Configura instituciones, carreras, cursos, materias y sus asignaciones.',
+            'Configurá instituciones, carreras, cursos, materias y sus asignaciones.',
         color: 'text-cyan-400',
         border: 'hover:border-cyan-500/50',
+        Icon: GraduationCap,
         items: [
             {
                 key: 'institutions',
@@ -107,13 +117,6 @@ const SECTIONS = {
                 path: '/dashboard/subjects',
                 action: 'subject:manage',
             },
-            {
-                key: 'mySubjects',
-                label: 'Mis materias',
-                color: 'text-lime-400',
-                path: '/dashboard/my-subjects',
-                action: 'subjectContent:manage',
-            },
         ],
     },
 };
@@ -123,15 +126,17 @@ function getRoles(user) {
         return [];
     }
 
-    return user.roles.map(role => {
-        if (typeof role === 'string') {
-            return role.toUpperCase();
-        }
+    return user.roles
+        .map(role => {
+            if (typeof role === 'string') {
+                return role.trim().toUpperCase();
+            }
 
-        return String(
-            role?.name || role?.role || ''
-        ).toUpperCase();
-    });
+            return String(
+                role?.name || role?.role || ''
+            ).trim().toUpperCase();
+        })
+        .filter(Boolean);
 }
 
 export default function DashboardView() {
@@ -152,17 +157,39 @@ export default function DashboardView() {
         user?.isSuperAdmin === true ||
         roles.includes('SUPER_ADMIN');
 
+    const isDirector = roles.includes('DIRECTOR');
+    const isPreceptor = roles.includes('PRECEPTOR');
+
+    const isAdministrator =
+        isSuperAdmin ||
+        isDirector ||
+        isPreceptor;
+
+    const isTeacher =
+        roles.includes('TEACHER') ||
+        Boolean(user?.teacherProfile);
+
     const isStudentOnly =
         !isSuperAdmin &&
         roles.length === 1 &&
         roles.includes('STUDENT');
 
-    // Utilizamos el token expuesto por AuthContext.
-    // El nombre exacto debe coincidir con su implementación.
     const token = auth.token ?? auth.accessToken;
 
-    const getVisibleItems = section =>
-        section.items.filter(item => {
+    // Una sección administrativa solo puede mostrarse
+    // a usuarios con roles administrativos reconocidos.
+    // Dentro de ella se verifican además los permisos
+    // correspondientes a cada opción.
+    const getVisibleItems = section => {
+        const isAdministrativeSection =
+            section === SECTIONS.users ||
+            section === SECTIONS.academic;
+
+        if (isAdministrativeSection && !isAdministrator) {
+            return [];
+        }
+
+        return section.items.filter(item => {
             if (item.publicToAuthenticated) {
                 return Boolean(user);
             }
@@ -171,13 +198,33 @@ export default function DashboardView() {
                 return true;
             }
 
-            return hasAny(user?.roles, item.action);
+            return hasAny(roles, item.action);
         });
+    };
 
-    const canAccessSection = section =>
-        getVisibleItems(section).length > 0;
+    const visibleSections = Object.entries(SECTIONS)
+        .filter(([, section]) =>
+            getVisibleItems(section).length > 0
+        );
 
-    // Los alumnos acceden directamente al listado.
+    // Si un usuario deja de tener autorización para
+    // una sección mientras está abierta, se evita
+    // renderizar sus opciones.
+    const currentSection =
+        activeSection && SECTIONS[activeSection]
+            ? SECTIONS[activeSection]
+            : null;
+
+    const currentVisibleItems = currentSection
+        ? getVisibleItems(currentSection)
+        : [];
+
+    const canShowCurrentSection =
+        currentSection &&
+        currentVisibleItems.length > 0;
+
+    // Los alumnos que únicamente tienen el rol STUDENT
+    // siguen ingresando directamente a Avisos Tempranos.
     if (isStudentOnly) {
         return (
             <EarlyNoticesView
@@ -187,67 +234,99 @@ export default function DashboardView() {
         );
     }
 
-    if (!activeSection) {
+    if (!canShowCurrentSection) {
         return (
-            <div>
-                <p className="mb-8 text-sm text-white lg:text-xl">
-                    ¡Hola de nuevo, {user?.firstName || 'Usuario'}!
-                </p>
+            <div className="space-y-7">
+                <div>
+                    <h1 className="text-2xl font-bold text-white sm:text-3xl">
+                        ¡Hola de nuevo, {user?.firstName || 'Usuario'}!
+                    </h1>
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    {Object.entries(SECTIONS).map(
-                        ([key, section]) => {
-                            const accessible =
-                                canAccessSection(section);
+                    <p className="mt-2 text-sm text-slate-300">
+                        Seleccioná una opción para continuar.
+                    </p>
+                </div>
 
-                            return (
-                                <button
-                                    key={key}
-                                    type="button"
-                                    onClick={() => {
-                                        if (accessible) {
-                                            setActiveSection(key);
-                                        }
-                                    }}
-                                    disabled={!accessible}
-                                    className={`group rounded-xl border border-slate-800 bg-slate-900 p-6 text-left transition-all ${accessible
-                                            ? `${section.border} cursor-pointer hover:bg-slate-800/60`
-                                            : 'cursor-not-allowed opacity-40'
-                                        }`}
-                                >
-                                    <h2
-                                        className={`text-xl font-bold ${section.color}`}
-                                    >
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    {/* Acceso directo para docentes */}
+                    {isTeacher && (
+                        <Link
+                            to="/dashboard/my-subjects"
+                            className="group flex min-h-48 cursor-pointer flex-col justify-between rounded-2xl border border-emerald-500/40 bg-slate-900/95 p-6 shadow-lg transition-all hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-slate-800"
+                        >
+                            <div className="flex items-start justify-between">
+                                <div className="rounded-xl bg-emerald-500/15 p-3 text-emerald-400">
+                                    <BookOpen size={28} />
+                                </div>
+
+                                <ArrowRight
+                                    size={21}
+                                    className="text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-emerald-400"
+                                />
+                            </div>
+
+                            <div className="mt-5">
+                                <h2 className="text-xl font-bold text-emerald-400">
+                                    Mis materias
+                                </h2>
+
+                                <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                                    Accedé a tus materias asignadas,
+                                    contenidos y actividades.
+                                </p>
+
+                                <span className="mt-4 inline-block text-xs font-semibold text-emerald-300">
+                                    Ingresar a mis materias →
+                                </span>
+                            </div>
+                        </Link>
+                    )}
+
+                    {/* Solo se renderizan secciones autorizadas */}
+                    {visibleSections.map(([key, section]) => {
+                        const Icon = section.Icon;
+
+                        return (
+                            <button
+                                key={key}
+                                type="button"
+                                onClick={() => setActiveSection(key)}
+                                className={`group flex min-h-48 cursor-pointer flex-col justify-between rounded-2xl border border-slate-700 bg-slate-900/95 p-6 text-left shadow-lg transition-all hover:-translate-y-0.5 hover:bg-slate-800 ${section.border}`}
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className={`rounded-xl bg-slate-800 p-3 ${section.color}`}>
+                                        <Icon size={27} />
+                                    </div>
+
+                                    <ArrowRight
+                                        size={21}
+                                        className="text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white"
+                                    />
+                                </div>
+
+                                <div className="mt-5">
+                                    <h2 className={`text-xl font-bold ${section.color}`}>
                                         {section.label}
                                     </h2>
 
-                                    <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                                    <p className="mt-2 text-sm leading-relaxed text-slate-400">
                                         {section.description}
                                     </p>
 
-                                    <div className="mt-6">
-                                        <span
-                                            className={`text-xs ${accessible
-                                                    ? 'text-slate-500 group-hover:text-slate-300'
-                                                    : 'text-slate-600'
-                                                }`}
-                                        >
-                                            {accessible
-                                                ? 'Ingresar →'
-                                                : 'Sin permisos'}
-                                        </span>
-                                    </div>
-                                </button>
-                            );
-                        }
-                    )}
+                                    <span className="mt-4 inline-block text-xs font-semibold text-slate-400 transition-colors group-hover:text-white">
+                                        Ingresar →
+                                    </span>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         );
     }
 
-    const section = SECTIONS[activeSection];
-    const visibleItems = getVisibleItems(section);
+    const section = currentSection;
+    const visibleItems = currentVisibleItems;
 
     return (
         <div>
@@ -260,9 +339,7 @@ export default function DashboardView() {
                     ← Volver al panel principal
                 </button>
 
-                <h1
-                    className={`text-2xl font-bold ${section.color}`}
-                >
+                <h1 className={`text-2xl font-bold ${section.color}`}>
                     {section.label}
                 </h1>
 
@@ -271,50 +348,35 @@ export default function DashboardView() {
                 </p>
             </div>
 
-            {visibleItems.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
-                    {visibleItems.map(item => (
-                        <Link
-                            key={item.key}
-                            to={item.path}
-                            className="group cursor-pointer rounded-xl border border-slate-800 bg-slate-900 p-6 transition-colors hover:border-slate-600 hover:bg-slate-800/60"
-                        >
-                            <h3
-                                className={`text-lg font-semibold ${item.color}`}
-                            >
-                                {item.label}
-                            </h3>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3 lg:grid-cols-4">
+                {visibleItems.map(item => (
+                    <Link
+                        key={item.key}
+                        to={item.path}
+                        className="group cursor-pointer rounded-xl border border-slate-700 bg-slate-900 p-6 transition-colors hover:border-slate-500 hover:bg-slate-800"
+                    >
+                        <h3 className={`text-lg font-semibold ${item.color}`}>
+                            {item.label}
+                        </h3>
 
-                            {!item.hideCount && (
-                                <p className="mt-2 text-3xl font-extrabold">
-                                    {isLoading
-                                        ? '...'
-                                        : isError
-                                            ? '—'
-                                            : summary?.[item.key] ?? 0}
-                                </p>
-                            )}
+                        {!item.hideCount && (
+                            <p className="mt-3 text-3xl font-extrabold text-white">
+                                {isLoading
+                                    ? '...'
+                                    : isError
+                                        ? '—'
+                                        : summary?.[item.key] ?? 0}
+                            </p>
+                        )}
 
-                            <span className="mt-3 inline-block text-xs text-slate-500 group-hover:text-slate-300">
-                                {item.hideCount
-                                    ? 'Ver avisos →'
-                                    : 'Ver y administrar →'}
-                            </span>
-                        </Link>
-                    ))}
-                </div>
-            ) : (
-                <div className="rounded-xl border border-slate-800 bg-slate-900 p-8 text-center">
-                    <h2 className="text-lg font-semibold text-slate-300">
-                        Sin opciones disponibles
-                    </h2>
-
-                    <p className="mt-2 text-sm text-slate-500">
-                        No tenés permisos para administrar los
-                        elementos de esta sección.
-                    </p>
-                </div>
-            )}
+                        <span className="mt-4 inline-block text-xs text-slate-400 group-hover:text-white">
+                            {item.hideCount
+                                ? 'Ver avisos →'
+                                : 'Ver y administrar →'}
+                        </span>
+                    </Link>
+                ))}
+            </div>
         </div>
     );
 }
