@@ -106,6 +106,10 @@ export const earlyNoticeController = {
         );
     },
 
+    updateMultiple(req, res) {
+        execute(res, () => service.updateMultiple(req.user, req.params.id, req.body));
+    },
+
     /**
      * PATCH /api/early-notices/:id/confirm
      *
@@ -140,6 +144,10 @@ export const earlyNoticeController = {
      *
      * Desactiva un aviso sin eliminarlo.
      */
+    deleteHistory(req, res) {
+        execute(res, () => service.deleteHistory(req.user, req.params.id));
+    },
+
     deactivate(req, res) {
         execute(res, () =>
             service.deactivate(

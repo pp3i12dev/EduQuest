@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
+import { earlyNoticeService } from '../services/earlyNotice.service';
 import {
     AlertCircle,
     Ban,
@@ -262,7 +263,19 @@ function DetailSection({ title, icon: Icon, children }) {
     );
 }
 
-function NoticeDetails({ notice, onClose }) {
+function NoticeDetails({ notice, onClose, token }) {
+    const [history, setHistory] = useState(null);
+    const [historyError, setHistoryError] = useState('');
+    useEffect(() => {
+        let active = true;
+        setHistory(null); setHistoryError('');
+        if (notice?.id && token) {
+            earlyNoticeService.getHistory(token, notice.id)
+                .then(result => { if (active) setHistory(result?.data ?? result); })
+                .catch(error => { if (active) setHistoryError(error.message || 'No se pudo cargar el historial'); });
+        }
+        return () => { active = false; };
+    }, [notice?.id, token]);
     if (!notice) return null;
 
     const teacher = getTeacher(notice);
@@ -435,6 +448,21 @@ function NoticeDetails({ notice, onClose }) {
                         </p>
                     </section>
 
+                    <section className="rounded-xl border border-slate-800 bg-slate-950/40 p-5">
+                        <h3 className="text-sm font-semibold text-white">Historial de revisiones</h3>
+                        {historyError && <p className="mt-3 text-sm text-red-300">{historyError}</p>}
+                        {!history && !historyError && <p className="mt-3 text-sm text-slate-400">Cargando historial…</p>}
+                        {history && (history.revisions?.length ? (
+                            <ol className="mt-3 space-y-2">
+                                {history.revisions.map(r => (
+                                    <li key={r.id} className="rounded-lg border border-slate-700 p-3 text-sm text-slate-200">
+                                        <strong>Versión {r.version}</strong> · {r.action} · {formatDateTime(r.createdAt)}
+                                    </li>
+                                ))}
+                            </ol>
+                        ) : <p className="mt-3 text-sm text-slate-400">Sin revisiones registradas.</p>)}
+                    </section>
+
                     {notice.status === 'REJECTED' && (
                         <section className="rounded-xl border border-red-500/20 bg-red-500/10 p-5">
                             <h3 className="text-sm font-semibold text-red-400">
@@ -476,6 +504,8 @@ function NoticeActions({
     onConfirm,
     onReject,
     onDeactivate,
+    canDeleteHistory,
+    onDeleteHistory,
 }) {
     const edit = canEdit(notice);
     const review = canReview(notice);
@@ -527,6 +557,12 @@ function NoticeActions({
                 </>
             )}
 
+            {canDeleteHistory && (
+                <button type="button" onClick={() => onDeleteHistory(notice)}
+                    className="cursor-pointer rounded-lg border border-red-500/40 px-3 py-2 text-xs text-red-300 hover:bg-red-500/10">
+                    Eliminar del historial
+                </button>
+            )}
             {deactivate && (
                 <button
                     type="button"
@@ -551,6 +587,7 @@ export default function EarlyNoticesView({
     const token = tokenProp ?? auth?.token;
     const currentUser = userProp ?? auth?.user;
 
+    const [mode, setMode] = useState('active');
     const [status, setStatus] = useState('');
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
@@ -591,6 +628,7 @@ export default function EarlyNoticesView({
         error,
     } = useEarlyNotices(token, {
         status: isStudentOnly ? 'CONFIRMED' : status,
+        mode,
         page,
         limit: 20,
     });
@@ -626,12 +664,12 @@ export default function EarlyNoticesView({
         Number(notice.teacherUserId);
 
     const canReview = (notice) =>
-        notice.isActive !== false &&
+        mode === 'active' && notice.isActive !== false &&
         notice.status === 'PENDING' &&
         ownsNotice(notice);
 
     const canEdit = (notice) =>
-        notice.isActive !== false &&
+        mode === 'active' && notice.isActive !== false &&
         (
             ownsNotice(notice) ||
             (
@@ -640,14 +678,17 @@ export default function EarlyNoticesView({
             )
         );
 
+    const canDeleteHistory = (isSuperAdmin || roles.includes('DIRECTOR')) && mode === 'history';
+
     const canDeactivate = (notice) =>
-        isAuthority &&
+        isAuthority && mode === 'active' &&
         notice.isActive !== false;
 
     const isSaving =
         actions.create.isPending ||
         actions.createMultiple.isPending ||
-        actions.update.isPending;
+        actions.update.isPending ||
+        actions.updateMultiple.isPending;
 
     const isBusy =
         actions.confirm.isPending ||
@@ -685,7 +726,7 @@ export default function EarlyNoticesView({
             clearMessages();
 
             if (editingNotice) {
-                await actions.update.mutateAsync({
+                await actions.updateMultiple.mutateAsync({
                     id: editingNotice.id,
                     data: payload,
                 });
@@ -806,6 +847,19 @@ export default function EarlyNoticesView({
         }
     };
 
+    const handleDeleteHistory = async (notice) => {
+        if (!window.confirm('¿Eliminar este aviso del historial? No se podrá recuperar desde la interfaz.')) return;
+        try {
+            clearMessages();
+            await earlyNoticeService.deleteHistory(token, notice.id);
+            setActionSuccess('Aviso eliminado del historial.');
+            // La lista se actualiza sin modificar las notificaciones antiguas.
+            window.location.reload();
+        } catch (err) {
+            setActionError(getErrorMessage(err, 'No se pudo eliminar del historial.'));
+        }
+    };
+
     const actionProps = {
         canEdit,
         canReview,
@@ -816,6 +870,8 @@ export default function EarlyNoticesView({
         onConfirm: handleConfirm,
         onReject: handleReject,
         onDeactivate: handleDeactivate,
+        canDeleteHistory,
+        onDeleteHistory: handleDeleteHistory,
     };
 
     return (
@@ -868,6 +924,16 @@ export default function EarlyNoticesView({
                     informar a los alumnos. Los avisos pendientes
                     requieren confirmación del docente responsable.
                 </p>
+            </div>
+
+            <div className="flex gap-2 rounded-xl border border-slate-800 bg-slate-900 p-2" role="tablist" aria-label="Vigencia de avisos">
+                {[['active', 'Vigentes'], ['history', 'Historial']].map(([value, label]) => (
+                    <button key={value} type="button" role="tab" aria-selected={mode === value}
+                        onClick={() => { setMode(value); setPage(1); setSelectedNotice(null); }}
+                        className={`cursor-pointer rounded-lg px-5 py-2 text-sm font-semibold ${mode === value ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>
+                        {label}
+                    </button>
+                ))}
             </div>
 
             {/* FILTROS */}
@@ -1221,6 +1287,7 @@ export default function EarlyNoticesView({
             {/* MODALES */}
             <NoticeDetails
                 notice={selectedNotice}
+                token={token}
                 onClose={() => setSelectedNotice(null)}
             />
 

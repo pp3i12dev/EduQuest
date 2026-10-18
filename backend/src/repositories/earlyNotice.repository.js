@@ -547,6 +547,14 @@ export const earlyNoticeRepository = {
         }));
     },
 
+    softDeleteHistory(id, updatedById) {
+        return prisma.earlyNotice.update({
+            where: { id },
+            data: { deletedAt: new Date(), isActive: false, updatedById },
+            include: noticeInclude,
+        }).then(normalizeNotice);
+    },
+
     count(where) {
         return prisma.earlyNotice.count({
             where,
@@ -605,6 +613,41 @@ export const earlyNoticeRepository = {
                             scheduleId: c.scheduleId,
                             classDate: c.classDate.toISOString().slice(0, 10),
                             day: c.day, shift: c.shift, startTime: c.startTime, endTime: c.endTime,
+                        })),
+                    },
+                },
+            });
+            return { notice: normalizeNotice(updated), version };
+        });
+    },
+
+    /** Sustituye las clases y registra revisión en la misma transacción. */
+    async replaceClassesWithRevision(id, data, classes, actorId) {
+        return prisma.$transaction(async (tx) => {
+            const current = await tx.earlyNotice.findUnique({ where: { id }, select: { id: true, isActive: true } });
+            if (!current || !current.isActive) {
+                const error = new Error('Aviso inexistente o inactivo'); error.status = 409; throw error;
+            }
+            const latest = await tx.earlyNoticeRevision.findFirst({
+                where: { earlyNoticeId: id }, orderBy: { version: 'desc' }, select: { version: true },
+            });
+            const version = (latest?.version ?? 0) + 1;
+            await tx.earlyNoticeClass.deleteMany({ where: { earlyNoticeId: id } });
+            await tx.earlyNoticeClass.createMany({ data: classes.map(c => ({ ...c, earlyNoticeId: id })) });
+            const updated = await tx.earlyNotice.update({ where: { id }, data, include: noticeInclude });
+            await tx.earlyNoticeRevision.create({
+                data: { earlyNoticeId: id, version, action: 'UPDATED', createdById: actorId,
+                    snapshot: {
+                        type: updated.type, status: updated.status, reason: updated.reason,
+                        periodStart: updated.periodStart?.toISOString().slice(0, 10) ?? null,
+                        periodEnd: updated.periodEnd?.toISOString().slice(0, 10) ?? null,
+                        estimatedArrivalTime: updated.estimatedArrivalTime,
+                        virtualMeetingUrl: updated.virtualMeetingUrl,
+                        virtualInstructions: updated.virtualInstructions,
+                        classes: updated.affectedClasses.map(c => ({
+                            teacherSubjectId: c.teacherSubjectId, scheduleId: c.scheduleId,
+                            classDate: c.classDate.toISOString().slice(0, 10), day: c.day,
+                            shift: c.shift, startTime: c.startTime, endTime: c.endTime,
                         })),
                     },
                 },

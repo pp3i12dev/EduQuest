@@ -122,6 +122,14 @@ export const earlyNoticeService = {
         );
     },
 
+    deleteHistory(token, id) {
+        return request(`/early-notices/${id}/history`, token, { method: 'DELETE' });
+    },
+
+    getHistory(token, id) {
+        return request(`/early-notices/${id}/history`, token);
+    },
+
     /**
      * POST /api/early-notices
      *
@@ -161,6 +169,12 @@ export const earlyNoticeService = {
                 body: JSON.stringify(data),
             }
         );
+    },
+
+    updateMultiple(token, id, data) {
+        return request(`/early-notices/${id}/multi`, token, {
+            method: 'PATCH', body: JSON.stringify(data),
+        });
     },
 
     /**

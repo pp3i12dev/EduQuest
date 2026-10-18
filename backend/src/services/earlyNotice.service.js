@@ -176,6 +176,32 @@ const isAuthority = (user) =>
     user.roles.includes('DIRECTOR') ||
     user.roles.includes('PRECEPTOR');
 
+// Hora civil de la institución (Argentina). La fecha Prisma @db.Date se compara en UTC.
+const academicNow = () => {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit',
+        day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date()).filter(p => p.type !== 'literal').map(p => [p.type, p.value]));
+    return { date: new Date(`${parts.year}-${parts.month}-${parts.day}T00:00:00.000Z`),
+        time: `${parts.hour}:${parts.minute}` };
+};
+
+// Vigente hasta la hora final de la última clase afectada; avisos históricos
+// sin filas EarlyNoticeClass usan su fecha y horario original.
+const futureClassFilter = () => {
+    const { date, time } = academicNow();
+    return { OR: [
+        { affectedClasses: { some: { OR: [
+            { classDate: { gt: date } },
+            { classDate: date, endTime: { gt: time } },
+        ] } } },
+        { affectedClasses: { none: {} }, OR: [
+            { classDate: { gt: date } },
+            { classDate: date, endTime: { gt: time } },
+        ] },
+    ] };
+};
+
 const canCreateNotices = (user) =>
     isAuthority(user) ||
     user.roles.includes('TEACHER');
@@ -416,6 +442,73 @@ export const earlyNoticeService = {
         return { ...notice, affectedClasses: classes, revision: 1 };
     },
 
+    /** Edita período y selección de clases de forma atómica y versionada. */
+    async updateMultiple(jwtUser, id, body) {
+        const user = await getContext(jwtUser);
+        const notice = await loadNotice(user, id);
+        if (!notice.isActive || notice.deletedAt) fail(409, 'No se puede editar un aviso inactivo');
+        const responsible = isResponsibleTeacher(user, notice);
+        if (!responsible && !isAuthority(user)) fail(403, 'No tenés permisos para editar este aviso');
+        if (notice.status === 'REJECTED') fail(409, 'No se pueden editar avisos rechazados');
+        if (!TYPES.includes(body?.type)) fail(400, 'Tipo de aviso inválido');
+        if (!Array.isArray(body.classes) || body.classes.length < 1 || body.classes.length > 120) {
+            fail(400, 'Seleccioná entre 1 y 120 clases');
+        }
+        const periodStart = parseDate(body.periodStart);
+        const periodEnd = parseDate(body.periodEnd || body.periodStart);
+        const span = Math.round((periodEnd - periodStart) / 86400000);
+        if (span < 0 || span > 90) fail(400, 'El período debe tener entre 1 y 91 días inclusive');
+        const classes = [];
+        const assignments = new Map();
+        const seen = new Set();
+        for (const row of body.classes) {
+            if (!row || typeof row !== 'object') fail(400, 'Clase inválida');
+            const validated = await validateAssignment(user, row.teacherSubjectId, row.scheduleId, row.classDate);
+            const { assignment, schedule, date, institutionId } = validated;
+            if (institutionId !== notice.institutionId || assignment.teacher.userId !== notice.teacherUserId) {
+                fail(400, 'No se puede cambiar el docente ni la institución del aviso');
+            }
+            if (date < periodStart || date > periodEnd) fail(400, 'Hay clases fuera del período indicado');
+            const key = `${assignment.id}:${schedule.id}:${date.toISOString().slice(0,10)}`;
+            if (seen.has(key)) fail(400, 'Hay clases duplicadas');
+            seen.add(key);
+            assignments.set(assignment.id, assignment);
+            classes.push({
+                teacherSubjectId: assignment.id, scheduleId: schedule.id, classDate: date,
+                day: schedule.day, shift: schedule.shift, startTime: schedule.startTime, endTime: schedule.endTime,
+            });
+        }
+        classes.sort((a,b) => a.classDate - b.classDate || a.startTime.localeCompare(b.startTime));
+        const first = classes[0];
+        const firstAssignment = assignments.get(first.teacherSubjectId);
+        const reason = cleanReason(body.reason);
+        const estimatedArrivalTime = body.type === 'LATE_ARRIVAL'
+            ? classes.reduce((_, c) => validateEstimatedArrival(body.type, body.estimatedArrivalTime, c.startTime, c.endTime), null)
+            : null;
+        const virtualMeetingUrl = body.type === 'VIRTUAL_SYNCHRONOUS' ? String(body.virtualMeetingUrl || '').trim() : null;
+        const virtualInstructions = body.type === 'VIRTUAL_ASYNCHRONOUS' ? String(body.virtualInstructions || '').trim() : null;
+        if (body.type === 'VIRTUAL_SYNCHRONOUS') {
+            try { const url = new URL(virtualMeetingUrl); if (!['https:', 'http:'].includes(url.protocol)) throw new Error(); }
+            catch { fail(400, 'Ingresá un enlace de videollamada válido'); }
+        }
+        if (body.type === 'VIRTUAL_ASYNCHRONOUS' && !virtualInstructions) fail(400, 'Indicá las instrucciones o materiales');
+        if (virtualInstructions?.length > 5000) fail(400, 'Instrucciones demasiado extensas');
+        // Cambios realizados por autoridades requieren nueva confirmación docente.
+        const newStatus = responsible ? notice.status : 'PENDING';
+        const data = {
+            type: body.type, reason, periodStart, periodEnd, estimatedArrivalTime,
+            virtualMeetingUrl, virtualInstructions, classDate: first.classDate,
+            teacherSubjectId: first.teacherSubjectId, subjectId: firstAssignment.subjectId,
+            courseId: firstAssignment.courseId, scheduleId: first.scheduleId,
+            day: first.day, shift: first.shift, startTime: first.startTime, endTime: first.endTime,
+            status: newStatus, updatedById: user.id,
+            ...(newStatus === 'PENDING' ? { confirmedAt: null, confirmedById: null, rejectedAt: null, rejectionReason: null } : {}),
+        };
+        const { notice: updated, version } = await repo.replaceClassesWithRevision(notice.id, data, classes, user.id);
+        await notificationService.safePublish(updated, { event: 'UPDATED', revision: version });
+        return updated;
+    },
+
     /**
      * Opciones para el formulario de creación.
      *
@@ -562,15 +655,23 @@ export const earlyNoticeService = {
             );
         }
 
-        if (query.includeInactive === 'true') {
-            if (!isAuthority(user)) {
-                fail(
-                    403,
-                    'No podés consultar avisos desactivados'
-                );
-            }
-        } else {
+        // Docentes sin rol administrativo: únicamente avisos propios.
+        if (!isAuthority(user) && !isStudentOnly(user)) {
+            if (!user.roles.includes('TEACHER')) fail(403, 'Sin permisos para consultar avisos');
+            where.teacherUserId = user.id;
+        }
+
+        // Por defecto se muestran solo avisos vigentes; el historial es separado.
+        // El borrado lógico nunca debe exponer datos eliminados.
+        where.deletedAt = null;
+        const mode = query.mode || 'active';
+        if (!['active', 'history'].includes(mode)) fail(400, 'Modo inválido');
+        const future = futureClassFilter();
+        if (mode === 'active') {
+            where.AND = [future];
             where.isActive = true;
+        } else {
+            where.AND = [{ OR: [{ NOT: future }, { isActive: false }] }];
         }
 
         const skip = (page - 1) * limit;
@@ -601,12 +702,14 @@ export const earlyNoticeService = {
         const user = await getContext(jwtUser);
         const notice = await loadNotice(user, id);
 
-        if (
-            !notice.isActive &&
-            !isAuthority(user)
-        ) {
+        if (notice.deletedAt) fail(404, 'Aviso no encontrado');
+        if (!isAuthority(user) && !isStudentOnly(user) &&
+            (!user.roles.includes('TEACHER') || notice.teacherUserId !== user.id)) {
             fail(404, 'Aviso no encontrado');
         }
+
+        // Los avisos desactivados siguen siendo consultables en el historial,
+        // respetando los permisos de rol y la visibilidad del alumnado.
 
         if (
             isStudentOnly(user) &&
@@ -960,6 +1063,19 @@ export const earlyNoticeService = {
      *
      * Conserva el registro para consulta histórica.
      */
+    async deleteHistory(jwtUser, id) {
+        const user = await getContext(jwtUser);
+        if (!user.isSuperAdmin && !user.roles.includes('DIRECTOR')) {
+            fail(403, 'Solo un directivo o superusuario puede eliminar historial');
+        }
+        const notice = await loadNotice(user, id);
+        if (notice.deletedAt) fail(404, 'Aviso no encontrado');
+        const future = futureClassFilter();
+        const activeCount = await repo.count({ id: notice.id, isActive: true, ...future });
+        if (activeCount) fail(409, 'El aviso todavía está vigente');
+        return repo.softDeleteHistory(notice.id, user.id);
+    },
+
     async deactivate(jwtUser, id) {
         const user = await getContext(jwtUser);
         const notice = await loadNotice(user, id);

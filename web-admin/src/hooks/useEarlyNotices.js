@@ -155,6 +155,11 @@ export function useEarlyNoticeActions(token) {
         onSuccess: invalidate,
     });
 
+    const updateMultiple = useMutation({
+        mutationFn: ({ id, data }) => earlyNoticeService.updateMultiple(token, id, data),
+        onSuccess: invalidate,
+    });
+
     /**
      * Confirmar aviso pendiente.
      */
@@ -202,6 +207,7 @@ export function useEarlyNoticeActions(token) {
         create,
         createMultiple,
         update,
+        updateMultiple,
         confirm,
         reject,
         deactivate,

@@ -2,7 +2,6 @@ import { createPortal } from 'react-dom';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useEarlyNoticeCreationOptions } from '../hooks/useEarlyNotices';
-import EarlyNoticeLegacyFormModal from './EarlyNoticeLegacyFormModal';
 
 const DAYS = ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'];
 const DAY_LABELS = { LUNES:'Lunes', MARTES:'Martes', MIERCOLES:'Miércoles', JUEVES:'Jueves', VIERNES:'Viernes', SABADO:'Sábado' };
@@ -16,6 +15,7 @@ const FIELD = 'w-full rounded-xl border border-slate-600 bg-slate-800 px-3 py-3 
 const format = value => `${value.slice(8,10)}/${value.slice(5,7)}/${value.slice(0,4)}`;
 const dateAtUTC = value => new Date(`${value}T00:00:00.000Z`);
 const iso = date => date.toISOString().slice(0,10);
+const dateString = value => value ? String(value).slice(0,10) : '';
 const name = a => `${a.teacher?.user?.firstName || ''} ${a.teacher?.user?.lastName || ''}`.trim();
 const courseName = a => `${a.subject?.nombre || 'Materia'} · ${a.course?.nombre || 'Curso'}`;
 const groupId = a => Number(a.teacherUserId ?? a.teacher?.user?.id);
@@ -35,15 +35,26 @@ export default function EarlyNoticeFormModal(props) {
   const [meetingUrl,setMeetingUrl] = useState('');
   const [instructions,setInstructions] = useState('');
   const [error,setError] = useState('');
-  const { data, isLoading, isError } = useEarlyNoticeCreationOptions(token, open && !initialData?.id);
+  const { data, isLoading, isError } = useEarlyNoticeCreationOptions(token, open);
   const options = data?.data ?? data?.options ?? data ?? {};
   const assignments = useMemo(() => (Array.isArray(options.assignments) ? options.assignments : []).filter(a => a.isActive !== false), [data]);
   const schedules = useMemo(() => Array.isArray(options.schedules) ? options.schedules : [], [data]);
   const teachers = useMemo(() => [...new Map(assignments.map(a => [groupId(a), {id:groupId(a), name:name(a)}])).values()].filter(t => t.id), [assignments]);
   useEffect(() => {
-    if (!open || initialData?.id) return;
-    setTeacherId(''); setType('ABSENCE'); setDuration('single'); setStart(''); setEnd('');
-    setSelected([]); setReason(''); setArrival(''); setMeetingUrl(''); setInstructions(''); setError('');
+    if (!open) return;
+    const editing = Boolean(initialData?.id);
+    const firstDate = dateString(initialData?.periodStart || initialData?.classDate);
+    const lastDate = dateString(initialData?.periodEnd || initialData?.classDate);
+    setTeacherId(editing ? String(initialData.teacherUserId) : '');
+    setType(editing ? initialData.type : 'ABSENCE');
+    setDuration(editing && firstDate !== lastDate ? 'multiple' : 'single');
+    setStart(editing ? firstDate : ''); setEnd(editing ? lastDate : '');
+    setSelected(editing ? (initialData.classes || initialData.affectedClasses || []).map(c => `${c.teacherSubjectId}:${c.scheduleId}:${dateString(c.classDate)}`) : []);
+    setReason(editing ? initialData.reason || '' : '');
+    setArrival(editing ? initialData.estimatedArrivalTime || '' : '');
+    setMeetingUrl(editing ? initialData.virtualMeetingUrl || '' : '');
+    setInstructions(editing ? initialData.virtualInstructions || '' : '');
+    setError('');
   }, [open, initialData?.id]);
   useEffect(() => {
     if (!teacherId && teachers.length === 1) setTeacherId(String(teachers[0].id));
@@ -94,12 +105,11 @@ export default function EarlyNoticeFormModal(props) {
       virtualInstructions:type === 'VIRTUAL_ASYNCHRONOUS' ? instructions.trim() : null,
       classes:chosen.map(c=>({teacherSubjectId:c.teacherSubjectId,scheduleId:c.scheduleId,classDate:c.classDate}))});
   };
-  if (initialData?.id) return <EarlyNoticeLegacyFormModal {...props}/>;
   if (!open) return null;
   return createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-3 sm:p-6" onMouseDown={e=>{if(e.target===e.currentTarget && !isSaving)onClose();}}>
     <div className="flex max-h-[95vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 text-white shadow-2xl">
       <header className="flex items-start justify-between border-b border-slate-700 px-6 py-5">
-        <div><h2 className="text-2xl font-bold">Nuevo aviso temprano</h2><p className="mt-1 text-sm text-slate-400">Elegí un período y marcá exactamente las clases afectadas.</p></div>
+        <div><h2 className="text-2xl font-bold">{initialData?.id ? `Editar aviso #${initialData.id}` : "Nuevo aviso temprano"}</h2><p className="mt-1 text-sm text-slate-400">Elegí un período y marcá exactamente las clases afectadas. Cada modificación se registra en el historial.</p></div>
         <button type="button" onClick={onClose} className="cursor-pointer rounded-lg px-3 py-1 text-2xl text-slate-400 hover:bg-slate-800" aria-label="Cerrar">×</button>
       </header>
       <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
@@ -108,7 +118,7 @@ export default function EarlyNoticeFormModal(props) {
           {isError && <p className="text-red-300">No se pudieron cargar los horarios del docente.</p>}
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm font-semibold">Docente responsable
-              <select className={`${FIELD} cursor-pointer`} value={teacherId} onChange={e=>setFieldTeacher(e.target.value)} required><option value="">Seleccionar docente</option>{teachers.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
+              <select className={`${FIELD} cursor-pointer`} value={teacherId} onChange={e=>setFieldTeacher(e.target.value)} disabled={Boolean(initialData?.id)} required><option value="">Seleccionar docente</option>{teachers.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>
             </label>
             <label className="space-y-2 text-sm font-semibold">Tipo de aviso
               <select className={`${FIELD} cursor-pointer`} value={type} onChange={e=>setType(e.target.value)}>{TYPES.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
@@ -134,7 +144,7 @@ export default function EarlyNoticeFormModal(props) {
           <label className="block space-y-2 text-sm font-semibold">Motivo del aviso<textarea rows={3} className={FIELD} value={reason} onChange={e=>setReason(e.target.value)} maxLength={2000} required placeholder="Descripción breve para los destinatarios. Evitá datos médicos sensibles."/></label>
           {(error || formError) && <p role="alert" className="rounded-lg border border-red-700 bg-red-950/50 p-3 text-sm text-red-200">{error || formError}</p>}
         </div>
-        <footer className="flex justify-end gap-3 border-t border-slate-700 bg-slate-950 p-4"><button type="button" onClick={onClose} disabled={isSaving} className="cursor-pointer rounded-xl border border-slate-600 px-5 py-3 hover:bg-slate-800">Cancelar</button><button type="submit" disabled={isSaving || isLoading || !chosen.length} className="cursor-pointer rounded-xl bg-blue-600 px-5 py-3 font-bold hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{isSaving?'Guardando…':`Crear aviso (${chosen.length} clases)`}</button></footer>
+        <footer className="flex justify-end gap-3 border-t border-slate-700 bg-slate-950 p-4"><button type="button" onClick={onClose} disabled={isSaving} className="cursor-pointer rounded-xl border border-slate-600 px-5 py-3 hover:bg-slate-800">Cancelar</button><button type="submit" disabled={isSaving || isLoading || !chosen.length} className="cursor-pointer rounded-xl bg-blue-600 px-5 py-3 font-bold hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">{isSaving?'Guardando…':`${initialData?.id ? 'Guardar cambios' : 'Crear aviso'} (${chosen.length} clases)`}</button></footer>
       </form>
     </div>
   </div>,document.body);

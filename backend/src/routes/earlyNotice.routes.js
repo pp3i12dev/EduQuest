@@ -83,6 +83,8 @@ router.post(
  *
  * Editar un aviso existente.
  */
+router.patch('/:id/multi', controller.updateMultiple);
+
 router.patch(
     '/:id',
     controller.update
@@ -117,5 +119,7 @@ router.patch(
     '/:id/deactivate',
     controller.deactivate
 );
+
+router.delete('/:id/history', controller.deleteHistory);
 
 export default router;
