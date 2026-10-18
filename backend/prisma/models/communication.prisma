@@ -1,0 +1,103 @@
+// Nuevas entidades para clases afectadas, historial y eventos.
+model EarlyNoticeClass {
+  id Int @id @default(autoincrement())
+  earlyNoticeId Int
+  earlyNotice EarlyNotice @relation(fields: [earlyNoticeId], references: [id], onDelete: Cascade)
+  teacherSubjectId Int
+  teacherSubject TeacherSubject @relation(fields: [teacherSubjectId], references: [id])
+  scheduleId Int?
+  schedule SubjectSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  classDate DateTime @db.Date
+  day ScheduleDay
+  shift Shift
+  startTime String
+  endTime String
+  @@unique([earlyNoticeId, teacherSubjectId, classDate, startTime, endTime])
+  @@index([teacherSubjectId, classDate])
+  @@index([classDate])
+}
+
+model EarlyNoticeRevision {
+  id Int @id @default(autoincrement())
+  earlyNoticeId Int
+  earlyNotice EarlyNotice @relation(fields: [earlyNoticeId], references: [id], onDelete: Cascade)
+  version Int
+  action String
+  snapshot Json
+  createdAt DateTime @default(now())
+  createdById Int
+  createdBy User @relation("EarlyNoticeRevisionAuthor", fields: [createdById], references: [id])
+  @@unique([earlyNoticeId, version])
+  @@index([createdAt])
+}
+
+enum InstitutionEventScope {
+  INSTITUTION
+  CAREERS
+  COURSES
+}
+
+model InstitutionEvent {
+  id Int @id @default(autoincrement())
+  title String
+  details String @db.Text
+  startsAt DateTime
+  endsAt DateTime
+  scope InstitutionEventScope
+  isActive Boolean @default(true)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  institutionId Int
+  institution Institution @relation(fields: [institutionId], references: [id])
+  createdById Int
+  createdBy User @relation("InstitutionEventCreator", fields: [createdById], references: [id])
+  updatedById Int?
+  updatedBy User? @relation("InstitutionEventUpdater", fields: [updatedById], references: [id])
+  audiences InstitutionEventAudience[]
+  careers InstitutionEventCareer[]
+  courses InstitutionEventCourse[]
+  revisions InstitutionEventRevision[]
+  notifications Notification[] @relation("InstitutionEventNotifications")
+  @@index([institutionId, startsAt])
+  @@index([institutionId, endsAt])
+  @@index([institutionId, deletedAt])
+}
+
+model InstitutionEventAudience {
+  id Int @id @default(autoincrement())
+  eventId Int
+  event InstitutionEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  role String
+  @@unique([eventId, role])
+}
+
+model InstitutionEventCareer {
+  eventId Int
+  careerId Int
+  event InstitutionEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  career Career @relation(fields: [careerId], references: [id])
+  @@id([eventId, careerId])
+}
+
+model InstitutionEventCourse {
+  eventId Int
+  courseId Int
+  event InstitutionEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id])
+  @@id([eventId, courseId])
+}
+
+model InstitutionEventRevision {
+  id Int @id @default(autoincrement())
+  institutionEventId Int
+  institutionEvent InstitutionEvent @relation(fields: [institutionEventId], references: [id], onDelete: Cascade)
+  version Int
+  action String
+  snapshot Json
+  createdAt DateTime @default(now())
+  createdById Int
+  createdBy User @relation("InstitutionEventRevisionAuthor", fields: [createdById], references: [id])
+  @@unique([institutionEventId, version])
+  @@index([createdAt])
+}
