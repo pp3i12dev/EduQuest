@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { authenticate } from '../middlewares/auth.middleware.js';
+import { institutionCommunicationController as c } from '../controllers/institutionCommunication.controller.js';
+const router = Router();
+router.use(authenticate);
+router.get('/options', c.options);
+router.get('/', c.list);
+router.get('/:id', c.get);
+router.post('/', c.create);
+router.patch('/:id', c.update);
+router.patch('/:id/cancel', c.cancel);
+router.delete('/:id/history', c.removeFromHistory);
+export default router;

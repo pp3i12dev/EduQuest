@@ -21,6 +21,7 @@ import {
     ChevronLeft,
     LayoutDashboard,
     CalendarDays,
+    Megaphone,
     ShieldCheck,
     LoaderCircle,
 } from 'lucide-react';
@@ -29,7 +30,6 @@ import { AuthContext } from '../context/AuthContext';
 import { useDashboardSummary } from '../hooks/useDashboard';
 import { hasAny } from '../config/permissions';
 
-import EarlyNoticesView from './EarlyNoticesView';
 
 const SECTIONS = {
     notices: {
@@ -58,6 +58,31 @@ const SECTIONS = {
                 hideCount: true,
             },
         ],
+    },
+
+
+    communications: {
+        label: 'Avisos Institucionales',
+        eyebrow: 'Comunicación institucional',
+        description: 'Consultá eventos, suspensiones de actividades y comunicados de tu institución.',
+        color: 'text-sky-400',
+        iconBackground: 'bg-sky-500/10',
+        iconBorder: 'border-sky-500/20',
+        hoverBorder: 'hover:border-sky-500/40',
+        gradient: 'from-sky-500/10 via-transparent to-transparent',
+        Icon: Megaphone,
+        directPath: '/dashboard/institution-communications',
+        items: [{
+            key: 'institutionCommunications',
+            label: 'Ver Avisos Institucionales',
+            description: 'Eventos y suspensiones de actividades.',
+            color: 'text-sky-400',
+            iconBackground: 'bg-sky-500/10',
+            Icon: Megaphone,
+            path: '/dashboard/institution-communications',
+            publicToAuthenticated: true,
+            hideCount: true,
+        }],
     },
 
     users: {
@@ -242,7 +267,7 @@ function ModuleCard({
                 <div className="mt-6 flex items-center justify-between border-t border-slate-700/60 pt-4">
                     <span className="text-xs font-semibold text-slate-300 transition-colors group-hover:text-white">
                         {section.directPath
-                            ? 'Abrir avisos'
+                            ? 'Abrir módulo'
                             : 'Explorar módulo'}
                     </span>
 
@@ -396,12 +421,6 @@ export default function DashboardView() {
         roles.includes('TEACHER') ||
         Boolean(user?.teacherProfile);
 
-    const isStudentOnly =
-        !isSuperAdmin &&
-        roles.length === 1 &&
-        roles.includes('STUDENT');
-
-    const token = auth.token ?? auth.accessToken;
 
     const getVisibleItems = (section) => {
         const isAdministrativeSection =
@@ -455,16 +474,8 @@ export default function DashboardView() {
     const formattedDate =
         today.charAt(0).toUpperCase() + today.slice(1);
 
-    // Los estudiantes conservan el acceso directo
-    // a Avisos Tempranos.
-    if (isStudentOnly) {
-        return (
-            <EarlyNoticesView
-                token={token}
-                currentUser={user}
-            />
-        );
-    }
+    // Los estudiantes ven las dos tarjetas de comunicaciones en el panel principal.
+    // Ya no se los redirige automáticamente a Avisos Tempranos.
 
     // PANTALLA PRINCIPAL
     if (!canShowCurrentSection) {

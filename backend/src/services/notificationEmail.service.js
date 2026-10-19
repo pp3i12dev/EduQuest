@@ -1,5 +1,5 @@
 import { notificationEmailRepository as repo } from '../repositories/notificationEmail.repository.js';
-import { sendEarlyNoticeEmail } from '../utils/mailer.js';
+import { sendEarlyNoticeEmail, sendInstitutionCommunicationEmail } from '../utils/mailer.js';
 
 const INTERVAL_MS = 30_000;
 let timer = null;
@@ -15,18 +15,47 @@ export const processPendingNotificationEmails = async () => {
       try {
         delivery = await repo.claim(id);
         if (!delivery) continue;
-        // Evitar enviar correos de avisos desactivados antes de la entrega.
-        if (!delivery.notification?.earlyNotice?.isActive) {
-          await repo.cancel(id, 'Aviso temprano desactivado o inexistente');
+        const notification = delivery.notification;
+        if (!notification) {
+          await repo.cancel(id, 'Notificación inexistente');
           continue;
         }
-        const info = await sendEarlyNoticeEmail({
-          to: delivery.recipient,
-          title: delivery.notification.title,
-          message: delivery.notification.message,
-          notificationType: delivery.notification.type,
-          notice: delivery.notification.earlyNotice,
-        });
+        let info;
+        if (notification.institutionEventId != null) {
+          const event = notification.institutionEvent;
+          if (!event || event.deletedAt) {
+            await repo.cancel(id, 'Comunicación institucional inexistente o eliminada');
+            continue;
+          }
+          // Las cancelaciones deben enviarse aunque isActive sea false.
+          if (notification.type !== 'EVENT_CANCELLED' && !event.isActive) {
+            await repo.cancel(id, 'Comunicación cancelada antes del envío');
+            continue;
+          }
+          info = await sendInstitutionCommunicationEmail({
+            to: delivery.recipient,
+            title: notification.title,
+            message: notification.message,
+            notificationType: notification.type,
+            event,
+            revision: notification.revision,
+          });
+        } else if (notification.earlyNoticeId != null) {
+          if (!notification.earlyNotice?.isActive) {
+            await repo.cancel(id, 'Aviso temprano desactivado o inexistente');
+            continue;
+          }
+          info = await sendEarlyNoticeEmail({
+            to: delivery.recipient,
+            title: notification.title,
+            message: notification.message,
+            notificationType: notification.type,
+            notice: notification.earlyNotice,
+          });
+        } else {
+          await repo.cancel(id, 'Notificación sin origen');
+          continue;
+        }
         // SMTP aceptado no significa necesariamente entregado al buzón.
         await repo.markSent(id, info.messageId);
         console.info(`[EduQuest][EMAIL] Envío aceptado: entrega ${id}`);

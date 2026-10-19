@@ -12,6 +12,7 @@ import dashboardRoutes from './routes/dashboard.routes.js';
 import invitationsRoutes from './routes/invitations.routes.js';
 import publicRoutes from './routes/public.routes.js';
 import earlyNoticeRoutes from './routes/earlyNotice.routes.js';
+import institutionCommunicationRoutes from './routes/institutionCommunication.routes.js';
 
 const app = express();
 
@@ -32,5 +33,6 @@ app.use('/api/public', publicRoutes);
 
 // Avisos Tempranos
 app.use('/api/early-notices', earlyNoticeRoutes);
+app.use('/api/institution-communications', institutionCommunicationRoutes);
 
 export default app;

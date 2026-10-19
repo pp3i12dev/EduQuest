@@ -12,7 +12,7 @@ import {
 import {
     BookOpen,
     ClipboardList,
-    ClipboardCheck,
+    Megaphone,
     LogOut,
     UserRound,
     ArrowLeft,
@@ -70,15 +70,14 @@ const NAVIGATION = [
         teacherOnly: true,
     },
     {
-        to: '/dashboard/teacher-confirmations',
-        label: 'Confirmaciones pendientes',
-        Icon: ClipboardCheck,
-        teacherOnly: true,
-    },
-    {
         to: '/dashboard/early-notices',
         label: 'Avisos Tempranos',
         Icon: ClipboardList,
+    },
+    {
+        to: '/dashboard/institution-communications',
+        label: 'Comunicaciones',
+        Icon: Megaphone,
     },
     {
         to: '/dashboard/profile',

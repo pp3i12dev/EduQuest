@@ -86,3 +86,53 @@ export const sendEarlyNoticeEmail = ({ to, title, message, notificationType, not
   const subjectName = rows.length === 1 ? rows[0].subject : `${rows.length} clases afectadas`;
   return getTransporter().sendMail({ from: process.env.MAIL_FROM, to, subject: `[EduQuest] ${status} — ${subjectName}`, text, html });
 };
+
+
+// Correos de eventos y suspensiones. El tipo EVENT_CANCELLED se usa también
+// para informar a quienes fueron retirados de una audiencia durante una edición.
+export const sendInstitutionCommunicationEmail = ({ to, title, message, notificationType, event, revision }) => {
+  const isSuspension = event.kind === 'SUSPENSION';
+  const isRemoved = String(title || '').startsWith('Ya no estás incluido:');
+  const action = isRemoved ? 'CAMBIO DE DESTINATARIOS'
+    : notificationType === 'EVENT_CANCELLED' ? 'CANCELACIÓN'
+    : notificationType === 'EVENT_UPDATED' ? 'ACTUALIZACIÓN' : 'NUEVA COMUNICACIÓN';
+  const kind = isSuspension ? 'Suspensión de actividades' : 'Evento institucional';
+  const reasons = { HOLIDAY: 'Feriado', MOURNING: 'Duelo', WEATHER: 'Condiciones climáticas', FACILITIES: 'Problemas edilicios', STRIKE: 'Medida de fuerza', OTHER: 'Otro' };
+  const activities = { PRESENTIAL_CLASSES: 'Clases presenciales', VIRTUAL_CLASSES: 'Clases virtuales', EXAMS: 'Evaluaciones', ADMINISTRATIVE: 'Actividades administrativas', EXTRACURRICULAR: 'Actividades extracurriculares' };
+  const shifts = { MANANA: 'Mañana', TARDE: 'Tarde', NOCHE: 'Noche' };
+  const institutionName = event.institution?.nombre || 'Institución';
+  const periodStart = formatDate(event.startsAt, { dateStyle: 'full', timeStyle: 'short' });
+  const periodEnd = formatDate(event.endsAt, { dateStyle: 'full', timeStyle: 'short' });
+  const venue = isSuspension ? '' : event.locationType === 'OTHER'
+    ? [event.venueName, event.venueAddress].filter(Boolean).join(' — ')
+    : [institutionName, event.institution?.direccion].filter(Boolean).join(' — ');
+  const scope = event.scope === 'INSTITUTION' ? 'Toda la institución'
+    : event.scope === 'CAREERS' ? (event.careers || []).map(c => c.career?.nombre).filter(Boolean).join(', ')
+    : (event.courses || []).map(c => c.course?.nombre).filter(Boolean).join(', ');
+  // Usar el texto específico de la notificación para distinguir cancelación de baja de destinatarios.
+  const cancellationExplanation = notificationType === 'EVENT_CANCELLED' && !isRemoved
+    ? (isSuspension
+      ? 'IMPORTANTE: Se canceló la suspensión de clases. Las clases se desarrollarán normalmente según el horario habitual, salvo que la institución comunique otra disposición.'
+      : 'IMPORTANTE: El evento fue cancelado y no se realizará según lo anunciado.')
+    : '';
+  const lines = [
+    action, kind, `Institución: ${institutionName}`,
+    ...(cancellationExplanation ? [cancellationExplanation] : []),
+    `Asunto: ${event.title}`, `Descripción: ${event.details || '—'}`,
+    `Desde: ${periodStart}`, `Hasta: ${periodEnd}`,
+    `Alcance: ${scope || 'Consultar EduQuest'}`,
+    ...(!isSuspension ? [`Lugar: ${venue || 'A confirmar'}`] : [
+      `Motivo: ${reasons[event.suspensionReason] || event.suspensionReason || 'No informado'}`,
+      `Actividades afectadas: ${(event.affectedActivities || []).map(a => activities[a] || a).join(', ') || 'No especificadas'}`,
+      `Turnos afectados: ${(event.affectedShifts || []).map(a => shifts[a] || a).join(', ') || 'Todos'}`,
+    ]),
+    `Versión: ${revision || 1}`,
+    ...(notificationType === 'EVENT_CANCELLED' ? [`Aviso: ${message || ''}`] : []),
+  ];
+  const url = `${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')}/dashboard/institution-communications`;
+  lines.push(`Consultá EduQuest: ${url}`);
+  const text = lines.join('\n\n');
+  const html = `<div style="background:#eef2f7;padding:24px;font-family:Arial,sans-serif;color:#17253b"><div style="max-width:720px;margin:auto;background:white;border-radius:12px;overflow:hidden;border:1px solid #dbe3ef"><div style="background:#173c78;color:white;padding:22px"><b>EduQuest · ${escapeHtml(institutionName)}</b><h2 style="color:white;margin:12px 0 0">${escapeHtml(action)} · ${escapeHtml(kind)}</h2></div><div style="padding:24px"><h2>${escapeHtml(event.title)}</h2>${lines.slice(3,-1).map(line => `<p style="white-space:pre-wrap;line-height:1.5">${escapeHtml(line)}</p>`).join('')}<p style="margin-top:24px"><a style="display:inline-block;padding:12px 18px;background:#173c78;color:white;border-radius:7px;text-decoration:none" href="${escapeHtml(url)}">Ver en EduQuest</a></p><p style="font-size:12px;color:#64748b">Correo automático institucional.</p></div></div></div>`;
+  return getTransporter().sendMail({ from: process.env.MAIL_FROM, to,
+    subject: `[EduQuest] ${action} — ${kind}: ${event.title}`, text, html });
+};

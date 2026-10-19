@@ -37,7 +37,21 @@ enum InstitutionEventScope {
   COURSES
 }
 
+enum InstitutionCommunicationKind {
+  EVENT
+  SUSPENSION
+}
+
 model InstitutionEvent {
+  kind InstitutionCommunicationKind @default(EVENT)
+  locationType String?
+  venueName String?
+  venueAddress String?
+  suspensionReason String?
+  affectedActivities String[] @default([])
+  affectedShifts Shift[] @default([])
+  cancelledAt DateTime?
+  cancellationReason String? @db.Text
   id Int @id @default(autoincrement())
   title String
   details String @db.Text

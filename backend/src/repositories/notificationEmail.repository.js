@@ -22,7 +22,14 @@ export const notificationEmailRepository = {
       include: {
         notification: {
           select: {
-            title: true, message: true, type: true,
+            id: true, title: true, message: true, type: true, revision: true,
+            earlyNoticeId: true, institutionEventId: true,
+            institutionEvent: { include: {
+              institution: { select: { nombre: true, direccion: true } },
+              audiences: true,
+              careers: { include: { career: { select: { nombre: true } } } },
+              courses: { include: { course: { select: { nombre: true } } } },
+            } },
             earlyNotice: { include: {
               affectedClasses: {
                 orderBy: [{ classDate: 'asc' }, { startTime: 'asc' }],
