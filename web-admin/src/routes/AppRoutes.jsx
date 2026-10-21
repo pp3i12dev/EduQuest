@@ -1,3 +1,4 @@
+
 import { useContext } from 'react';
 
 import {
@@ -16,6 +17,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import UsersListView from '../views/UsersListView';
 import InvitationsListView from '../views/InvitationListView';
 import AcceptInvitationView from '../views/AcceptInvitationView';
+import ProfileView from '../views/ProfileView';
 
 import CareersListView from '../views/CareersListView';
 import CoursesListView from '../views/CoursesListView';
@@ -31,6 +33,8 @@ import SubjectSchedulesView from '../views/SubjectSchedulesView';
 import RoleRoute from './RoleRoute';
 import TeacherSubjectsView from '../views/TeacherSubjectsView';
 import UnitsView from '../views/UnitsView';
+import EarlyNoticesView from '../views/EarlyNoticesView';
+import InstitutionCommunicationsView from '../views/InstitutionCommunicationsView';
 
 const ProtectedRoute = ({ children }) => {
     const { token } = useContext(AuthContext);
@@ -40,7 +44,25 @@ const ProtectedRoute = ({ children }) => {
         : <Navigate to="/login" replace />;
 };
 
-export default function AppRouter() {
+/**
+ * Conecta la vista de Avisos Tempranos
+ * con la sesión autenticada.
+ *
+ * La autorización de cada operación
+ * sigue correspondiendo al backend.
+ */
+function EarlyNoticesRoute() {
+    const { token, user } = useContext(AuthContext);
+
+    return (
+        <EarlyNoticesView
+            token={token}
+            currentUser={user}
+        />
+    );
+}
+
+export default function AppRoutes() {
     return (
         <BrowserRouter>
             <Routes>
@@ -51,9 +73,7 @@ export default function AppRouter() {
 
                 <Route
                     path="/aceptar-invitacion/:token"
-                    element={
-                        <AcceptInvitationView />
-                    }
+                    element={<AcceptInvitationView />}
                 />
 
                 <Route
@@ -67,6 +87,19 @@ export default function AppRouter() {
                     <Route
                         index
                         element={<DashboardView />}
+                    />
+
+                    {/* Perfil: disponible para todo usuario autenticado */}
+                    <Route
+                        path="profile"
+                        element={<ProfileView />}
+                    />
+
+                    <Route path="institution-communications" element={<InstitutionCommunicationsView />} />
+
+                    <Route
+                        path="early-notices"
+                        element={<EarlyNoticesRoute />}
                     />
 
                     <Route
@@ -152,6 +185,7 @@ export default function AppRouter() {
                             </RoleRoute>
                         }
                     />
+
                     <Route
                         path="my-subjects"
                         element={
@@ -227,12 +261,7 @@ export default function AppRouter() {
 
                 <Route
                     path="*"
-                    element={
-                        <Navigate
-                            to="/login"
-                            replace
-                        />
-                    }
+                    element={<Navigate to="/login" replace />}
                 />
             </Routes>
         </BrowserRouter>

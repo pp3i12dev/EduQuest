@@ -1,3 +1,4 @@
+
 export const FRONTEND_PERMISSIONS = {
     'teacher:manage': ['DIRECTOR', 'PRECEPTOR'],
     'preceptor:manage': ['DIRECTOR'],
@@ -20,9 +21,25 @@ export const FRONTEND_PERMISSIONS = {
 };
 
 export function hasAny(userRoles = [], action) {
-    return (
-        FRONTEND_PERMISSIONS[action]?.some(
-            (role) => userRoles.includes(role)
-        ) ?? false
+    if (!Array.isArray(userRoles)) {
+        return false;
+    }
+
+    // Evitamos autorizar acciones desconocidas.
+    if (!Object.prototype.hasOwnProperty.call(
+        FRONTEND_PERMISSIONS,
+        action
+    )) {
+        return false;
+    }
+
+    // El superadministrador tiene acceso a las
+    // funcionalidades administrativas registradas.
+    if (userRoles.includes('SUPER_ADMIN')) {
+        return true;
+    }
+
+    return FRONTEND_PERMISSIONS[action].some(
+        role => userRoles.includes(role)
     );
 }

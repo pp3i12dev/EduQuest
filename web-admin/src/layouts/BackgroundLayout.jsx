@@ -1,18 +1,17 @@
 
-import aula from '../assets/images/aula.jpg';
+import fondo from '../assets/images/fondo.png';
 
 export default function BackgroundLayout({ children }) {
     return (
-        <div className="min-h-screen relative overflow-hidden">
+        <div className="relative min-h-screen bg-[#151820]">
 
-            {/* Fondo */}
+            {/* Fondo principal */}
             <div
-                className="fixed inset-0 bg-cover bg-center blur-sm scale-105"
-                style={{ backgroundImage: `url(${aula})` }}
+                className="pointer-events-none fixed inset-0 bg-cover bg-center bg-no-repeat"
+                style={{
+                    backgroundImage: `url(${fondo})`,
+                }}
             />
-
-            {/* Capa oscura */}
-            <div className="fixed inset-0 bg-slate-900/70" />
 
             {/* Contenido */}
             <div className="relative z-10 min-h-screen">
@@ -22,4 +21,3 @@ export default function BackgroundLayout({ children }) {
         </div>
     );
 }
-

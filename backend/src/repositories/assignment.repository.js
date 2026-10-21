@@ -1,3 +1,4 @@
+
 import { getPrisma } from '../config/prisma.js';
 
 export const listAssignmentOptions = async (institutionId) => {
@@ -74,7 +75,10 @@ export const listAssignmentOptions = async (institutionId) => {
     };
 };
 
-export const listStudentsForCourse = async (institutionId, courseId) => {
+export const listStudentsForCourse = async (
+    institutionId,
+    courseId
+) => {
     const prisma = getPrisma();
 
     const students = await prisma.studentProfile.findMany({
@@ -168,6 +172,8 @@ export const findCourse = (institutionId, courseId) => {
     });
 };
 
+// Devuelve todos los docentes de la institución,
+// pero considera asignados solamente a los vigentes.
 export const listTeachersForCourseSubject = async (
     institutionId,
     courseId,
@@ -202,6 +208,7 @@ export const listTeachersForCourseSubject = async (
                     teacherId: true,
                     subjectId: true,
                     courseId: true,
+                    isActive: true,
                 },
             },
         },
@@ -212,14 +219,30 @@ export const listTeachersForCourseSubject = async (
         },
     });
 
-    return teachers.map((teacher) => ({
-        id: teacher.id,
-        legajoTeacher: teacher.legajoTeacher,
-        specialty: teacher.specialty,
-        user: teacher.user,
-        assigned: teacher.teacherSubjects.length > 0,
-        assignmentId: teacher.teacherSubjects[0]?.id ?? null,
-    }));
+    return teachers.map((teacher) => {
+        const currentAssignment =
+            teacher.teacherSubjects.find(
+                (assignment) => assignment.isActive
+            );
+
+        return {
+            id: teacher.id,
+            legajoTeacher: teacher.legajoTeacher,
+            specialty: teacher.specialty,
+            user: teacher.user,
+
+            // Solo representa responsabilidad vigente.
+            assigned: Boolean(currentAssignment),
+
+            assignmentId: currentAssignment?.id ?? null,
+
+            // Indica que este docente tuvo una asignación
+            // anterior para esta materia y curso.
+            hasHistory: teacher.teacherSubjects.some(
+                (assignment) => !assignment.isActive
+            ),
+        };
+    });
 };
 
 export const findTeacher = (institutionId, teacherId) => {
@@ -249,36 +272,155 @@ export const findSubject = (institutionId, subjectId) => {
     });
 };
 
-export const createTeacherSubject = (teacherId, subjectId, courseId) => {
+// Consulta una asignación concreta con su institución.
+// Sirve para verificar autorización antes de desactivarla.
+export const findTeacherSubjectAssignment = (id) => {
     const prisma = getPrisma();
 
-    return prisma.teacherSubject.create({
-        data: {
-            teacherId,
-            subjectId,
-            courseId,
-        },
+    return prisma.teacherSubject.findUnique({
+        where: { id },
         include: {
-            teacher: {
-                include: {
-                    user: true,
+            subject: {
+                select: {
+                    id: true,
+                    institutionId: true,
                 },
             },
-            subject: true,
-            course: true,
+            course: {
+                select: {
+                    id: true,
+                    institutionId: true,
+                },
+            },
         },
     });
 };
 
+// Asigna un único docente vigente por materia y curso.
+//
+// - Desactiva a cualquier responsable anterior.
+// - Reactiva una asignación histórica si ya existía.
+// - Nunca elimina contenidos, actividades ni historial.
+// - Ejecuta los cambios dentro de una transacción.
+//
+// El bloqueo transaccional serializa las operaciones
+// concurrentes sobre la misma materia y curso.
+export const createTeacherSubject = (
+    teacherId,
+    subjectId,
+    courseId
+) => {
+    const prisma = getPrisma();
+
+    return prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`
+            SELECT pg_advisory_xact_lock(
+                ${subjectId}::integer,
+                ${courseId}::integer
+            )
+        `;
+
+        const currentAssignment =
+            await tx.teacherSubject.findFirst({
+                where: {
+                    subjectId,
+                    courseId,
+                    isActive: true,
+                },
+                select: {
+                    id: true,
+                    teacherId: true,
+                },
+            });
+
+        // Si ya es el responsable vigente, no hace falta
+        // generar una asignación nueva.
+        if (
+            currentAssignment?.teacherId === teacherId
+        ) {
+            return tx.teacherSubject.findUnique({
+                where: {
+                    id: currentAssignment.id,
+                },
+                include: {
+                    teacher: {
+                        include: {
+                            user: true,
+                        },
+                    },
+                    subject: true,
+                    course: true,
+                },
+            });
+        }
+
+        // Los docentes anteriores pasan a histórico.
+        await tx.teacherSubject.updateMany({
+            where: {
+                subjectId,
+                courseId,
+                isActive: true,
+            },
+            data: {
+                isActive: false,
+            },
+        });
+
+        // La combinación docente-materia-curso es única.
+        // Si existía históricamente, se reactiva.
+        // Si nunca existió, se crea.
+        return tx.teacherSubject.upsert({
+            where: {
+                teacherId_subjectId_courseId: {
+                    teacherId,
+                    subjectId,
+                    courseId,
+                },
+            },
+            update: {
+                isActive: true,
+            },
+            create: {
+                teacherId,
+                subjectId,
+                courseId,
+                isActive: true,
+            },
+            include: {
+                teacher: {
+                    include: {
+                        user: true,
+                    },
+                },
+                subject: true,
+                course: true,
+            },
+        });
+    });
+};
+
+// Desactiva la asignación sin eliminar el registro.
+//
+// La autorización institucional debe verificarse
+// previamente desde assignment.service.js.
 export const deleteTeacherSubject = (id) => {
     const prisma = getPrisma();
 
-    return prisma.teacherSubject.delete({
-        where: { id },
+    return prisma.teacherSubject.update({
+        where: {
+            id,
+        },
+        data: {
+            isActive: false,
+        },
     });
 };
 
-export const listSchedules = async (institutionId, courseId, subjectId) => {
+export const listSchedules = async (
+    institutionId,
+    courseId,
+    subjectId
+) => {
     const prisma = getPrisma();
 
     return prisma.subjectSchedule.findMany({
@@ -328,7 +470,9 @@ export const listSchedulesForConflict = async (
             course: {
                 institutionId,
             },
-            ...(excludeId ? { NOT: { id: excludeId } } : {}),
+            ...(excludeId
+                ? { NOT: { id: excludeId } }
+                : {}),
         },
     });
 };

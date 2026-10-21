@@ -1,8 +1,11 @@
+
 import { Router } from 'express';
 
 import { authenticate } from '../middlewares/auth.middleware.js';
 
 import {
+    getMyInstitution,
+    updateMyInstitution,
     listInstitutions,
     getInstitution,
     createInstitution,
@@ -15,6 +18,14 @@ const router = Router();
 
 router.use(authenticate);
 
+// Institución propia.
+// Un director puede consultar y editar su institución.
+router.get('/me', getMyInstitution);
+router.put('/me', updateMyInstitution);
+
+// Administración global.
+// El servicio verifica qué operaciones corresponden
+// exclusivamente al SUPER_ADMIN.
 router.get('/', listInstitutions);
 router.get('/:id', getInstitution);
 router.post('/', createInstitution);

@@ -1,3 +1,4 @@
+
 export const PERMISSIONS = {
     'user:manageRoles': ['DIRECTOR', 'PRECEPTOR'],
 
@@ -54,7 +55,12 @@ export const PERMISSIONS = {
 
     'game:play': ['STUDENT'],
     'stats:viewSelf': ['STUDENT'],
-    'profile:editSelf': ['DIRECTOR', 'PRECEPTOR', 'TEACHER', 'STUDENT'],
+    'profile:editSelf': [
+        'DIRECTOR',
+        'PRECEPTOR',
+        'TEACHER',
+        'STUDENT',
+    ],
 };
 
 export const INVITATION_TARGET_PERMISSION = {
@@ -65,9 +71,21 @@ export const INVITATION_TARGET_PERMISSION = {
 };
 
 export function canRole(role, action) {
-    return PERMISSIONS[action]?.includes(role) ?? false;
+    if (!Object.prototype.hasOwnProperty.call(PERMISSIONS, action)) {
+        return false;
+    }
+
+    if (role === 'SUPER_ADMIN') {
+        return true;
+    }
+
+    return PERMISSIONS[action].includes(role);
 }
 
-export function canAnyRole(roles, action) {
-    return roles.some((role) => canRole(role, action));
+export function canAnyRole(roles = [], action) {
+    if (!Array.isArray(roles)) {
+        return false;
+    }
+
+    return roles.some(role => canRole(role, action));
 }
