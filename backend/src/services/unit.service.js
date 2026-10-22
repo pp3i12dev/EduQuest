@@ -28,6 +28,10 @@ export const listUnits = async (user, teacherSubjectId) => {
 export const createUnit = async (user, { teacherSubjectId, title, description, activityIds }) => {
     const teacherSubject = await getTeacherSubjectDetail(user, teacherSubjectId);
 
+        if (teacherSubject.isActive === false) {
+        throw httpError(409, 'La materia no está vigente: no se pueden crear unidades.');
+    }
+
     const cleanTitle = typeof title === 'string' ? title.trim() : '';
     if (!cleanTitle) throw httpError(400, 'El título es obligatorio');
     if (cleanTitle.length > 120) throw httpError(400, 'El título no puede superar los 120 caracteres');
