@@ -9,6 +9,7 @@ import courseRoutes from './course.routes.js';
 import subjectRoutes from './subject.routes.js';
 import teacherSubjectRoutes from './teacherSubject.routes.js';
 import assignmentsRoutes from './assignment.routes.js';
+import unitRoutes from './unit.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 
 // Notificaciones
@@ -25,6 +26,7 @@ router.use('/careers', careerRoutes);
 router.use('/courses', courseRoutes);
 router.use('/subjects', subjectRoutes);
 router.use('/teacher-subjects', teacherSubjectRoutes);
+router.use('/units', unitRoutes);
 
 router.use('/assignments', assignmentsRoutes);
 router.use('/dashboard', dashboardRoutes);
