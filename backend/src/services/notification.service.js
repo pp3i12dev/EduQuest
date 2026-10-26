@@ -1,8 +1,7 @@
 import { notificationRepository as repo } from '../repositories/notification.repository.js';
 import { notificationEmailRepository as emailRepo } from '../repositories/notificationEmail.repository.js';
+import { fcmMessaging } from './firebaseAdmin.service.js';
 
-// Esta etapa registra notificaciones y entregas pendientes.
-// No envía email ni WhatsApp hasta configurar proveedores oficiales.
 const userIdFromJwt = (jwt) => {
     const id = Number(jwt?.id ?? jwt?.userId ?? jwt?.sub);
     if (!Number.isSafeInteger(id) || id <= 0) {
@@ -12,6 +11,42 @@ const userIdFromJwt = (jwt) => {
 };
 
 export const notificationService = {
+    // Función auxiliar interna para disparar FCM a una lista de usuarios
+    async _sendPushToUsers(users, title, body, dataPayload = {}) {
+        try {
+            const userIds = users.map(u => u.id).filter(Boolean);
+            if (userIds.length === 0) return;
+
+            const devices = await repo.prisma.userDevice.findMany({
+                where: { userId: { in: userIds } },
+                select: { token: true },
+            });
+
+            const tokens = devices.map(d => d.token);
+            if (tokens.length === 0) return;
+
+            await fcmMessaging.sendEachForMulticast({
+                tokens: tokens,
+                notification: { title, body },
+                data: {
+                    ...dataPayload,
+                    click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                },
+                android: {
+                    priority: 'high',
+                    notification: {
+                        channelId: 'canal_ausencias',
+                        priority: 'max',
+                        sound: 'default',
+                        visibility: 'public',
+                    },
+                },
+            });
+        } catch (error) {
+            console.error('[FCM] Error al enviar notificaciones push:', error);
+        }
+    },
+
     async publish(notice, { event = null, revision = 1 } = {}) {
         if (!notice.isActive) return 0;
         if (event || notice.status === 'CONFIRMED' || notice.status === 'REJECTED') {
@@ -30,6 +65,7 @@ export const notificationService = {
         const detail = `${base}\nClases afectadas:\n${lines.join('\n') || 'Consultar aviso'}${notice.virtualMeetingUrl ? `\nVideollamada: ${notice.virtualMeetingUrl}` : ''}${notice.virtualInstructions ? `\nMaterial: ${notice.virtualInstructions}` : ''}`;
         const kinds = { ABSENCE: 'ausencia', LATE_ARRIVAL: 'llegada tarde', ATTENDANCE_CONFIRMED: 'asistencia confirmada', VIRTUAL_SYNCHRONOUS: 'clase virtual sincrónica', VIRTUAL_ASYNCHRONOUS: 'clase virtual asincrónica' };
         const kind = kinds[notice.type] || 'aviso';
+        
         if (event === 'UPDATED') {
             const teacher = await repo.findTeacher(notice.teacherUserId);
             const recipients = notice.status === 'PENDING'
@@ -38,27 +74,45 @@ export const notificationService = {
             const warning = notice.status === 'PENDING'
                 ? 'PENDIENTE DE CONFIRMACIÓN DOCENTE. Las clases siguen programadas hasta confirmación.\n'
                 : '';
-            return repo.publish(notice, 'EARLY_NOTICE_UPDATED',
-                `Aviso temprano actualizado (versión ${revision})`,
-                `${warning}Actualización #${revision} del aviso.\n${detail}`, recipients, revision);
+            
+            const title = `Aviso temprano actualizado (versión ${revision})`;
+            const bodyText = `${warning}Actualización #${revision} del aviso.`;
+            
+            // Disparar push FCM a los destinatarios de esta actualización
+            await this._sendPushToUsers(recipients, title, bodyText, { noticeId: String(notice.id), type: 'EARLY_NOTICE_UPDATED' });
+
+            return repo.publish(notice, 'EARLY_NOTICE_UPDATED', title, `${warning}Actualización #${revision} del aviso.\n${detail}`, recipients, revision);
         }
         if (notice.status === 'PENDING') {
             const teacher = await repo.findTeacher(notice.teacherUserId);
             if (!teacher?.isActive) return 0;
-            return repo.publish(notice, 'EARLY_NOTICE_PENDING',
-                'Aviso temprano pendiente de revisión',
-                `PENDIENTE DE CONFIRMACIÓN DOCENTE. Las clases siguen programadas hasta confirmación.\n${detail}`, [teacher, ...students], revision);
+            const recipients = [teacher, ...students];
+            
+            const title = 'Aviso temprano pendiente de revisión';
+            const bodyText = 'PENDIENTE DE CONFIRMACIÓN DOCENTE.';
+            
+            await this._sendPushToUsers(recipients, title, bodyText, { noticeId: String(notice.id), type: 'EARLY_NOTICE_PENDING' });
+
+            return repo.publish(notice, 'EARLY_NOTICE_PENDING', title, `PENDIENTE DE CONFIRMACIÓN DOCENTE. Las clases siguen programadas hasta confirmación.\n${detail}`, recipients, revision);
         }
         if (notice.status === 'CONFIRMED') {
-            return repo.publish(notice, 'EARLY_NOTICE_CONFIRMED',
-                'Aviso temprano confirmado',
-                `Se confirmó ${kind}.\n${detail}`, students, revision);
+            const title = 'Aviso temprano confirmado';
+            const bodyText = `Se confirmó ${kind}.`;
+
+            await this._sendPushToUsers(students, title, bodyText, { noticeId: String(notice.id), type: 'EARLY_NOTICE_CONFIRMED' });
+
+            return repo.publish(notice, 'EARLY_NOTICE_CONFIRMED', title, `Se confirmó ${kind}.\n${detail}`, students, revision);
         }
         if (notice.status === 'REJECTED') {
             const creator = await repo.findTeacher(notice.createdById);
-            return repo.publish(notice, 'EARLY_NOTICE_REJECTED',
-                'Aviso temprano rechazado',
-                `Aviso rechazado: las clases continúan según el horario oficial.\n${detail}`, [...(creator?.isActive ? [creator] : []), ...students], revision);
+            const recipients = [...(creator?.isActive ? [creator] : []), ...students];
+            
+            const title = 'Aviso temprano rechazado';
+            const bodyText = 'Aviso rechazado: las clases continúan según el horario oficial.';
+
+            await this._sendPushToUsers(recipients, title, bodyText, { noticeId: String(notice.id), type: 'EARLY_NOTICE_REJECTED' });
+
+            return repo.publish(notice, 'EARLY_NOTICE_REJECTED', title, `Aviso rechazado: las clases continúan según el horario oficial.\n${detail}`, recipients, revision);
         }
         return 0;
     },

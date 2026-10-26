@@ -24,6 +24,7 @@ model User {
   responsibleEarlyNotices EarlyNotice[] @relation("EarlyNoticeTeacher")
   confirmedEarlyNotices EarlyNotice[] @relation("EarlyNoticeConfirmer")
   notifications Notification[] @relation("UserNotifications")
+  devices       UserDevice[]   @relation("UserDevices") //
   earlyNoticeRevisions EarlyNoticeRevision[] @relation("EarlyNoticeRevisionAuthor")
   createdInstitutionEvents InstitutionEvent[] @relation("InstitutionEventCreator")
   updatedInstitutionEvents InstitutionEvent[] @relation("InstitutionEventUpdater")
