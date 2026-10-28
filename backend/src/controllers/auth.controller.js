@@ -1,6 +1,8 @@
 import { loginService, registerStudentService } from '../services/auth.service.js';
 import { handleServiceError } from '../utils/handleServiceError.js';
 
+
+
 export const login = async (req, res) => {
     try {
         const result = await loginService(req.body);
@@ -9,6 +11,8 @@ export const login = async (req, res) => {
         return handleServiceError(error, res);
     }
 };
+
+
 
 export const registerStudent = async (req, res) => {
     try {

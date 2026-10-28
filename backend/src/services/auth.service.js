@@ -13,6 +13,7 @@ class ServiceError extends Error {
     }
 }
 
+
 export const loginService = async ({ email, dni, password }) => {
     if (!password || (!email && !dni)) {
         throw new ServiceError(
@@ -85,6 +86,8 @@ export const loginService = async ({ email, dni, password }) => {
         },
     };
 };
+
+
 
 export const registerStudentService = async (data) => {
     const {
