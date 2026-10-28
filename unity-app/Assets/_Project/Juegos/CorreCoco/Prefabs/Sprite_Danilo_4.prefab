@@ -125,7 +125,7 @@ SpriteRenderer:
   m_Size: {x: 10.3125, y: 12.375}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!95 &3762599294338803224
@@ -242,5 +242,5 @@ MonoBehaviour:
   radioChequeoSuelo: 0.15
   capaSuelo:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 0
   animator: {fileID: 3762599294338803224}
