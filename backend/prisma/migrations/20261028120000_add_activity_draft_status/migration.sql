@@ -1,0 +1,1 @@
+ALTER TYPE "ActivityStatus" ADD VALUE 'DRAFT';
