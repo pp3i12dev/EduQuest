@@ -25,11 +25,11 @@ const PencilIcon = () => (
         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
     </svg>
 );
-export default function EditSubjectModal({ teacherSubjectId, onClose }) {
+export default function EditSubjectModal({ teacherSubjectId, onClose, onOpenQuizCreator }) {
     if (!teacherSubjectId) return null;
-    return <EditSubjectForm key={teacherSubjectId} teacherSubjectId={teacherSubjectId} onClose={onClose} />;
+    return <EditSubjectForm key={teacherSubjectId} teacherSubjectId={teacherSubjectId} onClose={onClose} onOpenQuizCreator={onOpenQuizCreator} />;
 }
-function EditSubjectForm({ teacherSubjectId, onClose }) {
+function EditSubjectForm({ teacherSubjectId, onClose, onOpenQuizCreator }) {
     const { data, isLoading, isError } = useTeacherSubjectDetail(teacherSubjectId);
     const { data: assignable = [] } = useAssignableActivities(teacherSubjectId);
     const saveMutation = useSaveTeacherSubject();
@@ -225,20 +225,29 @@ function EditSubjectForm({ teacherSubjectId, onClose }) {
                         </section>
 
                         <section>
-                            <h4 className="font-semibold mb-2">Juegos asignados</h4>
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <h4 className="font-semibold">Juegos asignados</h4>
+                                <button
+type="button"
+onClick={() => onOpenQuizCreator?.(teacherSubjectId)}
+className="inline-flex items-center gap-2 rounded-lg border border-violet-500/40 bg-violet-500/10 px-2.5 py-1.5 text-xs font-semibold text-violet-200 transition hover:border-violet-400 hover:bg-violet-500/20"
+                                >
++ Crear cuestionario
+                                </button>
+                            </div>
 
                             {visibleActivities.map((activity) => (
                                 <div key={activity.id}
-                                    className="flex justify-between items-center gap-2 bg-slate-800/60 border border-slate-700 rounded px-3 py-2 mb-2 text-sm">
-                                    <span className="flex-1">{activity.title}</span>
-                                    <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs px-2.5 py-0.5 rounded-full">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                        En funcionamiento
-                                    </span>
-                                    <button onClick={() => askRemoveActivity(activity)}
-                                        className="border border-red-500 text-red-400 rounded px-2 py-1 text-xs">
-                                        Quitar
-</                                  button>
+className="flex justify-between items-center gap-2 bg-slate-800/60 border border-slate-700 rounded px-3 py-2 mb-2 text-sm">
+<span className="flex-1">{activity.title}</span>
+<span className="inline-flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs px-2.5 py-0.5 rounded-full">
+<span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+    En funcionamiento
+</span>
+<button onClick={() => askRemoveActivity(activity)}
+    className="border border-red-500 text-red-400 rounded px-2 py-1 text-xs">
+    Quitar
+</button>
                                 </div>
                             ))}
                             {visibleActivities.length === 0 && (

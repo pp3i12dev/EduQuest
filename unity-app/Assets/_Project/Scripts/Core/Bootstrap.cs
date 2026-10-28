@@ -10,11 +10,13 @@ public class Bootstrap : MonoBehaviour
         var apiClient = new ApiClient(ApiConfig.BaseUrl, sessionManager);
         var authService = new AuthService(apiClient, sessionManager);
         var academicService = new AcademicService(apiClient);
+        var activityService = new ActivityService(apiClient);
 
         ServiceLocator.Register(sessionManager);
         ServiceLocator.Register(apiClient);
         ServiceLocator.Register(authService);
         ServiceLocator.Register(academicService);
+        ServiceLocator.Register(activityService);
 
         SceneLoader.LoadScene("Welcome");
     }

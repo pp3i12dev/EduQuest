@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import {
     BookOpen,
     GraduationCap,
@@ -11,12 +11,16 @@ import {
     LoaderCircle,
     Layers3,
     ArrowRight,
+    Plus,
 } from 'lucide-react';
 
+import { AuthContext } from '../context/AuthContext';
 import { useMyTeacherSubjects } from '../hooks/useTeacherSubject';
 import EditSubjectModal from '../components/EditSubjectModal';
+import QuizCreatorModal from '../components/QuizCreatorModal';
 
 export default function TeacherSubjectsView() {
+    const { user } = useContext(AuthContext);
     const {
         data: rows = [],
         isLoading,
@@ -24,6 +28,13 @@ export default function TeacherSubjectsView() {
     } = useMyTeacherSubjects();
 
     const [selectedId, setSelectedId] = useState(null);
+    const [selectedQuizSubjectId, setSelectedQuizSubjectId] = useState(null);
+    const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+
+    const openQuizCreator = (teacherSubjectId = null) => {
+        setSelectedQuizSubjectId(teacherSubjectId ?? rows[0]?.id ?? null);
+        setIsQuizModalOpen(true);
+    };
 
     const activeCount = rows.filter(
         row => Boolean(row.activities?.[0])
@@ -68,6 +79,19 @@ export default function TeacherSubjectsView() {
         </button>
     );
 
+    const renderQuizButton = row => (
+        <button
+            type="button"
+            onClick={() => openQuizCreator(row.id)}
+            title="Crear cuestionario"
+            aria-label={`Crear cuestionario para ${row.subject?.nombre || 'la materia'}`}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-sm font-semibold text-violet-200 transition-all hover:border-violet-400/60 hover:bg-violet-500/20 hover:text-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+        >
+            <Plus size={16} />
+            <span>Cuestionario</span>
+        </button>
+    );
+
     return (
         <div className="mx-auto w-full max-w-7xl space-y-7 pb-10 text-slate-100">
 
@@ -99,8 +123,19 @@ export default function TeacherSubjectsView() {
                         </div>
                     </div>
 
-                    <div className="hidden shrink-0 items-center justify-center rounded-2xl border border-slate-700/60 bg-slate-800/60 p-4 text-slate-500 lg:flex">
-                        <GraduationCap size={42} strokeWidth={1.5} />
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => openQuizCreator(rows[0]?.id ?? null)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2.5 text-sm font-semibold text-blue-200 transition hover:border-blue-400 hover:bg-blue-500/20"
+                        >
+                            <Plus size={16} />
+                            Crear cuestionario
+                        </button>
+
+                        <div className="hidden shrink-0 items-center justify-center rounded-2xl border border-slate-700/60 bg-slate-800/60 p-4 text-slate-500 lg:flex">
+                            <GraduationCap size={42} strokeWidth={1.5} />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -317,7 +352,10 @@ export default function TeacherSubjectsView() {
                                                         </td>
 
                                                         <td className="px-6 py-5 text-right">
-                                                            {renderEditButton(row)}
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                {renderQuizButton(row)}
+                                                                {renderEditButton(row)}
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 );
@@ -406,9 +444,25 @@ export default function TeacherSubjectsView() {
             </section>
 
             {/* MODAL DE EDICIÓN ORIGINAL */}
-            <EditSubjectModal
-                teacherSubjectId={selectedId}
-                onClose={() => setSelectedId(null)}
+            {selectedId && (
+                <EditSubjectModal
+                    teacherSubjectId={selectedId}
+                    onClose={() => setSelectedId(null)}
+                    onOpenQuizCreator={(subjectId) => {
+                        setSelectedId(null);
+                        openQuizCreator(subjectId);
+                    }}
+                />
+            )}
+
+            <QuizCreatorModal
+                isOpen={isQuizModalOpen}
+                teacherSubjectId={selectedQuizSubjectId}
+                teacherId={user?.id ?? null}
+                onClose={() => {
+                    setIsQuizModalOpen(false);
+                    setSelectedQuizSubjectId(null);
+                }}
             />
         </div>
     );
