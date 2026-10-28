@@ -42,6 +42,7 @@ export const PERMISSIONS = {
     'subjectContent:manage': ['TEACHER', 'PRECEPTOR', 'DIRECTOR'],
     'evaluation:manage': ['TEACHER'],
     'tracking:manage': ['TEACHER'],
+    'activity:manage': ['TEACHER'],
     'attendance:take': ['PRECEPTOR', 'TEACHER'],
 
     'selfSignup:approve': ['DIRECTOR', 'PRECEPTOR'],
