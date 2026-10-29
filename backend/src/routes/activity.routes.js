@@ -1,11 +1,13 @@
 import { Router } from 'express';
-import { saveDraft } from '../controllers/activity.controller.js';
-import authMiddleware from '../middlewares/auth.middleware.js';
-import permissionMiddleware from '../middlewares/permission.middleware.js';
+import { authenticate, requirePermission } from '../middlewares/auth.middleware.js';
+import { list, getOne, create, update } from '../controllers/activity.controller.js';
 
 const router = Router();
+router.use(authenticate, requirePermission('activity:manage'));
 
-router.post('/', authMiddleware, permissionMiddleware('activity:manage'), saveDraft);
-router.put('/:id', authMiddleware, permissionMiddleware('activity:manage'), saveDraft);
+router.get('/', list);
+router.get('/:id', getOne);
+router.post('/', create);
+router.put('/:id', update);
 
 export default router;
