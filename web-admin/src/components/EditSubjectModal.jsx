@@ -5,6 +5,8 @@ import {
     useSaveTeacherSubject,
 } from '../hooks/useTeacherSubject';
 import ConfirmDialog from './ConfirmDialog';
+import { TrueFalseActivityModal } from './TrueFalseActivityModal';
+
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx'];
@@ -45,6 +47,7 @@ function EditSubjectForm({ teacherSubjectId, onClose }) {
     const [showAssign, setShowAssign] = useState(false);
     const [localError, setLocalError] = useState('');
     const [pendingAction, setPendingAction] = useState(null);
+    const [isVFModalOpen, setIsVFModalOpen] = useState(false);
         const askDelete = (content) => setPendingAction({ type: 'content', item: content });
     const askRemoveActivity = (activity) => setPendingAction({ type: 'activity', item: activity });
 
@@ -245,10 +248,21 @@ function EditSubjectForm({ teacherSubjectId, onClose }) {
                                 <p className="text-slate-500 text-sm">No hay juegos asignados.</p>
                             )}
 
-                            <button onClick={() => setShowAssign((v) => !v)}
-                                className="mt-2 bg-blue-600 hover:bg-blue-700 rounded px-3 py-2 text-sm">
-                                + Asignar nuevo juego
-                            </button>
+                            <div className="flex gap-2 mt-2">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setShowAssign((v) => !v)}
+                                    className="bg-blue-600 hover:bg-blue-700 rounded px-3 py-2 text-sm">
+                                    + Asignar juego existente
+                                </button>
+
+                                <button 
+                                    type="button" 
+                                    onClick={() => setIsVFModalOpen(true)}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded px-3 py-2 text-sm font-medium">
+                                    + Crear Actividad V/F
+                                </button>
+                            </div>
 
                             {showAssign && (
                                 <div className="mt-3 border border-slate-700 rounded p-3 space-y-2">
@@ -293,6 +307,11 @@ function EditSubjectForm({ teacherSubjectId, onClose }) {
                 onConfirm={confirmPending}
                 onCancel={() => setPendingAction(null)}
                 />
+                <TrueFalseActivityModal
+            isOpen={isVFModalOpen}
+            onClose={() => setIsVFModalOpen(false)}
+            onSuccess={() => setIsVFModalOpen(false)}
+        />
         </div>
     );
 }

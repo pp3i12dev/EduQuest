@@ -2,6 +2,7 @@ enum ActivityStatus {
   ACTIVE
   MAINTENANCE
   INACTIVE
+  DRAFT
 }
 
 model Activity {
