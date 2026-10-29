@@ -75,6 +75,7 @@ model TeacherSubject {
   isActive Boolean @default(true)
   activities Activity[]
   contents TeacherSubjectContent[]
+  units Unit[]
   earlyNotices EarlyNotice[]
   affectedNoticeClasses EarlyNoticeClass[]
   @@unique([teacherId, subjectId, courseId])
