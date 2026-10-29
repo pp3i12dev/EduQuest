@@ -32,6 +32,7 @@ import SubjectSchedulesView from '../views/SubjectSchedulesView';
 
 import RoleRoute from './RoleRoute';
 import TeacherSubjectsView from '../views/TeacherSubjectsView';
+import UnitsView from '../views/UnitsView';
 import EarlyNoticesView from '../views/EarlyNoticesView';
 import InstitutionCommunicationsView from '../views/InstitutionCommunicationsView';
 
@@ -190,6 +191,15 @@ export default function AppRoutes() {
                         element={
                             <RoleRoute action="subjectContent:manage">
                                 <TeacherSubjectsView />
+                            </RoleRoute>
+                        }
+                    />
+                    
+                    <Route
+                        path="my-subjects/:teacherSubjectId/units"
+                        element={
+                            <RoleRoute action="subjectContent:manage">
+                                <UnitsView />
                             </RoleRoute>
                         }
                     />

@@ -1,0 +1,26 @@
+model Unit {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacherSubjectId Int
+  teacherSubject   TeacherSubject @relation(fields: [teacherSubjectId], references: [id], onDelete: Cascade)
+
+  activities UnitActivity[]
+
+  @@index([teacherSubjectId])
+}
+
+model UnitActivity {
+  id Int @id @default(autoincrement())
+
+  unitId Int
+  unit   Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  activityId Int
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([unitId, activityId])
+}
