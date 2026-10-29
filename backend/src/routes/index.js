@@ -10,6 +10,7 @@ import subjectRoutes from './subject.routes.js';
 import teacherSubjectRoutes from './teacherSubject.routes.js';
 import assignmentsRoutes from './assignment.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
+import gameRoutes from './game.routes.js';
 
 // Notificaciones
 import notificationRoutes from './notification.routes.js';
@@ -28,6 +29,7 @@ router.use('/teacher-subjects', teacherSubjectRoutes);
 
 router.use('/assignments', assignmentsRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/games', gameRoutes);
 
 // Notificaciones
 router.use('/notifications', notificationRoutes);
