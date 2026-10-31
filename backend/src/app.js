@@ -8,6 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import apiRouter from './routes/index.js';
+import studentRoutes from './routes/student.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import invitationsRoutes from './routes/invitations.routes.js';
 import publicRoutes from './routes/public.routes.js';
@@ -30,6 +31,7 @@ app.use('/api', apiRouter);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/invitations', invitationsRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/student', studentRoutes);
 
 // Avisos Tempranos
 app.use('/api/early-notices', earlyNoticeRoutes);

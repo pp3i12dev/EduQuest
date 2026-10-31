@@ -3,6 +3,7 @@ import {
     getMyActivity,
     createDraft,
     updateDraft,
+    setActivityStatus,
 } from '../services/activity.service.js';
 import { handleServiceError } from '../utils/handleServiceError.js';
 
@@ -43,6 +44,13 @@ export const create = async (req, res) => {
 export const update = async (req, res) => {
     try {
         return res.json(await updateDraft(req.user, parseId(req.params.id), req.body));
+    } catch (error) {
+        return handleServiceError(error, res);
+    }
+};
+export const changeStatus = async (req, res) => {
+    try {
+        return res.json(await setActivityStatus(req.user, parseId(req.params.id), req.body?.status));
     } catch (error) {
         return handleServiceError(error, res);
     }

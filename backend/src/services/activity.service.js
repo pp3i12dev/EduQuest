@@ -85,3 +85,14 @@ export const updateDraft = async (user, activityId, body) => {
     }
     return updateActivity(activityId, buildData(body ?? {}));
 };
+
+// Una actividad nace como DRAFT. Publicarla la vuelve asignable a una materia;
+// recién cuando esté vinculada a TeacherSubject aparece en Unity.
+export const setActivityStatus = async (user, activityId, status) => {
+    const teacher = await getTeacherProfile(user.id);
+    const activity = await getOwnActivity(teacher.id, activityId);
+    if (!['ACTIVE', 'MAINTENANCE', 'INACTIVE', 'DRAFT'].includes(status))
+        throw httpError(400, 'Estado de actividad inválido');
+    if (status === 'ACTIVE') cleanStatements(activity.content);
+    return updateActivity(activityId, { status });
+};

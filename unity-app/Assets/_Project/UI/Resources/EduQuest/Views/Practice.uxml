@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../../../USS/EduQuest.uss" />
+<ui:VisualElement class="screen"><ui:VisualElement class="layout"><ui:VisualElement class="sidebar"><ui:Label text="EDUQUEST" class="brand" />
+        <ui:Button name="nav-home" text="⌂   Inicio" class="nav" />
+        <ui:Button name="nav-subjects" text="▤   Materias" class="nav" />
+        <ui:Button name="nav-practice" text="▶   Jugar" class="nav" />
+        <ui:Button name="nav-history" text="★   Historial" class="nav" />
+        <ui:Button name="nav-profile" text="◉   Mi perfil" class="nav" />
+        <ui:Button name="nav-logout" text="Cerrar sesión" class="danger logout" />
+        </ui:VisualElement><ui:ScrollView class="main-scroll"><ui:VisualElement class="content"><ui:Label text="Zona de entrenamiento" class="heading" /><ui:Label text="Jugá para practicar sin afectar tus notas ni puntos." class="subheading" /><ui:VisualElement class="glass"><ui:VisualElement name="items" /></ui:VisualElement><ui:Label name="status" class="status" /></ui:VisualElement></ui:ScrollView></ui:VisualElement></ui:VisualElement>
+</ui:UXML>

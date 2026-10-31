@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../../../USS/EduQuest.uss" />
+<ui:VisualElement class="screen"><ui:ScrollView class="page-scroll"><ui:VisualElement class="container center"><ui:Label text="EDUQUEST" class="brand" /><ui:Label text="Ingresá a EduQuest" class="heading"/><ui:Label text="Acceso para alumnos con cuenta aprobada." class="subheading" /><ui:VisualElement class="glass auth"><ui:TextField name="identity" label="DNI o correo electrónico" class="field" /><ui:TextField name="password" label="Contraseña" class="field" /><ui:Button name="submit" text="Entrar al juego" class="primary" /><ui:Button name="back" text="Volver" class="ghost" /></ui:VisualElement><ui:Label name="status" class="status" /></ui:VisualElement></ui:ScrollView></ui:VisualElement>
+</ui:UXML>

@@ -6,6 +6,39 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/EduQuest/EQ_Welcome.unity
+    guid: d22ad851d4a64e0cb071ec5ddee9292c
+  - enabled: 1
+    path: Assets/_Project/Scenes/EduQuest/EQ_Login.unity
+    guid: 20c0ec4528074ff4a3158593f4c211a8
+  - enabled: 1
+    path: Assets/_Project/Scenes/EduQuest/EQ_Register.unity
+    guid: 3ad80f560a544398902c72ea12515036
+  - enabled: 1
+    path: Assets/_Project/Scenes/EduQuest/EQ_Home.unity
+    guid: e70751d7e3b74c0fae7115be269228b4
+  - enabled: 1
+    path: Assets/_Project/Scenes/EduQuest/EQ_Subjects.unity
+    guid: 344745ffe42545bebd61675deebfd90f
+  - enabled: 1
+    path: Assets/_Project/Scenes/EduQuest/EQ_Activities.unity
+    guid: e52798a1be694b4d817be3403454b042
+  - enabled: 1
+    path: Assets/_Project/Scenes/EduQuest/EQ_Profile.unity
+    guid: c19aa090cdeb4dd9bd925f8e2bce31cc
+  - enabled: 1
+    path: Assets/_Project/Scenes/EduQuest/EQ_History.unity
+    guid: 2476283d65ba43c593c33b08f3a4a555
+  - enabled: 1
+    path: Assets/_Project/Scenes/EduQuest/EQ_Practice.unity
+    guid: 59c55f40c6174df4891dca4ce06f995d
+  - enabled: 1
+    path: Assets/_Project/Scenes/EduQuest/EQ_Game.unity
+    guid: 60465920f62c4d4792bb75fed44740db
+  - enabled: 1
+    path: Assets/_Project/Scenes/EduQuest/EQ_Result.unity
+    guid: 026a15f948e54cd79665a35f975c5614
+  - enabled: 1
     path: Assets/_Project/Scenes/Boot.unity
     guid: cf75315f7ea39ef49aea7b526bcba486
   - enabled: 1

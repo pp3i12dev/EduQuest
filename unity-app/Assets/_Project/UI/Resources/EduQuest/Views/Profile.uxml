@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../../../USS/EduQuest.uss" />
+<ui:VisualElement class="screen"><ui:VisualElement class="layout"><ui:VisualElement class="sidebar"><ui:Label text="EDUQUEST" class="brand" />
+        <ui:Button name="nav-home" text="⌂   Inicio" class="nav" />
+        <ui:Button name="nav-subjects" text="▤   Materias" class="nav" />
+        <ui:Button name="nav-practice" text="▶   Jugar" class="nav" />
+        <ui:Button name="nav-history" text="★   Historial" class="nav" />
+        <ui:Button name="nav-profile" text="◉   Mi perfil" class="nav" />
+        <ui:Button name="nav-logout" text="Cerrar sesión" class="danger logout" />
+        </ui:VisualElement><ui:ScrollView class="main-scroll"><ui:VisualElement class="content"><ui:Label text="Mi perfil" class="heading" /><ui:Label text="Actualizá tus datos personales y tu contraseña." class="subheading" /><ui:VisualElement class="glass"><ui:Label name="identity-info" text="Cargando..." class="muted" /><ui:TextField name="first-name" label="Nombre" class="field" /><ui:TextField name="last-name" label="Apellido" class="field" /><ui:TextField name="email" label="Correo electrónico" class="field" /><ui:TextField name="phone" label="Teléfono" class="field" /><ui:Button name="save" text="Guardar cambios" class="primary" /></ui:VisualElement><ui:VisualElement class="glass"><ui:Label text="Cambiar contraseña" class="question" /><ui:TextField name="current-password" label="Contraseña actual" class="field" /><ui:TextField name="new-password" label="Nueva contraseña" class="field" /><ui:TextField name="confirm-password" label="Confirmar nueva contraseña" class="field" /><ui:Button name="password-save" text="Cambiar contraseña" class="secondary" /></ui:VisualElement><ui:Label name="status" class="status" /></ui:VisualElement></ui:ScrollView></ui:VisualElement></ui:VisualElement>
+</ui:UXML>

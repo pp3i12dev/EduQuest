@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../../../USS/EduQuest.uss" />
+<ui:VisualElement class="screen"><ui:VisualElement class="layout"><ui:VisualElement class="sidebar"><ui:Label text="EDUQUEST" class="brand" />
+        <ui:Button name="nav-home" text="⌂   Inicio" class="nav" />
+        <ui:Button name="nav-subjects" text="▤   Materias" class="nav" />
+        <ui:Button name="nav-practice" text="▶   Jugar" class="nav" />
+        <ui:Button name="nav-history" text="★   Historial" class="nav" />
+        <ui:Button name="nav-profile" text="◉   Mi perfil" class="nav" />
+        <ui:Button name="nav-logout" text="Cerrar sesión" class="danger logout" />
+        </ui:VisualElement><ui:ScrollView class="main-scroll"><ui:VisualElement class="content"><ui:Label text="Centro de aventuras" class="heading" /><ui:Label text="Tu progreso en EduQuest" class="subheading" /><ui:VisualElement class="glass"><ui:VisualElement class="row"><ui:VisualElement name="avatar" class="avatar gap" /><ui:VisualElement><ui:Label name="student-name" text="Cargando alumno..." class="heading" /><ui:Label text="ALUMNO" class="eyebrow" /><ui:Button name="edit-profile" text="Editar perfil" class="ghost" /></ui:VisualElement></ui:VisualElement></ui:VisualElement><ui:VisualElement class="glass"><ui:VisualElement class="grid-row"><ui:VisualElement class="stat"><ui:Label name="level" text="—" class="stat-number" /><ui:Label text="NIVEL" class="stat-label" /></ui:VisualElement><ui:VisualElement class="stat"><ui:Label name="points" text="—" class="stat-number" /><ui:Label text="PUNTOS TOTALES" class="stat-label" /></ui:VisualElement><ui:VisualElement class="stat"><ui:Label name="coins" text="—" class="stat-number" /><ui:Label text="MONEDAS" class="stat-label" /></ui:VisualElement></ui:VisualElement></ui:VisualElement><ui:VisualElement class="glass"><ui:Label name="progress" class="text" text="Cargando misiones..." /></ui:VisualElement><ui:Label name="status" class="status" /></ui:VisualElement></ui:ScrollView></ui:VisualElement></ui:VisualElement>
+</ui:UXML>

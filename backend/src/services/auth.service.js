@@ -96,6 +96,8 @@ export const registerStudentService = async (data) => {
         password,
         firstName,
         lastName,
+        telefono,
+        careerId,
         institutionId,
         courseId,
     } = data;
@@ -128,6 +130,9 @@ export const registerStudentService = async (data) => {
         );
     }
 
+    if (careerId != null && course.careerId !== Number(careerId)) {
+        throw new ServiceError('El curso no pertenece a la carrera seleccionada', 400);
+    }
     const passwordHash = await hashPassword(password);
 
     const user =
@@ -138,6 +143,7 @@ export const registerStudentService = async (data) => {
                 passwordHash,
                 firstName,
                 lastName,
+                telefono: typeof telefono === 'string' && telefono.trim() ? telefono.trim() : null,
                 institutionId: Number(institutionId),
             },
             courseId: Number(courseId),
