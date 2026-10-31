@@ -36,7 +36,11 @@ namespace EduQuest.Student
 
             VisualElement screen = root.Q<VisualElement>(className: "screen");
             if (screen == null) return;
-            screen.AddToClassList("mobile-portrait");
+            screen.EnableInClassList("mobile-portrait", isPortrait);
+            // Ratio visible (sin notch ni barras del SO): ajustar pantallas cortas.
+            float usableAspect = width > 0 ? safe.height / Mathf.Max(1f, safe.width) : 2.16f;
+            screen.EnableInClassList("eq-compact", isPortrait && usableAspect < 2.08f);
+            screen.EnableInClassList("eq-very-short", isPortrait && usableAspect < 1.85f);
             // En el nuevo tema los botones del drawer conservan sus propios
             // iconos/etiquetas UXML. Renombrarlos aquí los borraría.
             if (!screen.ClassListContains("eq-theme"))

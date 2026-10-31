@@ -27,6 +27,8 @@ namespace EduQuest.Student
             // StudentNavigation puede abrirla en Editor aunque el perfil Android
             // todavía no tenga una Scene List; para un APK sí debe incluirse.
             Click("forgot", () => StudentNavigation.Go("ForgotPassword"));
+            Click("register", () => StudentNavigation.Go("Register"));
+            Click("web-admin", () => Application.OpenURL(ApiConfig.WebAdminUrl));
             Click("submit", () => Run(async () =>
             {
                 string identity = Value("identity");

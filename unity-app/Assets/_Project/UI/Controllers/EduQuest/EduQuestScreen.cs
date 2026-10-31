@@ -54,6 +54,14 @@ namespace EduQuest.Student
                 return;
             }
             EduQuestMobileLayout.Apply(root, document.panelSettings);
+            // Scroll táctil vertical sin barras visibles en TODAS las pantallas.
+            // Un ScrollView para registro/historial sí es necesario en teléfonos pequeños.
+            root.Query<ScrollView>().ForEach(scroll =>
+            {
+                scroll.mode = ScrollViewMode.Vertical;
+                scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+                scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            });
             ApplyThemeArt();
             status = root.Q<Label>("status");
             if (status == null) Debug.LogWarning("EduQuest: falta Label status en " + currentScene);
@@ -95,7 +103,7 @@ namespace EduQuest.Student
             if (screen != null && backdrop != null)
             {
                 screen.style.backgroundImage = new StyleBackground(backdrop);
-                screen.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
+                screen.style.unityBackgroundScaleMode = ScaleMode.ScaleAndCrop;
             }
             PaintClass("art-logo", "Logo");
             PaintClass("art-star", "AchievementStar");
@@ -104,9 +112,23 @@ namespace EduQuest.Student
             PaintClass("art-book", "BookIllustration");
             PaintClass("art-gamepad", "GamepadIllustration");
             PaintClass("art-bars", "ProgressIllustration");
-            PaintClass("art-avatar", "AvatarIllustration");
+            PaintClass("art-avatar", "Avatar");
             PaintClass("art-mail", "MailIllustration");
             PaintClass("art-menu", "MenuIllustration");
+            PaintClass("art-navhome", "NavHome");
+            PaintClass("art-navplay", "NavPlay");
+            PaintClass("art-navsubjects", "NavSubjects");
+            PaintClass("art-navhistory", "NavHistory");
+            PaintClass("art-navprofile", "NavProfile");
+            PaintClass("art-navlogout", "NavLogout");
+            PaintClass("art-navsettings", "IconSettings");
+            PaintClass("art-navhelp", "IconHelp");
+            PaintClass("art-icon-mail", "IconMail");
+            PaintClass("art-icon-lock", "IconLock");
+            PaintClass("art-icon-eye", "IconEye");
+            PaintClass("art-icon-desktop", "IconDesktop");
+            PaintClass("art-icon-userplus", "IconUserPlus");
+            PaintClass("art-icon-info", "IconInfo");
             PaintClass("home-tile", "GoldTile", true);
             PaintClass("primary", "GoldButton", true);
             var drawerTexture = Resources.Load<Texture2D>("EduQuest/DrawerPurple");
@@ -150,10 +172,27 @@ namespace EduQuest.Student
             Click("nav-practice", () => StudentNavigation.Go("Practice"));
             Click("nav-history", () => StudentNavigation.Go("History"));
             Click("nav-profile", () => StudentNavigation.Go("Profile"));
+            Click("nav-settings", () => Status("Configuración estará disponible próximamente.", true));
+            Click("nav-help", () => Status("Ayuda estará disponible próximamente.", true));
             Click("nav-logout", () =>
             {
                 EduQuestRuntime.Session.ClearSession(); StudentNavigation.Reset(); StudentNavigation.Go("Welcome");
             });
+
+            string activeName = currentScene switch
+            {
+                "Practice" => "nav-practice",
+                "Subjects" => "nav-subjects",
+                "Activities" => "nav-subjects",
+                "History" => "nav-history",
+                "Profile" => "nav-profile",
+                _ => "nav-home"
+            };
+            foreach (var name in new[] { "nav-home", "nav-practice", "nav-subjects", "nav-history", "nav-profile", "nav-settings", "nav-help" })
+            {
+                var btn = root.Q<Button>(name);
+                if (btn != null) btn.EnableInClassList("nav-active", name == activeName);
+            }
         }
         private void Click(string name, Action callback)
         {

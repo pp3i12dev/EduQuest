@@ -242,3 +242,335 @@
 .eq-theme .generic-content .content-panel { margin-top: 6px; }
 .eq-theme .generic-content .heading { font-size: 25px; }
 .eq-theme .generic-content .list-action { width: 100%; min-width: 0; }
+
+
+/* ==========================================================================
+   EduQuest Android / Responsive v2 - Assets(7).rar
+   Resolución independiente: menú iconográfico y scroll táctil sin indicadores.
+   ========================================================================== */
+.eq-theme.screen { width: 100%; height: 100%; min-width: 0; overflow: hidden; }
+.eq-theme .layout, .eq-theme .main-scroll, .eq-theme .page-scroll,
+.eq-theme .content, .eq-theme .container, .eq-theme .white-panel,
+.eq-theme .student-card, .eq-theme .hero-info,
+.eq-theme .auth-fields { min-width: 0; }
+.eq-theme .page-scroll, .eq-theme .main-scroll { width: 100%; flex-shrink: 1; }
+.eq-theme .eq-scroll .unity-scroll-view__vertical-scroller,
+.eq-theme .eq-scroll .unity-scroll-view__horizontal-scroller { display: none; width: 0; }
+.eq-theme .eq-scroll .unity-scroll-view__content-container { min-width: 0; }
+/* Evitar padding inferior de "dock" antiguo: la navegación actual es un drawer. */
+.eq-theme .content { padding-bottom: 14px; }
+.eq-theme .container { padding-bottom: 22px; }
+.eq-theme .home-content { padding-bottom: 12px; }
+.eq-theme .home-menu-layer .sidebar .nav,
+.eq-theme .home-menu-layer .sidebar .logout {
+   display: flex; flex-direction: row; align-items: center;
+   justify-content: flex-start; min-width: 0;
+   padding-left: 12px; padding-right: 9px;
+}
+.eq-theme .home-menu-layer .sidebar .nav .drawer-nav-icon,
+.eq-theme .home-menu-layer .sidebar .logout .drawer-nav-icon {
+    width: 33px; min-width: 33px; height: 33px; flex-shrink: 0;
+    margin-right: 13px; -unity-background-scale-mode: scale-to-fit;
+}
+.eq-theme .home-menu-layer .sidebar .nav .drawer-nav-label,
+.eq-theme .home-menu-layer .sidebar .logout .drawer-nav-label {
+    color: white; font-size: 16px; -unity-font-style: bold;
+    -unity-text-align: middle-left; white-space: normal;
+    flex-grow: 1; flex-shrink: 1; min-width: 0;
+}
+.eq-theme .home-menu-layer .sidebar .nav-active .drawer-nav-label { color: rgb(49,26,113); }
+.eq-theme .home-menu-layer .sidebar .logout { margin-top: 5px; }
+/* Evitar proporciones forzadas que dilatan avatar, logo o iconos. */
+.eq-theme .hero-avatar, .eq-theme .drawer-avatar,
+.eq-theme .tile-icon, .eq-theme .stat-symbol,
+.eq-theme .logo-star, .eq-theme .logo-text,
+.eq-theme .home-menu, .eq-theme .drawer-nav-icon {
+    -unity-background-scale-mode: scale-to-fit;
+}
+.eq-theme .home-topbar { flex-shrink: 0; }
+.eq-theme .home-tile { min-width: 0; }
+.eq-theme .tile-title, .eq-theme .tile-subtitle, .eq-theme .hero-name { white-space: normal; }
+/* Celulares con menor superficie vertical utilizable: conservar las 4 tarjetas
+   visibles si caben, pero nunca cortar el registro ni el historial. */
+.eq-theme.eq-compact .content { padding-top: 8px; padding-bottom: 9px; }
+.eq-theme.eq-compact .home-topbar { min-height: 64px; margin-bottom: 6px; }
+.eq-theme.eq-compact .logo-group.small { height: 60px; }
+.eq-theme.eq-compact .student-card { min-height: 120px; padding: 10px; margin-bottom: 9px; }
+.eq-theme.eq-compact .hero-avatar { height: 94px; width: 94px; min-width: 94px; border-radius: 47px; margin-right: 9px; }
+.eq-theme.eq-compact .hero-name { font-size: 17px; }
+.eq-theme.eq-compact .level-text { font-size: 16px; margin-bottom: 5px; }
+.eq-theme.eq-compact .home-tile { height: 151px; padding-top: 7px; padding-bottom: 7px; }
+.eq-theme.eq-compact .tile-icon { width: 72px; height: 66px; }
+.eq-theme.eq-compact .tile-title { font-size: 19px; }
+.eq-theme.eq-compact .tile-row { margin-bottom: 9px; }
+.eq-theme.eq-compact .home-menu-layer .sidebar { padding-top: 15px; padding-bottom: 12px; }
+.eq-theme.eq-compact .drawer-avatar { width: 76px; height: 76px; margin-bottom: 4px; }
+.eq-theme.eq-compact .drawer-head { margin-bottom: 8px; }
+.eq-theme.eq-compact .drawer-close { height: 38px; min-height: 38px; margin-bottom: 7px; }
+.eq-theme.eq-compact .home-menu-layer .sidebar .nav { height: 47px; min-height: 47px; margin-top: 0; margin-bottom: 3px; }
+.eq-theme.eq-compact .home-menu-layer .sidebar .logout { height: 48px; min-height: 48px; }
+.eq-theme.eq-compact .logo-group.large { height: 158px; margin-top: 10px; }
+.eq-theme.eq-compact .logo-group { margin-bottom: 7px; }
+.eq-theme.eq-compact .auth-fields { padding-top: 7px; }
+.eq-theme.eq-compact.login-screen .logo-group { height: 152px; margin-top: 10px; }
+.eq-theme.eq-compact.welcome-screen .logo-group { height: 180px; margin-top: 12px; }
+.eq-theme.eq-compact .auth-actions { margin-top: 7px; }
+.eq-theme.eq-compact .heading { margin-top: 4px; margin-bottom: 7px; font-size: 25px; }
+.eq-theme.eq-compact .subheading { margin-bottom: 12px; font-size: 15px; }
+.eq-theme.eq-compact .primary { min-height: 48px; height: 52px; margin-top: 6px; margin-bottom: 8px; }
+.eq-theme.eq-compact .outline-button { min-height: 46px; height: 49px; margin-bottom: 8px; }
+.eq-theme.eq-compact .field { margin-bottom: 7px; }
+.eq-theme.eq-compact .field .unity-base-field__input { min-height: 46px; }
+/* En teléfonos muy cortos priorizar el tacto y permitir scroll vertical discreto. */
+.eq-theme.eq-very-short .home-tile { height: 132px; }
+.eq-theme.eq-very-short .tile-icon { width: 58px; height: 52px; }
+.eq-theme.eq-very-short .tile-title { font-size: 18px; }
+.eq-theme.eq-very-short .student-card { min-height: 100px; }
+.eq-theme.eq-very-short .hero-avatar { width: 78px; height: 78px; min-width: 78px; border-radius: 40px; }
+.eq-theme.eq-very-short .drawer-avatar { width: 62px; height: 62px; }
+.eq-theme.eq-very-short .home-menu-layer .sidebar .nav { height: 43px; min-height: 43px; }
+.eq-theme.eq-very-short .home-menu-layer .sidebar .nav .drawer-nav-icon { width: 27px; min-width: 27px; height: 27px; }
+
+
+/* =======================================================================
+   EduQuest Exact Mockup pass - Assets(8)
+   Auth icon fields, exact drawer layout, tighter mobile artboard.
+   ======================================================================= */
+.eq-theme .auth-card-layout { align-items: center; }
+.eq-theme .exact-auth-block { width: 100%; max-width: 360px; align-self: center; }
+.eq-theme.login-screen .heading { margin-top: 4px; margin-bottom: 18px; }
+.eq-theme .field-shell { position: relative; width: 100%; height: 56px; min-height: 56px; margin-bottom: 12px; }
+.eq-theme .field-inline { position: absolute; left: 0; right: 0; top: 0; bottom: 0; margin-bottom: 0; }
+.eq-theme .field-inline > .unity-base-field__label { display: none; }
+.eq-theme .field-inline > .unity-base-field__input { padding-left: 56px; padding-right: 18px; min-height: 56px; height: 56px; border-width: 2px; border-color: rgb(193,185,238); border-radius: 20px; }
+.eq-theme .password-inline > .unity-base-field__input { padding-right: 54px; }
+.eq-theme .field-inline .unity-text-field__input { font-size: 16px; color: rgb(53,45,122); }
+.eq-theme .field-icon, .eq-theme .field-eye { position: absolute; top: 14px; width: 28px; height: 28px; -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .field-icon { left: 16px; }
+.eq-theme .field-eye { right: 16px; opacity: 0.9; }
+.eq-theme .forgot-link { margin-top: 2px; margin-bottom: 10px; height: 38px; min-height: 38px; border-radius: 10px; border-width: 0; }
+.eq-theme .separator-row { flex-direction: row; align-items: center; width: 100%; margin-top: 4px; margin-bottom: 12px; }
+.eq-theme .separator-line { flex-grow: 1; height: 2px; background-color: rgba(140,128,205,0.55); }
+.eq-theme .separator-row .or-separator { margin-top: 0; margin-bottom: 0; width: 34px; }
+.eq-theme .icon-outline-button { display: flex; flex-direction: row; align-items: center; justify-content: center; padding-left: 16px; padding-right: 16px; }
+.eq-theme .btn-inline-icon { width: 26px; min-width: 26px; height: 26px; margin-right: 12px; -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .btn-inline-label { color: rgb(46,25,142); -unity-font-style: bold; font-size: 16px; }
+.eq-theme .assistive-hidden { display: none; }
+.eq-theme .recovery-description { max-width: 360px; align-self: center; }
+.eq-theme .recovery-note-box { flex-direction: row; align-items: center; width: 100%; max-width: 360px; padding: 16px 16px; background-color: rgba(227,207,255,0.75); border-radius: 22px; margin-top: 20px; }
+.eq-theme .note-icon { width: 26px; min-width: 26px; height: 26px; margin-right: 10px; -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .recovery-note-box .recovery-note { flex-grow: 1; margin-top: 0; padding: 0; background-color: rgba(0,0,0,0); border-radius: 0; font-size: 15px; }
+.eq-theme .back-square { -unity-font-style: bold; }
+.eq-theme .hero-role { display: none; }
+.eq-theme .home-topbar { margin-bottom: 11px; }
+.eq-theme .home-top-stats { width: 96px; }
+.eq-theme .top-stat { width: 96px; min-height: 38px; border-radius: 18px; }
+.eq-theme .top-stat-value { font-size: 16px; }
+.eq-theme .student-card { min-height: 142px; padding: 12px; border-radius: 24px; }
+.eq-theme .hero-avatar { width: 104px; height: 104px; min-width: 104px; border-radius: 52px; margin-right: 12px; }
+.eq-theme .hero-name { font-size: 18px; margin-bottom: 6px; }
+.eq-theme .level-text { font-size: 18px; margin-bottom: 12px; }
+.eq-theme .level-track { height: 16px; border-radius: 10px; }
+.eq-theme .level-fill { height: 16px; width: 70%; background-color: rgb(255,161,13); }
+.eq-theme .game-tiles { margin-top: 2px; }
+.eq-theme .home-tile { height: 172px; border-radius: 22px; }
+.eq-theme .tile-icon { width: 84px; height: 74px; }
+.eq-theme .tile-title { font-size: 20px; margin-top: 2px; }
+.eq-theme .tile-subtitle { font-size: 11px; padding-left: 8px; padding-right: 8px; }
+.eq-theme .profile-link { display: none; }
+.eq-theme .status { margin-top: 8px; }
+.eq-theme .home-menu-layer .sidebar { width: 84%; max-width: 360px; padding: 18px 14px 18px 14px; }
+.eq-theme .drawer-head { align-items: stretch; }
+.eq-theme .drawer-close { align-self: flex-end; width: 50px; height: 50px; margin-bottom: 8px; border-radius: 14px; font-size: 24px; color: rgb(55,34,138); }
+.eq-theme .drawer-avatar { width: 78px; height: 78px; align-self: flex-start; margin-bottom: 6px; }
+.eq-theme .drawer-name { font-size: 18px; -unity-text-align: middle-left; margin-left: 90px; margin-top: -76px; }
+.eq-theme .drawer-level { font-size: 12px; margin-left: 90px; margin-top: 2px; margin-bottom: 18px; }
+.eq-theme .home-menu-layer .sidebar .nav, .eq-theme .home-menu-layer .sidebar .logout { height: 52px; min-height: 52px; border-radius: 25px; margin-bottom: 3px; }
+.eq-theme .home-menu-layer .sidebar .nav .drawer-nav-label, .eq-theme .home-menu-layer .sidebar .logout .drawer-nav-label { font-size: 16px; }
+.eq-theme .home-menu-layer .sidebar .nav .drawer-nav-icon, .eq-theme .home-menu-layer .sidebar .logout .drawer-nav-icon { width: 28px; min-width: 28px; height: 28px; margin-right: 14px; }
+.eq-theme .drawer-divider { height: 2px; background-color: rgba(255,255,255,0.4); margin-top: 10px; margin-bottom: 10px; margin-left: 6px; margin-right: 6px; }
+.eq-theme .home-menu-layer .sidebar .logout { margin-top: 2px; }
+.eq-theme .generic-content .white-panel, .eq-theme .white-panel.content-panel { border-radius: 24px; }
+.eq-theme .generic-content .heading { font-size: 24px; }
+.eq-theme .generic-content .subheading { font-size: 15px; }
+.eq-theme .generic-content .glass { background-color: rgba(245,238,255,0.9); border-color: rgb(219,206,248); border-radius: 20px; }
+.eq-theme .generic-content .list-action, .eq-theme .generic-content .secondary, .eq-theme .generic-content .ghost, .eq-theme .generic-content .primary { min-height: 48px; height: 48px; border-radius: 24px; }
+.eq-theme .register-layout .form-wide { max-width: 390px; align-self: center; }
+.eq-theme .register-layout .white-panel .field .unity-base-field__input { min-height: 50px; }
+.eq-theme .home-content, .eq-theme .generic-content { max-width: 392px; align-self: center; width: 100%; }
+.eq-theme .container.auth-layout, .eq-theme .container.register-layout { max-width: 392px; align-self: center; width: 100%; }
+.eq-theme.eq-compact .home-tile { height: 154px; }
+.eq-theme.eq-compact .tile-icon { width: 70px; height: 62px; }
+.eq-theme.eq-compact .hero-avatar { width: 90px; height: 90px; min-width: 90px; }
+.eq-theme.eq-compact .student-card { min-height: 124px; }
+.eq-theme.eq-compact .drawer-name { margin-left: 78px; margin-top: -66px; }
+.eq-theme.eq-compact .drawer-level { margin-left: 78px; margin-bottom: 12px; }
+
+
+/* === Patch visual fino móvil 2026-10-31 / Assets(9) === */
+.eq-theme .eq-scroll > .unity-scroll-view__content-container { align-items: center; width: 100%; }
+.eq-theme .main-scroll > .unity-scroll-view__content-container { align-items: center; width: 100%; }
+.eq-theme .page-scroll > .unity-scroll-view__content-container { align-items: center; width: 100%; }
+.eq-theme .content, .eq-theme .container { width: 100%; }
+.eq-theme .home-content, .eq-theme .generic-content, .eq-theme .container.auth-layout, .eq-theme .container.register-layout { max-width: 372px; padding-left: 12px; padding-right: 12px; }
+.eq-theme .logo-group.large { width: 230px; height: 118px; margin-top: 8px; margin-bottom: 8px; }
+.eq-theme .logo-group.small { width: 120px; height: 54px; }
+.eq-theme .heading { max-width: 340px; align-self: center; }
+.eq-theme .subheading { max-width: 340px; align-self: center; }
+.eq-theme .student-card { overflow: hidden; }
+.eq-theme .hero-avatar, .eq-theme .drawer-avatar { border-width: 5px; border-color: rgb(246,199,26); border-radius: 999px; overflow: hidden; background-color: white; }
+.eq-theme .hero-avatar { width: 102px; height: 102px; min-width: 102px; }
+.eq-theme .drawer-avatar { width: 78px; height: 78px; min-width: 78px; margin-bottom: 4px; }
+.eq-theme .drawer-name { color: white; -unity-font-style: bold; }
+.eq-theme .drawer-level { color: white; opacity: 0.95; }
+.eq-theme .home-menu-layer .sidebar { padding-top: 12px; padding-left: 14px; padding-right: 14px; padding-bottom: 16px; }
+.eq-theme .home-menu-layer .sidebar .nav,
+.eq-theme .home-menu-layer .sidebar .logout {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    align-items: center;
+    padding-left: 12px;
+    padding-right: 12px;
+    border-width: 0;
+    background-color: rgba(255,255,255,0);
+}
+.eq-theme .home-menu-layer .sidebar .nav .drawer-nav-icon,
+.eq-theme .home-menu-layer .sidebar .logout .drawer-nav-icon {
+    flex-shrink: 0;
+    margin-left: 2px;
+    margin-right: 12px;
+    width: 26px; min-width: 26px; height: 26px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+.eq-theme .home-menu-layer .sidebar .nav .drawer-nav-label,
+.eq-theme .home-menu-layer .sidebar .logout .drawer-nav-label {
+    flex-grow: 1;
+    color: white;
+    white-space: normal;
+    -unity-text-align: middle-left;
+}
+.eq-theme .home-menu-layer .sidebar .logout {
+    margin-top: 6px;
+    min-height: 50px;
+    height: 50px;
+    border-radius: 12px;
+}
+.eq-theme .home-menu-layer .sidebar .logout:hover,
+.eq-theme .home-menu-layer .sidebar .logout:active {
+    background-color: rgba(255,255,255,0.08);
+}
+.eq-theme .drawer-divider { margin-top: 6px; margin-bottom: 6px; }
+.eq-theme .drawer-spacer { flex-grow: 1; }
+.eq-theme .featured-game { width: 100%; min-width: 0; background-color: rgba(255,255,255,0.78); border-radius: 22px; padding: 16px; border-width: 2px; border-color: rgb(230,207,82); margin-bottom: 12px; }
+.eq-theme .featured-tag, .eq-theme .featured-title, .eq-theme .featured-detail { width: 100%; min-width: 0; white-space: normal; }
+.eq-theme .featured-tag { color: rgb(123,96,26); font-size: 11px; -unity-font-style: bold; margin-bottom: 6px; }
+.eq-theme .featured-title { color: rgb(45,28,123); font-size: 24px; -unity-font-style: bold; margin-bottom: 8px; }
+.eq-theme .featured-detail { color: rgb(72,65,130); font-size: 13px; line-height: 18px; margin-bottom: 12px; }
+.eq-theme .featured-action { width: 100%; }
+.eq-theme .list-row { width: 100%; min-width: 0; }
+.eq-theme .list-copy { flex-grow: 1; min-width: 0; }
+.eq-theme .list-title, .eq-theme .list-subtitle { white-space: normal; max-width: 100%; }
+.eq-theme .list-title { font-size: 18px; }
+.eq-theme .list-subtitle { font-size: 13px; }
+.eq-theme .primary, .eq-theme .secondary, .eq-theme .outline-button, .eq-theme .ghost, .eq-theme .danger { border-radius: 22px; }
+.eq-theme .recovery-envelope { width: 206px; height: 168px; margin-top: 12px; margin-bottom: 14px; }
+.eq-theme .recovery-layout { padding-top: 4px; }
+.eq-theme .home-mobile .home-topbar { padding-top: 2px; }
+.eq-theme .home-top-stats { gap: 4px; }
+.eq-theme .tile-row { gap: 12px; }
+.eq-theme .home-tile { padding-left: 8px; padding-right: 8px; }
+.eq-theme.eq-compact .home-content, .eq-theme.eq-compact .generic-content, .eq-theme.eq-compact .container.auth-layout, .eq-theme.eq-compact .container.register-layout { max-width: 356px; }
+.eq-theme.eq-compact .student-card { min-height: 120px; }
+.eq-theme.eq-compact .home-tile { height: 148px; }
+.eq-theme.eq-compact .featured-title { font-size: 21px; }
+.eq-theme.eq-compact .drawer-name { margin-top: -68px; }
+
+
+/* === Revisión profunda final: welcome/logo/alineación general === */
+.eq-theme .container.auth-layout {
+    padding-top: 18px;
+    padding-bottom: 22px;
+}
+.eq-theme .welcome-layout,
+.eq-theme .auth-card-layout,
+.eq-theme .recovery-layout {
+    justify-content: center;
+    align-items: center;
+}
+.eq-theme .welcome-layout .heading,
+.eq-theme .welcome-layout .subheading,
+.eq-theme .auth-card-layout .heading,
+.eq-theme .auth-card-layout .subheading,
+.eq-theme .recovery-layout .heading,
+.eq-theme .recovery-layout .subheading {
+    text-align: center;
+    -unity-text-align: middle-center;
+}
+.eq-theme .welcome-layout .auth-actions {
+    width: 100%;
+    max-width: 360px;
+    align-self: center;
+    margin-top: 20px;
+}
+.eq-theme .logo-group {
+    width: 300px;
+    align-self: center;
+}
+.eq-theme .logo-group.large {
+    width: 300px;
+    height: 150px;
+    margin-top: 10px;
+    margin-bottom: 12px;
+}
+.eq-theme .logo-star {
+    width: 118px;
+    height: 110px;
+    margin-bottom: -24px;
+    align-self: center;
+}
+.eq-theme .logo-text {
+    width: 300px;
+    height: 76px;
+    align-self: center;
+}
+.eq-theme .welcome-screen .logo-group,
+.eq-theme .login-screen .logo-group {
+    margin-top: 8px;
+}
+.eq-theme .welcome-screen .auth-actions,
+.eq-theme .login-screen .auth-fields {
+    margin-top: 12px;
+}
+.eq-theme .page-scroll,
+.eq-theme .main-scroll {
+    padding-top: 0;
+}
+.eq-theme .home-content,
+.eq-theme .generic-content,
+.eq-theme .container.auth-layout,
+.eq-theme .container.register-layout {
+    padding-top: 16px;
+}
+.eq-theme .content {
+    padding-top: 16px;
+}
+.eq-theme .home-topbar { margin-top: 2px; }
+.eq-theme .home-menu-layer .sidebar .nav-active { display:flex; align-items:center; }
+.eq-theme .home-menu-layer .sidebar .logout { display:flex; align-items:center; }
+.eq-theme .drawer-head { margin-bottom: 10px; }
+.eq-theme .drawer-avatar { background-position: center center; }
+.eq-theme .hero-avatar { background-position: center center; }
+/* quita cualquier rigidez extra en las pantallas verticales */
+.eq-theme .screen { justify-content: flex-start; }
+.eq-theme.eq-compact .container.auth-layout {
+    padding-top: 10px;
+    padding-bottom: 14px;
+}
+.eq-theme.eq-compact .logo-group.large {
+    width: 274px;
+    height: 132px;
+    margin-top: 6px;
+}
+.eq-theme.eq-compact .logo-text { width: 274px; height: 68px; }
+.eq-theme.eq-compact .logo-star { width: 108px; height: 98px; }

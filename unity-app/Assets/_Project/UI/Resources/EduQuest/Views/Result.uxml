@@ -7,12 +7,13 @@
     <ui:Label name="drawer-name" text="Estudiante" class="drawer-name" />
     <ui:Label name="drawer-level" text="Alumno de EduQuest" class="drawer-level" />
   </ui:VisualElement>
-  <ui:Button name="nav-home" text="⌂   Inicio" class="nav nav-active" />
-  <ui:Button name="nav-practice" text="▶   Jugar (Práctica)" class="nav" />
-  <ui:Button name="nav-subjects" text="▣   Materias" class="nav" />
-  <ui:Button name="nav-history" text="★   Historial" class="nav" />
-  <ui:Button name="nav-profile" text="●   Perfil" class="nav" />
+  <ui:Button name="nav-home" class="nav nav-active"><ui:VisualElement class="drawer-nav-icon art-navhome" /><ui:Label text="Inicio" class="drawer-nav-label" /></ui:Button>
+  <ui:Button name="nav-practice" class="nav"><ui:VisualElement class="drawer-nav-icon art-navplay" /><ui:Label text="Jugar (Práctica)" class="drawer-nav-label" /></ui:Button>
+  <ui:Button name="nav-subjects" class="nav"><ui:VisualElement class="drawer-nav-icon art-navsubjects" /><ui:Label text="Materias" class="drawer-nav-label" /></ui:Button>
+  <ui:Button name="nav-history" class="nav"><ui:VisualElement class="drawer-nav-icon art-navhistory" /><ui:Label text="Historial" class="drawer-nav-label" /></ui:Button>
+  <ui:Button name="nav-profile" class="nav"><ui:VisualElement class="drawer-nav-icon art-navprofile" /><ui:Label text="Perfil" class="drawer-nav-label" /></ui:Button>
+  <ui:VisualElement class="drawer-divider" />
   <ui:VisualElement class="drawer-spacer" />
-  <ui:Button name="nav-logout" text="➜  Cerrar sesión" class="danger logout" />
+  <ui:Button name="nav-logout" class="danger logout"><ui:VisualElement class="drawer-nav-icon art-navlogout" /><ui:Label text="Cerrar sesión" class="drawer-nav-label" /></ui:Button>
  </ui:VisualElement></ui:VisualElement></ui:VisualElement></ui:VisualElement>
 </ui:UXML>

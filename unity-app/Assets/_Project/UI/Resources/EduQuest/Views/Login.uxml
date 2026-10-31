@@ -1,11 +1,42 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
   <Style src="../../../USS/EduQuest.uss" />
-<ui:VisualElement class="screen eq-theme login-screen auth-screen"><ui:ScrollView class="page-scroll eq-scroll"><ui:VisualElement class="container auth-layout">
-<ui:VisualElement class="logo-group large"><ui:VisualElement class="logo-star art-star" /><ui:VisualElement class="logo-text art-logo" /></ui:VisualElement>
-<ui:Label text="Iniciar sesión" class="heading title-centered" />
-<ui:VisualElement class="auth-fields"><ui:Label text="Correo electrónico o DNI" class="field-label" /><ui:TextField name="identity" label="" class="field auth-field" /><ui:Label text="Contraseña" class="field-label" /><ui:TextField name="password" label="" class="field auth-field" />
-<ui:Button name="forgot" text="¿Olvidaste tu contraseña?" class="link-button" />
-<ui:Button name="submit" text="Iniciar sesión" class="primary auth-submit" /><ui:Label text="o" class="or-separator" />
-<ui:Button name="back" text="Volver a bienvenida" class="outline-button" /></ui:VisualElement>
-<ui:Label name="status" class="status" /></ui:VisualElement></ui:ScrollView></ui:VisualElement>
+  <ui:VisualElement class="screen eq-theme login-screen auth-screen">
+    <ui:ScrollView class="page-scroll eq-scroll">
+      <ui:VisualElement class="container auth-layout auth-card-layout">
+        <ui:VisualElement class="logo-group large">
+          <ui:VisualElement class="logo-star art-star" />
+          <ui:VisualElement class="logo-text art-logo" />
+        </ui:VisualElement>
+        <ui:Label text="Iniciar sesión" class="heading title-centered" />
+        <ui:VisualElement class="auth-fields exact-auth-block">
+          <ui:VisualElement class="field-shell">
+            <ui:VisualElement class="field-icon art-icon-mail" />
+            <ui:TextField name="identity" label="" class="field auth-field field-inline" />
+          </ui:VisualElement>
+          <ui:VisualElement class="field-shell">
+            <ui:VisualElement class="field-icon art-icon-lock" />
+            <ui:TextField name="password" label="" class="field auth-field field-inline password-inline" />
+            <ui:VisualElement class="field-eye art-icon-eye" />
+          </ui:VisualElement>
+          <ui:Button name="forgot" text="¿Olvidaste tu contraseña?" class="link-button forgot-link" />
+          <ui:Button name="submit" text="Iniciar sesión" class="primary auth-submit" />
+          <ui:VisualElement class="separator-row">
+            <ui:VisualElement class="separator-line" />
+            <ui:Label text="o" class="or-separator" />
+            <ui:VisualElement class="separator-line" />
+          </ui:VisualElement>
+          <ui:Button name="register" class="outline-button icon-outline-button">
+            <ui:VisualElement class="btn-inline-icon art-icon-userplus" />
+            <ui:Label text="Registrarse como alumno" class="btn-inline-label" />
+          </ui:Button>
+          <ui:Button name="web-admin" class="outline-button icon-outline-button">
+            <ui:VisualElement class="btn-inline-icon art-icon-desktop" />
+            <ui:Label text="Ir al Web Admin" class="btn-inline-label" />
+          </ui:Button>
+          <ui:Button name="back" text="Volver a bienvenida" class="assistive-hidden" />
+        </ui:VisualElement>
+        <ui:Label name="status" class="status title-centered" />
+      </ui:VisualElement>
+    </ui:ScrollView>
+  </ui:VisualElement>
 </ui:UXML>

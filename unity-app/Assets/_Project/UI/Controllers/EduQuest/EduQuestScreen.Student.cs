@@ -34,8 +34,8 @@ namespace EduQuest.Student
             var avatar = Q<VisualElement>("avatar");
             // Silueta genérica por defecto para todos los alumnos.
             // Podrá sustituirse por el avatar personalizable de Prisma más adelante.
-            var texture = Resources.Load<Texture2D>("EduQuest/AvatarIllustration");
-            if (texture == null) texture = Resources.Load<Texture2D>("EduQuest/Avatar");
+            var texture = Resources.Load<Texture2D>("EduQuest/Avatar");
+            if (texture == null) texture = Resources.Load<Texture2D>("EduQuest/AvatarIllustration");
             if (avatar != null)
             {
                 if (texture != null)
@@ -46,7 +46,7 @@ namespace EduQuest.Student
                 else
                 {
                     avatar.style.backgroundColor = new Color(0.34f, 0.42f, 0.73f);
-                    Debug.LogWarning("EduQuest: no se encontró GenericAvatar.png en Resources/EduQuest");
+                    Debug.LogWarning("EduQuest: no se encontró Avatar.png en Resources/EduQuest");
                 }
             }
             Click("edit-profile", () => StudentNavigation.Go("Profile"));
