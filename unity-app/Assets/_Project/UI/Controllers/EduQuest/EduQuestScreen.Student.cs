@@ -12,6 +12,16 @@ namespace EduQuest.Student
         private bool showingCompleted;
         private void SetupHome()
         {
+            var screen = root.Q<VisualElement>(className: "screen");
+            Click("home-menu", () =>
+            {
+                if (screen != null) screen.EnableInClassList("menu-open", !screen.ClassListContains("menu-open"));
+            });
+            Click("go-practice", () => StudentNavigation.Go("Practice"));
+            Click("go-subjects", () => StudentNavigation.Go("Subjects"));
+            ApplyIcon("level-icon", "LevelIcon");
+            ApplyIcon("points-icon", "StarIcon");
+            ApplyIcon("coins-icon", "CoinIcon");
             Q<Label>("student-name").text = FullName(EduQuestRuntime.Session.CurrentUser);
             var avatar = Q<VisualElement>("avatar");
             var texture = Resources.Load<Texture2D>("EduQuest/Avatar");
@@ -27,6 +37,12 @@ namespace EduQuest.Student
                 Q<Label>("progress").text = $"{data.pendingActivities} actividades pendientes  ·  {data.finishedGames} partidas completadas" +
                     (data.courses != null && data.courses.Length > 0 ? "  ·  " + string.Join(", ", data.courses.Select(x => x.name)) : "  ·  Sin curso del año actual");
             });
+        }
+        private void ApplyIcon(string elementName, string resourceName)
+        {
+            var box = Q<VisualElement>(elementName);
+            var tex = Resources.Load<Texture2D>("EduQuest/" + resourceName);
+            if (box != null && tex != null) box.style.backgroundImage = new StyleBackground(tex);
         }
         private void SetupSubjects()
         {
@@ -133,17 +149,38 @@ namespace EduQuest.Student
         private void SetupPractice()
         {
             var list = Items();
+            // Disponible desde el primer día: usa el nivel original, sin modificar sus assets.
+            var runner = new VisualElement();
+            runner.AddToClassList("featured-game");
+            runner.Add(Text("AVENTURA DE MOVIMIENTO · PANTALLA HORIZONTAL", "featured-tag"));
+            runner.Add(Text("Corre y aprende", "featured-title"));
+            runner.Add(Text("Corré, saltá obstáculos y respondé preguntas. Por ahora usa el banco de demostración incorporado al nivel original. No afecta notas, puntos ni monedas del perfil.", "featured-detail"));
+            var playRunner = new Button(() =>
+            {
+                if (!StudentNavigation.GoRunnerPractice())
+                    Status("No se encontró el nivel del juego. Agregá Nivel01.unity a la Scene List del perfil Android.");
+            }) { text = "CORRER Y RESPONDER" };
+            playRunner.AddToClassList("primary");
+            playRunner.AddToClassList("featured-action");
+            runner.Add(playRunner);
+            list.Add(runner);
+            list.Add(Text("DESAFÍOS DE PREGUNTAS", "eyebrow"));
             Run(async () =>
             {
                 var games = await EduQuestRuntime.Student.PracticeGames();
                 if (this == null) return;
-                if (games == null || games.Length == 0) { Empty(list, "Todavía no hay juegos disponibles para practicar."); return; }
+                if (games == null || games.Length == 0)
+                {
+                    list.Add(Text("Todavía no hay cuestionarios publicados para practicar.", "muted"));
+                    return;
+                }
                 foreach (var game in games)
                 {
                     var selected = game;
-                    ListRow(list, game.name, game.activities + " actividades disponibles · Sin nota ni puntos", "PRACTICAR", () =>
+                    // No duplicar el runner cuando el servidor agregue múltiples tipos.
+                    if (selected.gameType != "true_false") continue;
+                    ListRow(list, "Verdadero o falso", selected.activities + " actividades de las materias publicadas · Sin nota ni puntos", "PRACTICAR", () =>
                     {
-                        if (selected.gameType != "true_false") { Status("Aún falta el adaptador para este juego."); return; }
                         StudentNavigation.PracticeMode = true;
                         StudentNavigation.GameType = selected.gameType;
                         StudentNavigation.ActivityId = 0;

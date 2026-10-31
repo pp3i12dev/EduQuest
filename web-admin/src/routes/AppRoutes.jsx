@@ -11,6 +11,8 @@ import {
 import { AuthContext } from '../context/AuthContext';
 
 import LoginView from '../views/LoginView';
+import ForgotPasswordView from '../views/ForgotPasswordView';
+import ResetPasswordView from '../views/ResetPasswordView';
 import DashboardView from '../views/DashBoardView';
 import DashboardLayout from '../layouts/DashboardLayout';
 
@@ -66,6 +68,8 @@ export default function AppRoutes() {
     return (
         <BrowserRouter>
             <Routes>
+                <Route path="/olvide-contrasena" element={<ForgotPasswordView />} />
+                <Route path="/restablecer-contrasena" element={<ResetPasswordView />} />
                 <Route
                     path="/login"
                     element={<LoginView />}

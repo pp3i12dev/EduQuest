@@ -53,10 +53,12 @@ namespace EduQuest.Student
                     ". Verificá Panel Settings, UXML y errores de UI Toolkit.");
                 return;
             }
+            EduQuestMobileLayout.Apply(root, document.panelSettings);
+            ApplyGoldButtonSkins();
             status = root.Q<Label>("status");
             if (status == null) Debug.LogWarning("EduQuest: falta Label status en " + currentScene);
             if (!EduQuestRuntime.Session.IsStudent() &&
-                currentScene != "Welcome" && currentScene != "Login" && currentScene != "Register")
+                currentScene != "Welcome" && currentScene != "Login" && currentScene != "Register" && currentScene != "ForgotPassword")
             {
                 StudentNavigation.Go("Welcome");
                 return;
@@ -66,6 +68,7 @@ namespace EduQuest.Student
             {
                 case "Welcome": SetupWelcome(); break;
                 case "Login": SetupLogin(); break;
+                case "ForgotPassword": SetupForgotPassword(); break;
                 case "Register": SetupRegister(); break;
                 case "Home": SetupHome(); break;
                 case "Subjects": SetupSubjects(); break;
@@ -77,6 +80,22 @@ namespace EduQuest.Student
                 case "Result": SetupResult(); break;
                 default: Status("Vista desconocida: " + currentScene); break;
             }
+        }
+        private void Update()
+        {
+            if (root != null) EduQuestMobileLayout.Refresh(root, GetComponent<UIDocument>()?.panelSettings);
+        }
+
+        private void ApplyGoldButtonSkins()
+        {
+            // Gradiente real generado como textura. No depende de USS experimental ni de plugins.
+            var gradient = Resources.Load<Texture2D>("EduQuest/GoldButton");
+            if (gradient == null) return;
+            root.Query<Button>(className: "primary").ForEach(button =>
+            {
+                button.style.backgroundImage = new StyleBackground(gradient);
+                button.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
+            });
         }
         private void BindSidebar()
         {

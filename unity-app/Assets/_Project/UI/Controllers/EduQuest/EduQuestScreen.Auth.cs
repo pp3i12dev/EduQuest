@@ -24,6 +24,7 @@ namespace EduQuest.Student
         {
             Password("password");
             Click("back", () => StudentNavigation.Go("Welcome"));
+            Click("forgot", () => StudentNavigation.Go("ForgotPassword"));
             Click("submit", () => Run(async () =>
             {
                 string identity = Value("identity");
@@ -40,6 +41,21 @@ namespace EduQuest.Student
                     throw new Exception("Unity es exclusivo para alumnos. Ingresá al Web Admin para otros roles.");
                 }
                 StudentNavigation.Go("Home");
+            }));
+        }
+        private void SetupForgotPassword()
+        {
+            Click("back", () => StudentNavigation.Go("Login"));
+            Click("send", () => Run(async () =>
+            {
+                var email = Value("email");
+                if (string.IsNullOrWhiteSpace(email) || !email.Contains("@") || email.Length > 254)
+                    throw new Exception("Ingresá un correo electrónico válido.");
+                var reply = await EduQuestRuntime.Auth.ForgotPasswordAsync(email);
+                if (this == null) return;
+                Status(reply?.message ?? "Si existe la cuenta, recibirás un enlace de recuperación.", true);
+                var note = Q<Label>("recovery-note");
+                if (note != null) note.text = "Si el correo existe, revisá tu bandeja y spam. El enlace vence a los 15 minutos.";
             }));
         }
         private void SetupRegister()

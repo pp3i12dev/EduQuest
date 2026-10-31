@@ -39,4 +39,10 @@ public class AuthService
             return ServiceResult<RegisterStudentResponseDTO>.Fail(ex.Message);
         }
     }
+    // No requiere JWT: también funciona si el alumno olvidó sus credenciales.
+    public Task<PasswordRecoveryResponseDTO> ForgotPasswordAsync(string email)
+    {
+        return apiClient.PostAsync<object, PasswordRecoveryResponseDTO>(
+            "/auth/forgot-password", new { email });
+    }
 }

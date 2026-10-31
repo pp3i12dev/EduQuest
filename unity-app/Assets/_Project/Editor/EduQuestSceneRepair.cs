@@ -12,7 +12,7 @@ public static class EduQuestSceneRepair
 {
     private static readonly string[] Screens =
     {
-        "Welcome", "Login", "Register", "Home", "Subjects", "Activities",
+        "Welcome", "Login", "ForgotPassword", "Register", "Home", "Subjects", "Activities",
         "Profile", "History", "Practice", "Game", "Result"
     };
 

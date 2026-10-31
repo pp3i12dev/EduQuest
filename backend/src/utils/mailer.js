@@ -136,3 +136,19 @@ export const sendInstitutionCommunicationEmail = ({ to, title, message, notifica
   return getTransporter().sendMail({ from: process.env.MAIL_FROM, to,
     subject: `[EduQuest] ${action} — ${kind}: ${event.title}`, text, html });
 };
+
+// Nunca se envía la contraseña por correo: sólo un enlace de un uso, de 15 minutos.
+export const sendPasswordResetEmail = async ({ to, token, expiresAt }) => {
+  if (!process.env.FRONTEND_URL || !process.env.SMTP_HOST || !process.env.MAIL_FROM)
+    throw new Error('Configurá FRONTEND_URL, SMTP_HOST y MAIL_FROM.');
+  const url = new URL('/restablecer-contrasena', process.env.FRONTEND_URL);
+  url.searchParams.set('token', token);
+  const link = url.toString();
+  return getTransporter().sendMail({
+    from: process.env.MAIL_FROM,
+    to,
+    subject: 'EduQuest: restablecer contraseña',
+    text: `Recibimos una solicitud para restablecer tu contraseña.\n\nAbrí este enlace: ${link}\n\nVence en 15 minutos (${expiresAt.toLocaleString('es-AR')}). Si no lo solicitaste, ignorá este correo.`,
+    html: `<div style="font:16px Arial,sans-serif;color:#1e293b;max-width:500px"><h2>EduQuest · Recuperar acceso</h2><p>Recibimos una solicitud para cambiar tu contraseña.</p><p><a href="${escapeHtml(link)}" style="display:inline-block;background:#e89c17;color:#171717;text-decoration:none;font-weight:bold;padding:14px 20px;border-radius:10px">Crear nueva contraseña</a></p><p>El enlace vence en 15 minutos y puede usarse una sola vez.</p><p>Si no lo pediste, ignorá este mensaje.</p></div>`,
+  });
+};

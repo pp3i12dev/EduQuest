@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 
 import {
@@ -23,7 +24,6 @@ import BackgroundLayout from '../layouts/BackgroundLayout';
 
 export default function LoginView() {
     const [showPassword, setShowPassword] = useState(false);
-    const [showRecoveryNotice, setShowRecoveryNotice] = useState(false);
 
     const {
         register,
@@ -39,7 +39,6 @@ export default function LoginView() {
     const loginMutation = useLogin();
 
     const onSubmit = (data) => {
-        setShowRecoveryNotice(false);
         loginMutation.mutate(data);
     };
 
@@ -162,40 +161,6 @@ export default function LoginView() {
                             </div>
                         )}
 
-                        {/* AVISO DE RECUPERACIÓN */}
-                        {showRecoveryNotice && (
-                            <div
-                                role="status"
-                                className="mb-6 flex items-start gap-3 rounded-xl border border-blue-500/30 bg-blue-950/60 p-4 text-sm text-blue-200 backdrop-blur-md"
-                            >
-                                <KeyRound
-                                    size={19}
-                                    className="mt-0.5 shrink-0 text-blue-400"
-                                />
-
-                                <div className="min-w-0 flex-1">
-                                    <p className="font-semibold">
-                                        Recuperación de contraseña
-                                    </p>
-
-                                    <p className="mt-1 leading-relaxed text-blue-200/80">
-                                        Esta funcionalidad estará disponible próximamente.
-                                        Por ahora, contactá al administrador de tu institución
-                                        si necesitás recuperar el acceso.
-                                    </p>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setShowRecoveryNotice(false)}
-                                    aria-label="Cerrar aviso"
-                                    className="cursor-pointer rounded-md p-1 text-blue-300 hover:bg-blue-500/20 hover:text-white"
-                                >
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        )}
-
                         <form
                             onSubmit={handleSubmit(onSubmit)}
                             noValidate
@@ -261,15 +226,7 @@ export default function LoginView() {
                                         Contraseña
                                     </label>
 
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setShowRecoveryNotice(true)
-                                        }
-                                        className="cursor-pointer text-xs font-medium text-blue-400 transition-colors hover:text-cyan-300 hover:underline"
-                                    >
-                                        ¿Olvidaste tu contraseña?
-                                    </button>
+                                    <Link to="/olvide-contrasena" className="cursor-pointer text-xs font-medium text-blue-400 transition-colors hover:text-cyan-300 hover:underline">¿Olvidaste tu contraseña?</Link>
                                 </div>
 
                                 <div className="relative">

@@ -46,3 +46,88 @@
 .split { flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; }
 .question { font-size: 21px; color: white; margin-bottom: 22px; white-space: normal; }
 .answer { min-width: 200px; margin-right: 12px; }
+
+/* ---------------- Android / telefono: estilos con clase aplicada por EduQuestMobileLayout. ---------------- */
+.mobile-portrait { flex-grow: 1; }
+.mobile-portrait .page-scroll { flex-grow: 1; }
+.mobile-portrait .container { width: 100%; min-width: 0; padding-left: 18px; padding-right: 18px; padding-top: 25px; padding-bottom: 22px; }
+.mobile-portrait .center { align-items: stretch; justify-content: flex-start; }
+.mobile-portrait .brand { font-size: 35px; -unity-text-align: middle-center; margin-bottom: 12px; }
+.mobile-portrait .heading { font-size: 26px; white-space: normal; margin-bottom: 8px; }
+.mobile-portrait .subheading { font-size: 14px; white-space: normal; margin-bottom: 18px; }
+.mobile-portrait .eyebrow { font-size: 11px; letter-spacing: 1px; }
+.mobile-portrait .auth, .mobile-portrait .form-wide { width: 100%; max-width: 100%; min-width: 0; }
+.mobile-portrait .glass { min-width: 0; padding-top: 18px; padding-bottom: 18px; padding-left: 17px; padding-right: 17px; margin-bottom: 12px; border-top-left-radius: 16px; border-top-right-radius: 16px; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; }
+.mobile-portrait .primary, .mobile-portrait .secondary, .mobile-portrait .ghost, .mobile-portrait .danger { min-height: 54px; height: auto; padding-top: 12px; padding-bottom: 12px; font-size: 15px; white-space: normal; }
+.mobile-portrait .field { min-height: 64px; font-size: 15px; margin-bottom: 14px; }
+.mobile-portrait .field > .unity-base-field__input { min-height: 42px; }
+.mobile-portrait .text { font-size: 15px; }
+.mobile-portrait .muted { font-size: 13px; }
+.mobile-portrait .question { font-size: 19px; white-space: normal; }
+.mobile-portrait .status { font-size: 13px; min-height: 34px; }
+.mobile-portrait .layout { flex-direction: column; position: relative; flex-grow: 1; }
+/* La barra original izquierda se convierte en dock inferior accesible al tacto. */
+.mobile-portrait .sidebar { position: absolute; left: 0; right: 0; bottom: 0; top: auto; width: 100%; height: 73px; flex-direction: row; justify-content: space-around; align-items: center; padding-top: 7px; padding-bottom: 7px; padding-left: 4px; padding-right: 4px; border-right-width: 0px; border-top-width: 1px; border-top-color: rgb(50,77,114); }
+.mobile-portrait .sidebar .brand { display: none; }
+.mobile-portrait .sidebar .nav, .mobile-portrait .sidebar .logout { flex-grow: 1; flex-shrink: 1; min-width: 0; width: auto; height: 55px; min-height: 55px; margin-top: 0px; margin-bottom: 0px; margin-left: 2px; margin-right: 2px; padding-left: 2px; padding-right: 2px; padding-top: 8px; padding-bottom: 8px; font-size: 11px; -unity-text-align: middle-center; border-top-left-radius: 9px; border-top-right-radius: 9px; border-bottom-left-radius: 9px; border-bottom-right-radius: 9px; }
+.mobile-portrait .sidebar .logout { background-color: rgb(84,44,74); }
+.mobile-portrait .main-scroll { flex-grow: 1; margin-bottom: 74px; }
+.mobile-portrait .content { padding-top: 21px; padding-bottom: 22px; padding-left: 16px; padding-right: 16px; min-width: 0; }
+.mobile-portrait .list-row { flex-direction: column; align-items: stretch; padding-top: 15px; padding-bottom: 15px; padding-left: 14px; padding-right: 14px; margin-bottom: 10px; }
+.mobile-portrait .list-info { flex-grow: 0; margin-right: 0; margin-bottom: 10px; }
+.mobile-portrait .list-title { font-size: 17px; }
+.mobile-portrait .list-subtitle { font-size: 13px; white-space: normal; }
+.mobile-portrait .list-action { width: 100%; min-width: 0; height: 49px; min-height: 49px; }
+.mobile-portrait .stat { min-width: 91px; flex-grow: 1; margin-right: 8px; margin-bottom: 10px; }
+.mobile-portrait .stat-number { font-size: 29px; }
+.mobile-portrait .stat-label { font-size: 11px; }
+.mobile-portrait .avatar { width: 106px; height: 106px; border-top-left-radius: 53px; border-top-right-radius: 53px; border-bottom-left-radius: 53px; border-bottom-right-radius: 53px; margin-right: 12px; }
+.mobile-portrait .row { flex-wrap: wrap; }
+.mobile-portrait .row > .primary, .mobile-portrait .row > .secondary, .mobile-portrait .row > .ghost { flex-grow: 1; min-width: 120px; margin-right: 5px; }
+.mobile-portrait .answer { min-width: 0; width: 100%; margin-right: 0; }
+.mobile-portrait .featured-game { background-color: rgb(28,67,97); border-top-left-radius: 17px; border-top-right-radius: 17px; border-bottom-left-radius: 17px; border-bottom-right-radius: 17px; border-top-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-right-width: 1px; border-color: rgb(69,178,188); padding-top: 18px; padding-bottom: 18px; padding-left: 17px; padding-right: 17px; margin-bottom: 15px; }
+.mobile-portrait .featured-tag { color: rgb(112,248,212); font-size: 12px; -unity-font-style: bold; margin-bottom: 8px; }
+.mobile-portrait .featured-title { color: rgb(250,255,255); font-size: 23px; -unity-font-style: bold; margin-bottom: 9px; }
+.mobile-portrait .featured-detail { color: rgb(195,228,245); font-size: 14px; white-space: normal; margin-bottom: 12px; }
+.mobile-portrait .featured-action { width: 100%; min-height: 56px; }
+
+/* EduQuest · Gold / amber UI. Textura con degradado real desde Resources. */
+.primary { background-color: rgb(255,183,31); color: rgb(48,29,5); border-top-left-radius: 14px; border-top-right-radius: 14px; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; }
+.primary:hover { background-color: rgb(255,207,71); color: rgb(35,24,10); }
+.secondary { background-color: rgb(84,74,116); }
+.auth-screen .auth-card { background-color: rgb(28,38,74); border-color: rgb(94,93,125); }
+.auth-screen .auth-field { width: 100%; min-width: 0; flex-direction: column; align-items: stretch; margin-top: 8px; margin-bottom: 17px; }
+.auth-screen .auth-field .unity-base-field__label { width: 100%; min-width: 0; font-size: 14px; color: rgb(248,228,190); padding-bottom: 6px; }
+.auth-screen .auth-field .unity-base-field__input { flex-grow: 0; min-width: 0; width: 100%; min-height: 49px; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; border-color: rgb(103,107,142); border-width: 1px; background-color: rgb(16,26,53); }
+.auth-screen .auth-field .unity-text-field__input { color: rgb(251,251,255); }
+.auth-screen .auth-submit { margin-top: 17px; }
+.auth-screen .link-button { align-self: flex-end; border-width: 0; background-color: rgba(0,0,0,0); color: rgb(255,198,77); font-size: 14px; -unity-text-align: middle-right; height: 37px; margin-bottom: 8px; }
+.auth-screen .link-button:hover { color: rgb(255,230,165); }
+.hero-card { border-color: rgb(86,88,148); background-color: rgb(33,45,87); }
+.hero-info { align-items: center; justify-content: center; }
+.hero-avatar { border-color: rgb(255,197,67); border-width: 3px; width: 142px; height: 142px; border-radius: 71px; margin-right: 0; }
+.hero-name { color: white; font-size: 27px; -unity-font-style: bold; -unity-text-align: middle-center; white-space: normal; margin-bottom: 6px; }
+.hero-role { color: rgb(255,198,83); -unity-font-style: bold; font-size: 12px; margin-bottom: 15px; }
+.profile-action { align-self: center; }
+.home-topbar { flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.home-menu { display: none; width: 56px; font-size: 28px; -unity-text-align: middle-center; }
+.home-stats { flex-direction: row; justify-content: space-between; margin-bottom: 10px; }
+.stat-card { align-items: center; flex-grow: 1; min-width: 0; background-color: rgb(31,46,88); padding-top: 15px; padding-bottom: 14px; padding-left: 6px; padding-right: 6px; margin-right: 6px; border-radius: 15px; }
+.stat-icon { width: 44px; height: 44px; -unity-background-scale-mode: scale-to-fit; margin-bottom: 7px; }
+.stat-card .stat-number { color: rgb(255,209,83); }
+.stat-card .stat-label { color: rgb(186,207,241); }
+.mobile-portrait.home-mobile .home-menu { display: flex; align-items: center; justify-content: center; }
+.mobile-portrait.home-mobile .sidebar { display: none; position: absolute; z-index: 100; left: 0; top: 0; right: auto; bottom: auto; width: 260px; height: auto; flex-direction: column; align-items: stretch; justify-content: flex-start; padding-top: 26px; padding-bottom: 25px; padding-left: 12px; padding-right: 12px; border-right-width: 1px; border-right-color: rgb(85,102,152); border-top-width: 0; }
+.mobile-portrait.home-mobile.menu-open .sidebar { display: flex; }
+.mobile-portrait.home-mobile .sidebar .brand { display: flex; -unity-text-align: middle-center; }
+.mobile-portrait.home-mobile .sidebar .nav, .mobile-portrait.home-mobile .sidebar .logout { width: 100%; flex-grow: 0; min-height: 53px; font-size: 16px; -unity-text-align: middle-left; padding-left: 16px; }
+.mobile-portrait.home-mobile .sidebar .logout { margin-top: 16px; }
+.mobile-portrait.home-mobile .main-scroll { margin-bottom: 0; }
+.mobile-portrait.home-mobile .home-content { padding-top: 18px; }
+.mobile-portrait.home-mobile .hero-card { align-items: center; }
+.mobile-portrait.home-mobile .hero-avatar { margin-right: 0; }
+.mobile-portrait.home-mobile .hero-name { font-size: 23px; }
+.mobile-portrait.home-mobile .home-stats .stat { min-width: 0; margin-right: 5px; }
+.mobile-portrait.home-mobile .stat-icon { width: 39px; height: 39px; }
+.mobile-portrait.home-mobile .stat-number { font-size: 25px; }
+.mobile-portrait.home-mobile .stat-label { font-size: 11px; }

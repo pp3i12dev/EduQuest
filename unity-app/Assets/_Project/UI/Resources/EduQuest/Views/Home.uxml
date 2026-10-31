@@ -1,11 +1,59 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <Style src="../../../USS/EduQuest.uss" />
-<ui:VisualElement class="screen"><ui:VisualElement class="layout"><ui:VisualElement class="sidebar"><ui:Label text="EDUQUEST" class="brand" />
+  <Style src="../../../USS/EduQuest.uss" />
+  <ui:VisualElement class="screen home-mobile">
+    <ui:VisualElement class="layout">
+      <ui:VisualElement class="sidebar">
+        <ui:Label text="EDUQUEST" class="brand" />
         <ui:Button name="nav-home" text="⌂   Inicio" class="nav" />
         <ui:Button name="nav-subjects" text="▤   Materias" class="nav" />
         <ui:Button name="nav-practice" text="▶   Jugar" class="nav" />
         <ui:Button name="nav-history" text="★   Historial" class="nav" />
         <ui:Button name="nav-profile" text="◉   Mi perfil" class="nav" />
         <ui:Button name="nav-logout" text="Cerrar sesión" class="danger logout" />
-        </ui:VisualElement><ui:ScrollView class="main-scroll"><ui:VisualElement class="content"><ui:Label text="Centro de aventuras" class="heading" /><ui:Label text="Tu progreso en EduQuest" class="subheading" /><ui:VisualElement class="glass"><ui:VisualElement class="row"><ui:VisualElement name="avatar" class="avatar gap" /><ui:VisualElement><ui:Label name="student-name" text="Cargando alumno..." class="heading" /><ui:Label text="ALUMNO" class="eyebrow" /><ui:Button name="edit-profile" text="Editar perfil" class="ghost" /></ui:VisualElement></ui:VisualElement></ui:VisualElement><ui:VisualElement class="glass"><ui:VisualElement class="grid-row"><ui:VisualElement class="stat"><ui:Label name="level" text="—" class="stat-number" /><ui:Label text="NIVEL" class="stat-label" /></ui:VisualElement><ui:VisualElement class="stat"><ui:Label name="points" text="—" class="stat-number" /><ui:Label text="PUNTOS TOTALES" class="stat-label" /></ui:VisualElement><ui:VisualElement class="stat"><ui:Label name="coins" text="—" class="stat-number" /><ui:Label text="MONEDAS" class="stat-label" /></ui:VisualElement></ui:VisualElement></ui:VisualElement><ui:VisualElement class="glass"><ui:Label name="progress" class="text" text="Cargando misiones..." /></ui:VisualElement><ui:Label name="status" class="status" /></ui:VisualElement></ui:ScrollView></ui:VisualElement></ui:VisualElement>
+      </ui:VisualElement>
+      <ui:ScrollView class="main-scroll">
+        <ui:VisualElement class="content home-content">
+          <ui:VisualElement class="home-topbar">
+            <ui:VisualElement>
+              <ui:Label text="EDUQUEST" class="eyebrow" />
+              <ui:Label text="¡Tu próxima aventura!" class="heading" />
+            </ui:VisualElement>
+            <ui:Button name="home-menu" text="☰" class="home-menu ghost" />
+          </ui:VisualElement>
+          <ui:VisualElement class="glass hero-card">
+            <ui:VisualElement class="hero-info">
+              <ui:VisualElement name="avatar" class="avatar hero-avatar" />
+              <ui:Label name="student-name" text="Cargando alumno..." class="hero-name" />
+              <ui:Label text="ALUMNO · AVENTURERO" class="hero-role" />
+              <ui:Button name="edit-profile" text="EDITAR PERFIL" class="ghost profile-action" />
+            </ui:VisualElement>
+          </ui:VisualElement>
+          <ui:VisualElement class="home-stats">
+            <ui:VisualElement class="stat stat-card">
+              <ui:VisualElement name="level-icon" class="stat-icon" />
+              <ui:Label name="level" text="—" class="stat-number" />
+              <ui:Label text="NIVEL" class="stat-label" />
+            </ui:VisualElement>
+            <ui:VisualElement class="stat stat-card">
+              <ui:VisualElement name="points-icon" class="stat-icon" />
+              <ui:Label name="points" text="—" class="stat-number" />
+              <ui:Label text="PUNTOS" class="stat-label" />
+            </ui:VisualElement>
+            <ui:VisualElement class="stat stat-card">
+              <ui:VisualElement name="coins-icon" class="stat-icon" />
+              <ui:Label name="coins" text="—" class="stat-number" />
+              <ui:Label text="MONEDAS" class="stat-label" />
+            </ui:VisualElement>
+          </ui:VisualElement>
+          <ui:VisualElement class="glass missions-card">
+            <ui:Label text="TU PROGRESO" class="eyebrow" />
+            <ui:Label name="progress" class="text" text="Cargando misiones..." />
+            <ui:Button name="go-practice" text="¡VAMOS A JUGAR!" class="primary" />
+            <ui:Button name="go-subjects" text="VER MIS MATERIAS" class="secondary" />
+          </ui:VisualElement>
+          <ui:Label name="status" class="status" />
+        </ui:VisualElement>
+      </ui:ScrollView>
+    </ui:VisualElement>
+  </ui:VisualElement>
 </ui:UXML>

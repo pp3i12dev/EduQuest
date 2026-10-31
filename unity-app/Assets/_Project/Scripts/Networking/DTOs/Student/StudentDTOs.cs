@@ -1,11 +1,12 @@
 using System;
+using Newtonsoft.Json;
 
 namespace EduQuest.Student
 {
     [Serializable] public class DashboardDTO { public int points, level, coins, finishedGames, pendingActivities; public CourseInfoDTO[] courses; public string progressRule; }
     [Serializable] public class CourseInfoDTO { public int id, year; public string name; }
     [Serializable] public class SubjectDTO { public int id, subjectId, courseId; public string name, teacherName, courseName; }
-    [Serializable] public class ActivityDTO { public int id, pointsAwarded; public string title, description, gameType, teacherName, subjectName, createdAt; public bool completed; public int? bestScore; }
+    [Serializable] public class ActivityDTO { public int id, pointsAwarded; public string title, description, gameType, teacherName, subjectName, createdAt; public bool completed; [JsonProperty("bestScore")] public int? bestScore { get; set; } }
     [Serializable] public class HistoryDTO { public int totalPoints; public bool estimatedHistoricalPoints; public AttemptDTO[] items; }
     [Serializable] public class AttemptDTO { public int id, score, earnedPoints, durationSeconds; public string activityTitle, subjectName, teacherName, activityDate, completedAt; }
     [Serializable] public class ProfileDTO { public int id; public string dni, firstName, lastName, email, telefono; public bool isActive; public string[] roles; }
