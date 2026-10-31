@@ -54,7 +54,7 @@ namespace EduQuest.Student
                 return;
             }
             EduQuestMobileLayout.Apply(root, document.panelSettings);
-            ApplyGoldButtonSkins();
+            ApplyThemeArt();
             status = root.Q<Label>("status");
             if (status == null) Debug.LogWarning("EduQuest: falta Label status en " + currentScene);
             if (!EduQuestRuntime.Session.IsStudent() &&
@@ -86,19 +86,65 @@ namespace EduQuest.Student
             if (root != null) EduQuestMobileLayout.Refresh(root, GetComponent<UIDocument>()?.panelSettings);
         }
 
-        private void ApplyGoldButtonSkins()
+        private void ApplyThemeArt()
         {
-            // Gradiente real generado como textura. No depende de USS experimental ni de plugins.
-            var gradient = Resources.Load<Texture2D>("EduQuest/GoldButton");
-            if (gradient == null) return;
-            root.Query<Button>(className: "primary").ForEach(button =>
+            // Imágenes reales de la identidad EduQuest, sin UI como screenshot ni
+            // dependencias de iconos React. Todos los controles siguen siendo clicables.
+            var screen = root.Q<VisualElement>(className: "screen");
+            var backdrop = Resources.Load<Texture2D>("EduQuest/BackgroundPortrait");
+            if (screen != null && backdrop != null)
             {
-                button.style.backgroundImage = new StyleBackground(gradient);
-                button.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
+                screen.style.backgroundImage = new StyleBackground(backdrop);
+                screen.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
+            }
+            PaintClass("art-logo", "Logo");
+            PaintClass("art-star", "AchievementStar");
+            PaintClass("art-coin", "CoinIllustration");
+            PaintClass("art-trophy", "TrophyIllustration");
+            PaintClass("art-book", "BookIllustration");
+            PaintClass("art-gamepad", "GamepadIllustration");
+            PaintClass("art-bars", "ProgressIllustration");
+            PaintClass("art-avatar", "AvatarIllustration");
+            PaintClass("art-mail", "MailIllustration");
+            PaintClass("art-menu", "MenuIllustration");
+            PaintClass("home-tile", "GoldTile", true);
+            PaintClass("primary", "GoldButton", true);
+            var drawerTexture = Resources.Load<Texture2D>("EduQuest/DrawerPurple");
+            var drawer = root.Q<VisualElement>(className: "sidebar");
+            if (drawer != null && drawerTexture != null)
+            {
+                drawer.style.backgroundImage = new StyleBackground(drawerTexture);
+                drawer.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
+            }
+        }
+
+        private void PaintClass(string className, string resourceName, bool stretch = false)
+        {
+            var texture = Resources.Load<Texture2D>("EduQuest/" + resourceName);
+            if (texture == null)
+            {
+                Debug.LogWarning("EduQuest: falta el recurso visual " + resourceName);
+                return;
+            }
+            root.Query<VisualElement>(className: className).ForEach(element =>
+            {
+                element.style.backgroundImage = new StyleBackground(texture);
+                element.style.unityBackgroundScaleMode = stretch ? ScaleMode.StretchToFill : ScaleMode.ScaleToFit;
+                if (stretch) element.style.backgroundColor = Color.clear;
             });
         }
+
         private void BindSidebar()
         {
+            // Un solo controlador de drawer para TODAS las escenas, incluido Home.
+            var screen = root.Q<VisualElement>(className: "screen");
+            Click("home-menu", () =>
+            {
+                if (screen != null) screen.EnableInClassList("menu-open", !screen.ClassListContains("menu-open"));
+            });
+            Click("close-menu", () => screen?.RemoveFromClassList("menu-open"));
+            var curtain = Q<VisualElement>("menu-backdrop");
+            if (curtain != null) curtain.RegisterCallback<ClickEvent>(_ => screen?.RemoveFromClassList("menu-open"));
             Click("nav-home", () => StudentNavigation.Go("Home"));
             Click("nav-subjects", () => StudentNavigation.Go("Subjects"));
             Click("nav-practice", () => StudentNavigation.Go("Practice"));

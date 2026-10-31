@@ -1,21 +1,11 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <Style src="../../../USS/EduQuest.uss" />
-    <ui:VisualElement class="screen auth-screen">
-        <ui:ScrollView class="page-scroll">
-            <ui:VisualElement class="container center">
-                <ui:Label text="✦  EDUQUEST" class="brand" />
-                <ui:Label text="¡Qué bueno verte!" class="heading" />
-                <ui:Label text="Iniciá sesión y continuá tu aventura." class="subheading" />
-                <ui:VisualElement class="glass auth auth-card">
-                    <ui:Label text="ACCESO DE ALUMNOS" class="eyebrow" />
-                    <ui:TextField name="identity" label="Correo electrónico o DNI" class="field auth-field" />
-                    <ui:TextField name="password" label="Contraseña" class="field auth-field" />
-                    <ui:Button name="forgot" text="¿Olvidaste tu contraseña?" class="link-button" />
-                    <ui:Button name="submit" text="ENTRAR A EDUQUEST" class="primary auth-submit" />
-                    <ui:Button name="back" text="Volver" class="ghost" />
-                </ui:VisualElement>
-                <ui:Label name="status" class="status" />
-            </ui:VisualElement>
-        </ui:ScrollView>
-    </ui:VisualElement>
+  <Style src="../../../USS/EduQuest.uss" />
+<ui:VisualElement class="screen eq-theme login-screen auth-screen"><ui:ScrollView class="page-scroll eq-scroll"><ui:VisualElement class="container auth-layout">
+<ui:VisualElement class="logo-group large"><ui:VisualElement class="logo-star art-star" /><ui:VisualElement class="logo-text art-logo" /></ui:VisualElement>
+<ui:Label text="Iniciar sesión" class="heading title-centered" />
+<ui:VisualElement class="auth-fields"><ui:Label text="Correo electrónico o DNI" class="field-label" /><ui:TextField name="identity" label="" class="field auth-field" /><ui:Label text="Contraseña" class="field-label" /><ui:TextField name="password" label="" class="field auth-field" />
+<ui:Button name="forgot" text="¿Olvidaste tu contraseña?" class="link-button" />
+<ui:Button name="submit" text="Iniciar sesión" class="primary auth-submit" /><ui:Label text="o" class="or-separator" />
+<ui:Button name="back" text="Volver a bienvenida" class="outline-button" /></ui:VisualElement>
+<ui:Label name="status" class="status" /></ui:VisualElement></ui:ScrollView></ui:VisualElement>
 </ui:UXML>

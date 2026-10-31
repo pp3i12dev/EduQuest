@@ -37,13 +37,17 @@ namespace EduQuest.Student
             VisualElement screen = root.Q<VisualElement>(className: "screen");
             if (screen == null) return;
             screen.AddToClassList("mobile-portrait");
-            // Los nombres están en el UXML; el dock se muestra con palabras cortas.
-            Rename(root, "nav-home", "Inicio");
-            Rename(root, "nav-subjects", "Materias");
-            Rename(root, "nav-practice", "Jugar");
-            Rename(root, "nav-history", "Historial");
-            Rename(root, "nav-profile", "Perfil");
-            Rename(root, "nav-logout", "Salir");
+            // En el nuevo tema los botones del drawer conservan sus propios
+            // iconos/etiquetas UXML. Renombrarlos aquí los borraría.
+            if (!screen.ClassListContains("eq-theme"))
+            {
+                Rename(root, "nav-home", "Inicio");
+                Rename(root, "nav-subjects", "Materias");
+                Rename(root, "nav-practice", "Jugar");
+                Rename(root, "nav-history", "Historial");
+                Rename(root, "nav-profile", "Perfil");
+                Rename(root, "nav-logout", "Salir");
+            }
 
             // Cálculo aproximado de px físicos → unidades del panel, que respeta
             // la Safe Area en dispositivos con notch y Android 15+.

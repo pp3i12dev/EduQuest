@@ -18,8 +18,17 @@ namespace EduQuest.Student
             string target = Prefix + screen;
             if (!Application.CanStreamedLevelBeLoaded(target))
             {
-                Debug.LogError("EduQuest: la escena '" + target + "' no figura en la Scene List activa. " +
-                    "Abrí File > Build Profiles y agregala o ejecutá EduQuest > Configurar 11 escenas UI Toolkit en Build Profiles.");
+#if UNITY_EDITOR
+                string editorScene = "Assets/_Project/Scenes/EduQuest/" + target + ".unity";
+                if (UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEditor.SceneAsset>(editorScene) != null)
+                {
+                    UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(
+                        editorScene, new LoadSceneParameters(LoadSceneMode.Single));
+                    return;
+                }
+#endif
+                Debug.LogError("EduQuest: la escena '" + target + "' no figura en el Build Profile activo. " +
+                    "Ejecutá EduQuest > Android > Configurar orientación y escenas y verificá la Scene List de Android.");
                 return;
             }
             SceneManager.LoadScene(target);

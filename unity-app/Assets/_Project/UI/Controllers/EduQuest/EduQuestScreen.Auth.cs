@@ -24,18 +24,9 @@ namespace EduQuest.Student
         {
             Password("password");
             Click("back", () => StudentNavigation.Go("Welcome"));
-            // Si EQ_ForgotPassword está fuera del Build Profile activo, indicarlo
-            // claramente: antes StudentNavigation sólo dejaba una traza en Console.
-            Click("forgot", () =>
-            {
-                if (!Application.CanStreamedLevelBeLoaded("EQ_ForgotPassword"))
-                {
-                    Status("No se pudo abrir Recuperar contraseña: EQ_ForgotPassword no está incluida en el Build Profile activo. Ejecutá EduQuest > Android > Configurar orientación y escenas.");
-                    Debug.LogError("EduQuest: falta EQ_ForgotPassword en la Scene List activa.");
-                    return;
-                }
-                StudentNavigation.Go("ForgotPassword");
-            });
+            // StudentNavigation puede abrirla en Editor aunque el perfil Android
+            // todavía no tenga una Scene List; para un APK sí debe incluirse.
+            Click("forgot", () => StudentNavigation.Go("ForgotPassword"));
             Click("submit", () => Run(async () =>
             {
                 string identity = Value("identity");

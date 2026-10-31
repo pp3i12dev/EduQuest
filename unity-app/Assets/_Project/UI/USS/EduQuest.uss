@@ -147,3 +147,98 @@
 .home-mobile .main-scroll .unity-scroll-view__vertical-scroller { display: none; }
 .home-mobile .main-scroll .unity-scroll-view__horizontal-scroller { display: none; }
 .home-mobile .hero-avatar { -unity-background-scale-mode: scale-to-fit; background-color: rgb(43,46,106); }
+
+
+/* ============================================================================
+   EDUQUEST · TEMA ILUSTRADO MÓVIL – Basado en los diseños de referencia.
+   Los PNG se asignan desde EduQuestScreen.cs con Resources.Load<Texture2D>.
+   Escala de diseño: 430 × 932 y zona segura de Android.
+   ============================================================================ */
+.eq-theme.screen { flex-grow: 1; min-width: 0; color: rgb(31,21,102); background-color: rgb(255,247,251); }
+.eq-theme .page-scroll, .eq-theme .main-scroll { flex-grow: 1; min-width: 0; }
+.eq-theme .eq-scroll .unity-scroll-view__vertical-scroller { display: none; }
+.eq-theme .eq-scroll .unity-scroll-view__horizontal-scroller { display: none; }
+.eq-theme .container { width: 100%; min-width: 0; padding-left: 22px; padding-right: 22px; padding-top: 18px; padding-bottom: 90px; }
+.eq-theme .heading { font-size: 29px; color: rgb(29,18,105); -unity-font-style: bold; white-space: normal; margin-bottom: 14px; }
+.eq-theme .subheading { font-size: 17px; color: rgb(41,32,117); white-space: normal; line-height: 24px; }
+.eq-theme .title-centered { -unity-text-align: middle-center; }
+.eq-theme .logo-group { align-items: center; justify-content: center; height: 176px; margin-bottom: 20px; }
+.eq-theme .logo-group.large { margin-top: 30px; height: 208px; }
+.eq-theme .logo-group.small { margin-top: 0; margin-bottom: 0; height: 74px; width: 168px; }
+.eq-theme .logo-star { width: 120px; height: 114px; margin-bottom: -22px; -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .logo-text { width: 258px; height: 81px; -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .logo-group.small .logo-star { width: 65px; height: 53px; margin-bottom: -15px; }
+.eq-theme .logo-group.small .logo-text { width: 155px; height: 40px; }
+.eq-theme .auth-layout { align-items: stretch; justify-content: flex-start; }
+.eq-theme .auth-layout .heading { margin-top: 13px; }
+.eq-theme .auth-layout .subheading { margin-top: 0; }
+.eq-theme .auth-fields { width: 100%; padding-top: 20px; }
+.eq-theme .field-label { color: rgb(42,32,112); font-size: 14px; -unity-font-style: bold; margin-top: 6px; margin-bottom: 5px; }
+.eq-theme .field { flex-direction: column; width: 100%; min-width: 0; color: rgb(44,28,119); font-size: 15px; margin-bottom: 12px; }
+.eq-theme .field .unity-base-field__label { color: rgb(54,40,137); min-width: 0; width: 100%; font-size: 14px; padding-bottom: 6px; }
+.eq-theme .field .unity-base-field__input { color: rgb(36,25,103); background-color: rgb(255,255,255); border-top-width: 2px; border-right-width: 2px; border-left-width: 2px; border-bottom-width: 2px; border-color: rgb(182,170,233); border-radius: 24px; min-height: 55px; padding-left: 16px; padding-right: 13px; }
+.eq-theme .field .unity-text-field__input { color: rgb(37,27,99); font-size: 18px; }
+.eq-theme .primary { background-color: rgb(255,183,39); color: white; -unity-font-style: bold; font-size: 19px; height: 60px; min-height: 60px; border-width: 0; border-radius: 31px; -unity-text-align: middle-center; margin-top: 10px; margin-bottom: 14px; }
+.eq-theme .outline-button { height: 55px; min-height: 55px; background-color: rgba(255,255,255,0.85); color: rgb(46,25,142); border-color: rgb(170,159,235); border-width: 2px; border-radius: 28px; font-size: 16px; -unity-font-style: bold; margin-bottom: 14px; }
+.eq-theme .link-button, .eq-theme .profile-link { color: rgb(36,30,207); background-color: rgba(0,0,0,0); font-size: 15px; -unity-font-style: bold; border-width: 0; height: 44px; min-height: 44px; align-self: center; -unity-text-align: middle-center; }
+.eq-theme .or-separator { -unity-text-align: middle-center; color: rgb(78,43,160); font-size: 16px; -unity-font-style: bold; margin-top: 7px; margin-bottom: 17px; }
+.eq-theme .status { color: rgb(98,46,171); font-size: 14px; white-space: normal; margin-top: 8px; }
+.eq-theme.welcome-screen .logo-group { margin-top: 55px; height: 255px; }
+.eq-theme.welcome-screen .auth-actions { margin-top: 30px; }
+.eq-theme.welcome-screen .primary { margin-bottom: 24px; }
+.eq-theme.login-screen .logo-group { margin-top: 28px; height: 215px; }
+.eq-theme.login-screen .auth-fields { margin-top: 12px; }
+.eq-theme.forgot-screen .recovery-layout { padding-top: 22px; }
+.eq-theme.forgot-screen .back-square { align-self: flex-start; width: 51px; height: 51px; background-color: rgb(255,255,255); color: rgb(40,23,129); border-radius: 17px; border-width: 0px; font-size: 38px; -unity-font-style: bold; }
+.eq-theme .recovery-envelope { width: 145px; height: 150px; align-self: center; margin-top: 10px; margin-bottom: 9px; }
+.eq-theme.forgot-screen .auth-fields { margin-top: 20px; }
+.eq-theme.forgot-screen .recovery-description { padding-left: 8px; padding-right: 8px; }
+.eq-theme .recovery-note { margin-top: 24px; padding: 19px; background-color: rgba(227,207,255,0.72); border-radius: 21px; font-size: 16px; color: rgb(42,27,131); white-space: normal; }
+.eq-theme .white-panel { width: 100%; min-width: 0; margin-bottom: 14px; padding-top: 20px; padding-bottom: 20px; padding-left: 19px; padding-right: 19px; background-color: rgba(255,255,255,0.93); border-radius: 26px; border-width: 1px; border-color: rgb(227,220,250); }
+.eq-theme .panel-title { color: rgb(47,25,136); font-size: 20px; -unity-font-style: bold; margin-bottom: 14px; }
+.eq-theme .list-row { background-color: rgb(249,244,255); border-color: rgb(217,207,247); border-width: 1px; border-radius: 16px; margin-bottom: 13px; }
+.eq-theme .list-title, .eq-theme .question { color: rgb(46,23,122); }
+.eq-theme .list-subtitle, .eq-theme .text, .eq-theme .muted { color: rgb(91,77,147); }
+.eq-theme .secondary, .eq-theme .ghost { background-color: rgb(249,239,255); color: rgb(54,28,148); border-width: 1px; border-color: rgb(188,171,235); border-radius: 18px; }
+.eq-theme .secondary:hover, .eq-theme .ghost:hover { background-color: rgb(229,208,255); }
+.eq-theme .eyebrow { color: rgb(80,36,167); }
+/* HOME: reference-like top badges, profile and four tiles */
+.eq-theme.home-mobile .layout, .eq-theme.generic-screen .layout { position: relative; flex-grow: 1; }
+.eq-theme .content { padding-left: 17px; padding-right: 17px; padding-top: 13px; padding-bottom: 78px; }
+.eq-theme .home-topbar { flex-direction: row; justify-content: space-between; align-items: center; min-height: 82px; margin-bottom: 13px; }
+.eq-theme .home-menu { display: flex; width: 56px; min-width: 56px; height: 56px; min-height: 56px; margin: 0; border-radius: 16px; background-color: rgb(255,255,255); border-width: 1px; border-color: rgb(134,105,219); -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .home-top-stats { width: 88px; align-items: stretch; }
+.eq-theme .top-stat { flex-direction: row; justify-content: space-around; align-items: center; width: 87px; min-height: 34px; background-color: rgb(255,255,255); border-radius: 22px; margin-bottom: 5px; border-width: 1px; border-color: rgb(211,194,251); }
+.eq-theme .stat-symbol { width: 31px; height: 30px; -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .top-stat-value { color: rgb(32,23,103); -unity-font-style: bold; font-size: 17px; }
+.eq-theme .student-card { flex-direction: row; align-items: center; background-color: rgb(255,255,255); border-radius: 30px; padding: 14px; margin-bottom: 17px; min-height: 154px; border-width: 1px; border-color: rgb(238,227,251); }
+.eq-theme .hero-avatar { width: 118px; height: 118px; min-width: 118px; margin-right: 14px; margin-bottom: 0; background-color: rgb(82,38,206); border-radius: 60px; border-color: rgb(255,206,0); border-width: 6px; -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .hero-info { flex-grow: 1; min-width: 0; align-items: flex-start; }
+.eq-theme .hero-name { color: rgb(34,23,104); font-size: 21px; -unity-font-style: bold; -unity-text-align: middle-left; white-space: normal; margin-bottom: 4px; }
+.eq-theme .hero-role { color: rgb(68,51,150); font-size: 13px; margin-bottom: 2px; }
+.eq-theme .level-text { color: rgb(44,27,119); font-size: 19px; -unity-font-style: bold; margin-bottom: 10px; }
+.eq-theme .level-track { height: 15px; width: 100%; border-radius: 10px; background-color: rgb(224,222,238); overflow: hidden; }
+.eq-theme .level-fill { height: 15px; width: 33%; border-radius: 10px; background-color: rgb(255,169,19); }
+.eq-theme .game-tiles { width: 100%; flex-grow: 0; }
+.eq-theme .tile-row { flex-direction: row; justify-content: space-between; margin-bottom: 13px; }
+.eq-theme .home-tile { width: 48.5%; min-width: 0; height: 185px; flex-grow: 0; margin: 0; padding: 12px 6px 11px 6px; background-color: rgb(255,212,67); border-width: 1px; border-color: rgb(255,251,158); border-radius: 28px; align-items: center; justify-content: center; flex-direction: column; }
+.eq-theme .tile-icon { width: 94px; height: 82px; -unity-background-scale-mode: scale-to-fit; margin-bottom: 4px; }
+.eq-theme .tile-title { color: rgb(42,23,123); -unity-font-style: bold; font-size: 22px; -unity-text-align: middle-center; }
+.eq-theme .tile-subtitle { color: rgb(51,37,112); font-size: 12px; -unity-text-align: middle-center; white-space: normal; }
+.eq-theme .home-progress { font-size: 13px; color: rgb(87,68,138); -unity-text-align: middle-center; white-space: normal; margin-top: 8px; }
+.eq-theme .home-menu-layer { display: none; position: absolute; top: 0; bottom: 0; left: 0; right: 0; }
+.eq-theme.menu-open .home-menu-layer { display: flex; }
+.eq-theme .home-menu-backdrop { position: absolute; top: 0; right: 0; left: 0; bottom: 0; background-color: rgba(26,13,66,0.48); }
+.eq-theme .home-menu-layer .sidebar { position: absolute; top: 0; bottom: 0; left: 0; width: 78%; max-width: 360px; height: auto; display: flex; flex-direction: column; background-color: rgb(59,38,141); border-width: 0; border-top-right-radius: 24px; border-bottom-right-radius: 24px; padding: 32px 18px 25px 18px; }
+.eq-theme .drawer-head { align-items: center; margin-bottom: 16px; }
+.eq-theme .drawer-close { align-self: flex-end; width: 54px; height: 50px; background-color: rgb(255,255,255); color: rgb(48,27,144); border-radius: 16px; font-size: 26px; border-width: 0; margin-bottom: 16px; }
+.eq-theme .drawer-avatar { width: 100px; height: 100px; margin-bottom: 12px; -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .drawer-name { font-size: 21px; color: white; -unity-font-style: bold; -unity-text-align: middle-center; }
+.eq-theme .drawer-level { font-size: 14px; color: rgb(237,217,255); margin-top: 5px; }
+.eq-theme .home-menu-layer .sidebar .nav { width: 100%; flex-grow: 0; flex-shrink: 0; height: 56px; min-height: 56px; margin-top: 4px; margin-bottom: 5px; padding-left: 16px; background-color: rgba(255,255,255,0); color: white; border-width: 0; font-size: 17px; -unity-font-style: normal; -unity-text-align: middle-left; }
+.eq-theme .home-menu-layer .sidebar .nav-active { background-color: rgb(255,189,26); color: rgb(37,22,117); border-radius: 28px; -unity-font-style: bold; }
+.eq-theme .drawer-spacer { flex-grow: 1; }
+.eq-theme .home-menu-layer .sidebar .logout { height: 58px; min-height: 58px; margin-top: 8px; background-color: rgba(255,255,255,0); color: white; font-size: 17px; -unity-text-align: middle-left; }
+.eq-theme .generic-content .content-panel { margin-top: 6px; }
+.eq-theme .generic-content .heading { font-size: 25px; }
+.eq-theme .generic-content .list-action { width: 100%; min-width: 0; }

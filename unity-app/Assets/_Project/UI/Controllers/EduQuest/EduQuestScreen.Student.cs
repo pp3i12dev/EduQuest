@@ -20,25 +20,21 @@ namespace EduQuest.Student
                 homeScroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
                 homeScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             }
-            Click("home-menu", () =>
-            {
-                if (screen != null) screen.EnableInClassList("menu-open", !screen.ClassListContains("menu-open"));
-            });
-            Click("close-menu", () => screen?.RemoveFromClassList("menu-open"));
-            var backdrop = Q<VisualElement>("menu-backdrop");
-            if (backdrop != null)
-                backdrop.RegisterCallback<ClickEvent>(_ => screen?.RemoveFromClassList("menu-open"));
-            ApplyIcon("home-menu", "MenuIcon");
             Click("go-practice", () => StudentNavigation.Go("Practice"));
             Click("go-subjects", () => StudentNavigation.Go("Subjects"));
+            Click("go-history", () => StudentNavigation.Go("History"));
+            Click("go-profile", () => StudentNavigation.Go("Profile"));
             ApplyIcon("level-icon", "LevelIcon");
             ApplyIcon("points-icon", "StarIcon");
             ApplyIcon("coins-icon", "CoinIcon");
-            Q<Label>("student-name").text = FullName(EduQuestRuntime.Session.CurrentUser);
+            string studentName = FullName(EduQuestRuntime.Session.CurrentUser);
+            Q<Label>("student-name").text = "¡Hola, " + studentName + "!";
+            var drawerName = Q<Label>("drawer-name");
+            if (drawerName != null) drawerName.text = studentName;
             var avatar = Q<VisualElement>("avatar");
             // Silueta genérica por defecto para todos los alumnos.
             // Podrá sustituirse por el avatar personalizable de Prisma más adelante.
-            var texture = Resources.Load<Texture2D>("EduQuest/GenericAvatar");
+            var texture = Resources.Load<Texture2D>("EduQuest/AvatarIllustration");
             if (texture == null) texture = Resources.Load<Texture2D>("EduQuest/Avatar");
             if (avatar != null)
             {
@@ -58,7 +54,17 @@ namespace EduQuest.Student
             {
                 var data = await EduQuestRuntime.Student.Dashboard();
                 if (this == null) return;
-                Q<Label>("level").text = data.level.ToString();
+                Q<Label>("level").text = "Nivel " + data.level;
+                var drawerLevel = Q<Label>("drawer-level");
+                if (drawerLevel != null) drawerLevel.text = "Nivel " + data.level;
+                var bar = Q<VisualElement>("progress-fill");
+                if (bar != null)
+                {
+                    // Regla temporal actual del backend: un nivel por cada 500 puntos.
+                    // El nivel mostrado siempre viene de Prisma, no se recalcula aquí.
+                    float fraction = Mathf.Clamp01((data.points % 500) / 500f);
+                    bar.style.width = Length.Percent(Mathf.Max(6f, fraction * 100f));
+                }
                 Q<Label>("points").text = data.points.ToString("N0");
                 Q<Label>("coins").text = data.coins.ToString("N0");
                 Q<Label>("progress").text = $"{data.pendingActivities} actividades pendientes  ·  {data.finishedGames} partidas completadas" +

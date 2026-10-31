@@ -1,11 +1,18 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <Style src="../../../USS/EduQuest.uss" />
-<ui:VisualElement class="screen"><ui:VisualElement class="layout"><ui:VisualElement class="sidebar"><ui:Label text="EDUQUEST" class="brand" />
-        <ui:Button name="nav-home" text="⌂   Inicio" class="nav" />
-        <ui:Button name="nav-subjects" text="▤   Materias" class="nav" />
-        <ui:Button name="nav-practice" text="▶   Jugar" class="nav" />
-        <ui:Button name="nav-history" text="★   Historial" class="nav" />
-        <ui:Button name="nav-profile" text="◉   Mi perfil" class="nav" />
-        <ui:Button name="nav-logout" text="Cerrar sesión" class="danger logout" />
-        </ui:VisualElement><ui:ScrollView class="main-scroll"><ui:VisualElement class="content"><ui:Label text="Zona de entrenamiento" class="heading" /><ui:Label text="Elegí una aventura. La práctica no modifica tus notas ni puntos." class="subheading" /><ui:VisualElement class="glass"><ui:VisualElement name="items" /></ui:VisualElement><ui:Label name="status" class="status" /></ui:VisualElement></ui:ScrollView></ui:VisualElement></ui:VisualElement>
+  <Style src="../../../USS/EduQuest.uss" />
+<ui:VisualElement class="screen eq-theme generic-screen generic-practice"><ui:VisualElement class="layout"><ui:ScrollView class="main-scroll eq-scroll"><ui:VisualElement class="content generic-content"><ui:VisualElement class="home-topbar"><ui:Button name="home-menu" class="home-menu art-menu" tooltip="Abrir menú" /><ui:VisualElement class="logo-group small"><ui:VisualElement class="logo-star art-star" /><ui:VisualElement class="logo-text art-logo" /></ui:VisualElement><ui:VisualElement class="topbar-stat"><ui:VisualElement class="stat-symbol art-star" /><ui:Label name="top-points" class="top-stat-value" text="—" /></ui:VisualElement></ui:VisualElement><ui:VisualElement class="white-panel content-panel"><ui:Label xmlns:ui="UnityEngine.UIElements" text="Zona de entrenamiento" class="heading"/><ui:Label xmlns:ui="UnityEngine.UIElements" text="Elegí una aventura. La práctica no modifica tus notas ni puntos." class="subheading"/><ui:VisualElement xmlns:ui="UnityEngine.UIElements" class="glass"><ui:VisualElement name="items"/></ui:VisualElement><ui:Label xmlns:ui="UnityEngine.UIElements" name="status" class="status"/></ui:VisualElement></ui:VisualElement></ui:ScrollView><ui:VisualElement name="home-menu-layer" class="home-menu-layer"><ui:VisualElement name="menu-backdrop" class="home-menu-backdrop" />
+ <ui:VisualElement class="sidebar">
+  <ui:VisualElement class="drawer-head"><ui:Button name="close-menu" class="drawer-close" text="✕" />
+    <ui:VisualElement name="drawer-avatar" class="drawer-avatar art-avatar" />
+    <ui:Label name="drawer-name" text="Estudiante" class="drawer-name" />
+    <ui:Label name="drawer-level" text="Alumno de EduQuest" class="drawer-level" />
+  </ui:VisualElement>
+  <ui:Button name="nav-home" text="⌂   Inicio" class="nav nav-active" />
+  <ui:Button name="nav-practice" text="▶   Jugar (Práctica)" class="nav" />
+  <ui:Button name="nav-subjects" text="▣   Materias" class="nav" />
+  <ui:Button name="nav-history" text="★   Historial" class="nav" />
+  <ui:Button name="nav-profile" text="●   Perfil" class="nav" />
+  <ui:VisualElement class="drawer-spacer" />
+  <ui:Button name="nav-logout" text="➜  Cerrar sesión" class="danger logout" />
+ </ui:VisualElement></ui:VisualElement></ui:VisualElement></ui:VisualElement>
 </ui:UXML>
