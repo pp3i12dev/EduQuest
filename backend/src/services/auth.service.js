@@ -133,13 +133,31 @@ export const registerStudentService = async (data) => {
     if (careerId != null && course.careerId !== Number(careerId)) {
         throw new ServiceError('El curso no pertenece a la carrera seleccionada', 400);
     }
+    // Mensaje amigable antes de intentar insertar. Sigue siendo necesario capturar P2002,
+    // porque dos solicitudes simultáneas podrían pasar esta comprobación a la vez.
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedDni = String(dni).trim();
+    if (!normalizedEmail || !normalizedDni) {
+        throw new ServiceError('Completá un correo electrónico y DNI válidos.', 400);
+    }
+
+    const existingEmail = await userRepository.findUserByEmailOrDni({ email: normalizedEmail });
+    if (existingEmail) {
+        throw new ServiceError('El correo electrónico ya está registrado. Iniciá sesión, recuperá tu contraseña o consultá la aprobación de tu cuenta con la institución.', 409);
+    }
+    const existingDni = await userRepository.findUserByEmailOrDni({ dni: normalizedDni });
+    if (existingDni) {
+        throw new ServiceError('El DNI ya está registrado. Si es tu cuenta, intentá iniciar sesión o contactá a la institución.', 409);
+    }
+
     const passwordHash = await hashPassword(password);
 
-    const user =
-        await userRepository.createStudentSelfSignup({
+    let user;
+    try {
+        user = await userRepository.createStudentSelfSignup({
             userData: {
-                dni,
-                email,
+                dni: normalizedDni,
+                email: normalizedEmail,
                 passwordHash,
                 firstName,
                 lastName,
@@ -148,6 +166,20 @@ export const registerStudentService = async (data) => {
             },
             courseId: Number(courseId),
         });
+    } catch (error) {
+        if (error?.code !== 'P2002') throw error;
+        // Prisma 7 + adaptador Neon no siempre informa meta.target.
+        // Revisamos ambas claves tras la colisión, sin revelar el stack de Prisma.
+        const byEmail = await userRepository.findUserByEmailOrDni({ email: normalizedEmail });
+        if (byEmail) {
+            throw new ServiceError('El correo electrónico ya está registrado. Iniciá sesión o recuperá la contraseña. Si tu cuenta está pendiente, contactá a la institución.', 409);
+        }
+        const byDni = await userRepository.findUserByEmailOrDni({ dni: normalizedDni });
+        if (byDni) {
+            throw new ServiceError('El DNI ya está registrado. Contactá a la institución si necesitás recuperar tu cuenta.', 409);
+        }
+        throw new ServiceError('Ya existe un registro con alguno de los datos ingresados. Revisá correo y DNI.', 409);
+    }
 
     return {
         message:

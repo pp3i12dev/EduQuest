@@ -2,23 +2,14 @@
   <Style src="../../../USS/EduQuest.uss" />
   <ui:VisualElement class="screen home-mobile">
     <ui:VisualElement class="layout">
-      <ui:VisualElement class="sidebar">
-        <ui:Label text="EDUQUEST" class="brand" />
-        <ui:Button name="nav-home" text="⌂   Inicio" class="nav" />
-        <ui:Button name="nav-subjects" text="▤   Materias" class="nav" />
-        <ui:Button name="nav-practice" text="▶   Jugar" class="nav" />
-        <ui:Button name="nav-history" text="★   Historial" class="nav" />
-        <ui:Button name="nav-profile" text="◉   Mi perfil" class="nav" />
-        <ui:Button name="nav-logout" text="Cerrar sesión" class="danger logout" />
-      </ui:VisualElement>
-      <ui:ScrollView class="main-scroll">
+      <ui:ScrollView name="home-scroll" class="main-scroll">
         <ui:VisualElement class="content home-content">
           <ui:VisualElement class="home-topbar">
             <ui:VisualElement>
               <ui:Label text="EDUQUEST" class="eyebrow" />
               <ui:Label text="¡Tu próxima aventura!" class="heading" />
             </ui:VisualElement>
-            <ui:Button name="home-menu" text="☰" class="home-menu ghost" />
+            <ui:Button name="home-menu" text="" tooltip="Abrir menú de navegación" class="home-menu" />
           </ui:VisualElement>
           <ui:VisualElement class="glass hero-card">
             <ui:VisualElement class="hero-info">
@@ -54,6 +45,21 @@
           <ui:Label name="status" class="status" />
         </ui:VisualElement>
       </ui:ScrollView>
+      <ui:VisualElement name="home-menu-layer" class="home-menu-layer">
+        <ui:VisualElement name="menu-backdrop" class="home-menu-backdrop" />
+      <ui:VisualElement class="sidebar">
+        <ui:VisualElement class="drawer-header">
+          <ui:Label text="EDUQUEST" class="brand" />
+          <ui:Button name="close-menu" text="CERRAR ✕" class="drawer-close ghost" />
+        </ui:VisualElement>
+        <ui:Button name="nav-home" text="⌂   Inicio" class="nav" />
+        <ui:Button name="nav-subjects" text="▤   Materias" class="nav" />
+        <ui:Button name="nav-practice" text="▶   Jugar" class="nav" />
+        <ui:Button name="nav-history" text="★   Historial" class="nav" />
+        <ui:Button name="nav-profile" text="◉   Mi perfil" class="nav" />
+        <ui:Button name="nav-logout" text="Cerrar sesión" class="danger logout" />
+      </ui:VisualElement>
+      </ui:VisualElement>
     </ui:VisualElement>
   </ui:VisualElement>
 </ui:UXML>

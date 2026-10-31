@@ -116,12 +116,6 @@
 .stat-icon { width: 44px; height: 44px; -unity-background-scale-mode: scale-to-fit; margin-bottom: 7px; }
 .stat-card .stat-number { color: rgb(255,209,83); }
 .stat-card .stat-label { color: rgb(186,207,241); }
-.mobile-portrait.home-mobile .home-menu { display: flex; align-items: center; justify-content: center; }
-.mobile-portrait.home-mobile .sidebar { display: none; position: absolute; z-index: 100; left: 0; top: 0; right: auto; bottom: auto; width: 260px; height: auto; flex-direction: column; align-items: stretch; justify-content: flex-start; padding-top: 26px; padding-bottom: 25px; padding-left: 12px; padding-right: 12px; border-right-width: 1px; border-right-color: rgb(85,102,152); border-top-width: 0; }
-.mobile-portrait.home-mobile.menu-open .sidebar { display: flex; }
-.mobile-portrait.home-mobile .sidebar .brand { display: flex; -unity-text-align: middle-center; }
-.mobile-portrait.home-mobile .sidebar .nav, .mobile-portrait.home-mobile .sidebar .logout { width: 100%; flex-grow: 0; min-height: 53px; font-size: 16px; -unity-text-align: middle-left; padding-left: 16px; }
-.mobile-portrait.home-mobile .sidebar .logout { margin-top: 16px; }
 .mobile-portrait.home-mobile .main-scroll { margin-bottom: 0; }
 .mobile-portrait.home-mobile .home-content { padding-top: 18px; }
 .mobile-portrait.home-mobile .hero-card { align-items: center; }
@@ -131,3 +125,25 @@
 .mobile-portrait.home-mobile .stat-icon { width: 39px; height: 39px; }
 .mobile-portrait.home-mobile .stat-number { font-size: 25px; }
 .mobile-portrait.home-mobile .stat-label { font-size: 11px; }
+
+/* --------------------------------------------------------------------------
+   HOME ANDROID – menú superpuesto; la capa va al final de Home.uxml.
+   No se utiliza z-index: en UI Toolkit importa el orden de dibujo.
+   -------------------------------------------------------------------------- */
+.home-mobile .layout { position: relative; flex-grow: 1; }
+.home-mobile .home-menu { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; min-height: 52px; background-color: rgb(255,183,47); border-width: 0; border-radius: 14px; -unity-background-scale-mode: scale-to-fit; }
+.home-mobile .home-menu:hover { background-color: rgb(255,207,91); }
+.home-mobile .home-menu-layer { display: none; position: absolute; top: 0; bottom: 0; left: 0; right: 0; }
+.home-mobile.menu-open .home-menu-layer { display: flex; }
+.home-mobile .home-menu-backdrop { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(4,8,25,0.76); }
+.home-mobile .home-menu-layer .sidebar { display: flex; position: absolute; left: 0; top: 0; bottom: 0; width: 285px; max-width: 86%; height: auto; flex-direction: column; padding-top: 20px; padding-bottom: 23px; padding-left: 18px; padding-right: 18px; background-color: rgb(24,28,67); border-right-color: rgb(246,165,49); border-right-width: 2px; border-top-width: 0px; }
+.home-mobile .drawer-header { flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+.home-mobile .drawer-header .brand { display: flex; font-size: 22px; margin-bottom: 0px; }
+.home-mobile .drawer-close { height: 43px; min-height: 43px; font-size: 11px; margin-bottom: 0px; margin-left: 8px; padding-left: 8px; padding-right: 8px; }
+.home-mobile .home-menu-layer .sidebar .nav { width: 100%; flex-grow: 0; flex-shrink: 0; height: 53px; min-height: 53px; margin-bottom: 8px; font-size: 16px; -unity-text-align: middle-left; padding-left: 17px; background-color: rgb(37,49,101); border-radius: 13px; }
+.home-mobile .home-menu-layer .sidebar .nav:hover { background-color: rgb(68,78,140); }
+.home-mobile .home-menu-layer .sidebar .logout { display: flex; align-items: center; justify-content: center; width: 100%; flex-shrink: 0; margin-top: 20px; height: 54px; min-height: 54px; }
+.home-mobile .main-scroll { flex-grow: 1; min-width: 0; margin-bottom: 0px; }
+.home-mobile .main-scroll .unity-scroll-view__vertical-scroller { display: none; }
+.home-mobile .main-scroll .unity-scroll-view__horizontal-scroller { display: none; }
+.home-mobile .hero-avatar { -unity-background-scale-mode: scale-to-fit; background-color: rgb(43,46,106); }

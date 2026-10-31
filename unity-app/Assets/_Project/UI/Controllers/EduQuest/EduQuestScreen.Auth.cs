@@ -24,7 +24,18 @@ namespace EduQuest.Student
         {
             Password("password");
             Click("back", () => StudentNavigation.Go("Welcome"));
-            Click("forgot", () => StudentNavigation.Go("ForgotPassword"));
+            // Si EQ_ForgotPassword está fuera del Build Profile activo, indicarlo
+            // claramente: antes StudentNavigation sólo dejaba una traza en Console.
+            Click("forgot", () =>
+            {
+                if (!Application.CanStreamedLevelBeLoaded("EQ_ForgotPassword"))
+                {
+                    Status("No se pudo abrir Recuperar contraseña: EQ_ForgotPassword no está incluida en el Build Profile activo. Ejecutá EduQuest > Android > Configurar orientación y escenas.");
+                    Debug.LogError("EduQuest: falta EQ_ForgotPassword en la Scene List activa.");
+                    return;
+                }
+                StudentNavigation.Go("ForgotPassword");
+            });
             Click("submit", () => Run(async () =>
             {
                 string identity = Value("identity");
@@ -129,7 +140,7 @@ namespace EduQuest.Student
                 if (password != Value("confirm-password")) throw new Exception("Las contraseñas no coinciden.");
                 var data = new RegisterStudentRequestDTO {
                     dni = Value("dni"), firstName = Value("first-name"), lastName = Value("last-name"),
-                    email = Value("email"), telefono = Value("phone"), password = password,
+                    email = Value("email").Trim().ToLowerInvariant(), telefono = Value("phone"), password = password,
                     institutionId = selectedInstitution, careerId = selectedCareer, courseId = selectedCourse
                 };
                 var result = await EduQuestRuntime.Auth.RegisterStudentAsync(data);

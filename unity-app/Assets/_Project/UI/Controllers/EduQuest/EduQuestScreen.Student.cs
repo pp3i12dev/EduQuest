@@ -13,10 +13,22 @@ namespace EduQuest.Student
         private void SetupHome()
         {
             var screen = root.Q<VisualElement>(className: "screen");
+            var homeScroll = Q<ScrollView>("home-scroll");
+            if (homeScroll != null)
+            {
+                // Oculta el indicador; el contenido sigue desplazándose con el dedo.
+                homeScroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+                homeScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            }
             Click("home-menu", () =>
             {
                 if (screen != null) screen.EnableInClassList("menu-open", !screen.ClassListContains("menu-open"));
             });
+            Click("close-menu", () => screen?.RemoveFromClassList("menu-open"));
+            var backdrop = Q<VisualElement>("menu-backdrop");
+            if (backdrop != null)
+                backdrop.RegisterCallback<ClickEvent>(_ => screen?.RemoveFromClassList("menu-open"));
+            ApplyIcon("home-menu", "MenuIcon");
             Click("go-practice", () => StudentNavigation.Go("Practice"));
             Click("go-subjects", () => StudentNavigation.Go("Subjects"));
             ApplyIcon("level-icon", "LevelIcon");
@@ -24,8 +36,23 @@ namespace EduQuest.Student
             ApplyIcon("coins-icon", "CoinIcon");
             Q<Label>("student-name").text = FullName(EduQuestRuntime.Session.CurrentUser);
             var avatar = Q<VisualElement>("avatar");
-            var texture = Resources.Load<Texture2D>("EduQuest/Avatar");
-            if (texture != null && avatar != null) avatar.style.backgroundImage = new StyleBackground(texture);
+            // Silueta genérica por defecto para todos los alumnos.
+            // Podrá sustituirse por el avatar personalizable de Prisma más adelante.
+            var texture = Resources.Load<Texture2D>("EduQuest/GenericAvatar");
+            if (texture == null) texture = Resources.Load<Texture2D>("EduQuest/Avatar");
+            if (avatar != null)
+            {
+                if (texture != null)
+                {
+                    avatar.style.backgroundImage = new StyleBackground(texture);
+                    avatar.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+                }
+                else
+                {
+                    avatar.style.backgroundColor = new Color(0.34f, 0.42f, 0.73f);
+                    Debug.LogWarning("EduQuest: no se encontró GenericAvatar.png en Resources/EduQuest");
+                }
+            }
             Click("edit-profile", () => StudentNavigation.Go("Profile"));
             Run(async () =>
             {
