@@ -1,0 +1,11 @@
+// Publicacion de actividades por curso: se corresponde con la tabla existente en Neon.
+model ActivityCourse {
+  activityId Int
+  courseId   Int
+  assignedAt DateTime @default(now())
+  Activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  Course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([activityId, courseId])
+  @@index([courseId])
+}

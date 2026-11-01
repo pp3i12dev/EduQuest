@@ -11,6 +11,7 @@ namespace EduQuest.Student
     {
         private QuestionSetDTO currentQuestions;
         private readonly Dictionary<string, bool> answers = new Dictionary<string, bool>();
+        private readonly Dictionary<string, string> choiceAnswers = new Dictionary<string, string>();
         private int questionIndex;
         private float startedAt;
 
@@ -31,49 +32,74 @@ namespace EduQuest.Student
                     ? await EduQuestRuntime.Student.PracticeQuestions(StudentNavigation.GameType)
                     : await EduQuestRuntime.Student.Play(StudentNavigation.ActivityId);
                 if (this == null) return;
-                if (currentQuestions == null || currentQuestions.gameType != "true_false")
+                if (currentQuestions == null || (currentQuestions.gameType != "true_false" && currentQuestions.gameType != "multiple_choice"))
                     throw new Exception("El servidor todavía no ofrece este juego para Unity.");
                 if (currentQuestions.questions == null || currentQuestions.questions.Length == 0)
                     throw new Exception("Esta actividad no tiene preguntas publicadas.");
                 questionIndex = 0;
                 answers.Clear();
+                choiceAnswers.Clear();
                 DisplayQuestion();
             });
         }
         private void DisplayQuestion()
         {
             if (currentQuestions?.questions == null) return;
+            bool multiple = currentQuestions.gameType == "multiple_choice";
+            var choicesContainer = Q<VisualElement>("answer-options");
+            var boolContainer = Q<VisualElement>("boolean-answers");
+            if (choicesContainer != null) choicesContainer.Clear();
+            if (choicesContainer != null) choicesContainer.style.display = multiple ? DisplayStyle.Flex : DisplayStyle.None;
+            if (boolContainer != null) boolContainer.style.display = multiple ? DisplayStyle.None : DisplayStyle.Flex;
             bool finished = questionIndex >= currentQuestions.questions.Length;
-            Q<Button>("true").SetEnabled(!finished);
-            Q<Button>("false").SetEnabled(!finished);
+            Q<Button>("true").SetEnabled(!finished && !multiple);
+            Q<Button>("false").SetEnabled(!finished && !multiple);
             Q<Button>("finish").SetEnabled(finished);
             if (finished)
             {
-                Q<Label>("question-position").text = "Preguntas contestadas: " + answers.Count;
+                Q<Label>("question-position").text = "Preguntas contestadas: " + (multiple ? choiceAnswers.Count : answers.Count);
                 Q<Label>("question-text").text = "¡Listo! Enviá tus respuestas para conocer el resultado.";
                 return;
             }
             var item = currentQuestions.questions[questionIndex];
             Q<Label>("question-position").text = "Pregunta " + (questionIndex + 1) + " de " + currentQuestions.questions.Length;
             Q<Label>("question-text").text = item.text;
+            if (!multiple || choicesContainer == null) return;
+            foreach (var option in item.options ?? Array.Empty<RemoteChoiceDTO>())
+            {
+                string optionId = option.id;
+                var btn = new Button(() => AnswerChoice(optionId)) { text = option.text };
+                btn.AddToClassList("secondary");
+                btn.AddToClassList("choice-answer");
+                choicesContainer.Add(btn);
+            }
         }
         private void Answer(bool value)
         {
             if (currentQuestions?.questions == null || questionIndex >= currentQuestions.questions.Length) return;
+            if (currentQuestions.gameType != "true_false") return;
             answers[currentQuestions.questions[questionIndex].id] = value;
+            questionIndex++;
+            DisplayQuestion();
+        }
+        private void AnswerChoice(string optionId)
+        {
+            if (currentQuestions?.questions == null || questionIndex >= currentQuestions.questions.Length) return;
+            if (currentQuestions.gameType != "multiple_choice") return;
+            choiceAnswers[currentQuestions.questions[questionIndex].id] = optionId;
             questionIndex++;
             DisplayQuestion();
         }
         private void Finish()
         {
-            if (currentQuestions?.questions == null || answers.Count != currentQuestions.questions.Length)
+            if (currentQuestions?.questions == null || (currentQuestions.gameType == "multiple_choice" ? choiceAnswers.Count : answers.Count) != currentQuestions.questions.Length)
             { Status("Respondé todas las preguntas antes de finalizar."); return; }
             Q<Button>("finish").SetEnabled(false);
             Run(async () =>
             {
                 try
                 {
-                var data = currentQuestions.questions.Select(q => new AnswerDTO { id = q.id, answer = answers[q.id] }).ToArray();
+                var data = currentQuestions.questions.Select(q => currentQuestions.gameType == "multiple_choice" ? new AnswerDTO { id = q.id, optionId = choiceAnswers[q.id] } : new AnswerDTO { id = q.id, answer = answers[q.id] }).ToArray();
                 int duration = Mathf.Clamp(Mathf.RoundToInt(Time.realtimeSinceStartup - startedAt), 0, 86400);
                 var result = StudentNavigation.PracticeMode
                     ? await EduQuestRuntime.Student.CheckPractice(StudentNavigation.GameType, data)

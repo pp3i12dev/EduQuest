@@ -100,7 +100,7 @@ namespace EduQuest.Student
             noticeRect.sizeDelta = new Vector2(860f, 66f);
 
             AddLabel(noticeObject.transform,
-                "PRACTICA - PREGUNTAS DE DEMOSTRACION - SIN NOTA",
+                "PRACTICA CURRICULAR - SIN NOTA NI PUNTOS",
                 23, TextAnchor.MiddleLeft);
         }
 

@@ -24,25 +24,35 @@ async function assignedActivity(requester, activityId) {
     throw fail(404, 'La actividad no está publicada para tu curso');
   return { ...ctx, activity };
 }
-function statements(activity) {
-  if (activity.gameType !== 'true_false' || !Array.isArray(activity.content?.statements) || !activity.content.statements.length)
-    throw fail(409, `El videojuego '${activity.gameType}' necesita implementación específica en Unity`);
-  return activity.content.statements;
+function questionsFor(activity) {
+  if (activity.gameType === 'true_false') {
+    if (!Array.isArray(activity.content?.statements) || !activity.content.statements.length) throw fail(409, 'Actividad sin afirmaciones');
+    return activity.content.statements;
+  }
+  if (activity.gameType === 'multiple_choice') {
+    if (!Array.isArray(activity.content?.questions) || !activity.content.questions.length) throw fail(409, 'Actividad sin preguntas de opciones múltiples');
+    return activity.content.questions;
+  }
+  throw fail(409, `El videojuego '${activity.gameType}' todavía no tiene adaptador evaluativo en Unity`);
 }
+function statements(activity) { return questionsFor(activity); }
 function publicQuestions(activity) {
   return {
     id: activity.id, title: activity.title, description: activity.description || '', gameType: activity.gameType,
-    questions: statements(activity).map(q => ({ id: String(q.id), text: q.text })),
+    questions: questionsFor(activity).map(q => ({ id: String(q.id), text: q.text,
+      ...(activity.gameType === 'multiple_choice' ? { options: q.options.map(o => ({ id: String(o.id), text: o.text })) } : {}) })),
   };
 }
-function grade(keys, answers) {
+function grade(keys, answers, type = 'true_false') {
   if (!Array.isArray(answers) || answers.length !== keys.size) throw fail(400, 'Respondé todas las preguntas');
   const seen = new Set(); let correct = 0;
   for (const item of answers) {
     const key = String(item?.id);
-    if (seen.has(key) || !keys.has(key) || typeof item.answer !== 'boolean') throw fail(400, 'Respuestas inválidas o repetidas');
+    if (seen.has(key) || !keys.has(key)) throw fail(400, 'Respuestas inválidas o repetidas');
     seen.add(key);
-    if (item.answer === keys.get(key)) correct++;
+    if (type === 'true_false' && typeof item.answer !== 'boolean') throw fail(400, 'Respuestas de verdadero/falso inválidas');
+    if (type === 'multiple_choice' && !['1','2','3','4'].includes(String(item.optionId))) throw fail(400, 'Opción inválida');
+    if ((type === 'true_false' ? item.answer : String(item.optionId)) === keys.get(key)) correct++;
   }
   return { score: Math.round(correct * 100 / keys.size), correct, total: keys.size };
 }
@@ -114,7 +124,7 @@ export async function play(requester, activityId) {
 export async function complete(requester, activityId, body = {}) {
   const { student, activity } = await assignedActivity(requester, activityId);
   const keys = new Map(statements(activity).map(q => [String(q.id), q.correctAnswer]));
-  const result = grade(keys, body.answers);
+  const result = grade(keys, body.answers, activity.gameType);
   const duration = Number(body.timeInSec);
   if (!Number.isFinite(duration) || duration < 0 || duration > 86400) throw fail(400, 'Duración inválida');
   const saved = await repo.saveGradedAttempt({
@@ -151,4 +161,20 @@ export async function practiceCheck(requester, body = {}) {
     keys.set(key, all.get(key));
   }
   return { ...grade(keys, body.answers), earnedPoints: 0, message: 'La práctica no modifica el historial, los puntos ni las notas.' };
+}
+
+
+// Exclusivo de práctica no evaluada en Corre y aprende: la solución viaja al juego
+// local porque PreguntaData valida la opción dentro de Unity. NUNCA usar para
+// actividades que otorguen puntos o notas; esas se corrigen por POST /complete.
+export async function runnerPracticeBank(requester) {
+  const { byId } = await context(requester);
+  const all = await repo.findPublishedActivities([...byId.keys()]);
+  const questions = all.filter(a => a.gameType === 'multiple_choice' && Array.isArray(a.content?.questions))
+    .flatMap(a => a.content.questions.map(q => ({
+      id: `${a.id}:${q.id}`, text: q.text,
+      options: q.options.map(o => ({ id: String(o.id), text: o.text })),
+      correctAnswer: String(q.correctAnswer),
+    }))).slice(0, 40);
+  return { mode: 'PRACTICE_ONLY', rewarded: false, questions };
 }

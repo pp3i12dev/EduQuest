@@ -11,9 +11,9 @@ namespace EduQuest.Student
     [Serializable] public class AttemptDTO { public int id, score, earnedPoints, durationSeconds; public string activityTitle, subjectName, teacherName, activityDate, completedAt; }
     [Serializable] public class ProfileDTO { public int id; public string dni, firstName, lastName, email, telefono; public bool isActive; public string[] roles; }
     [Serializable] public class GameTypeDTO { public string gameType, name; public int activities; }
-    [Serializable] public class QuestionDTO { public string id, text; }
+    [Serializable] public class QuestionDTO { public string id, text; public RemoteChoiceDTO[] options; }
     [Serializable] public class QuestionSetDTO { public int id; public string title, description, gameType; public QuestionDTO[] questions; }
-    [Serializable] public class AnswerDTO { public string id; public bool answer; }
+    [Serializable] public class AnswerDTO { public string id; public bool answer; public string optionId; }
     [Serializable] public class ResultDTO { public int score, correct, total, earnedPoints, attemptId, points, level, coins; public string message; }
     [Serializable] public class MessageDTO { public string message; }
     [Serializable] public class AssessmentDTO { public AnswerDTO[] answers; public int timeInSec; }
@@ -23,3 +23,5 @@ namespace EduQuest.Student
     [Serializable] public class RemoteMultiQuestionDTO { public string id, text; public RemoteChoiceDTO[] options; }
     [Serializable] public class RemoteMatchingQuestionDTO { public string id, prompt; public RemoteChoiceDTO[] left, right; }
 }
+
+namespace EduQuest.Student { [System.Serializable] public class RunnerPracticeBankDTO { public string mode; public bool rewarded; public RunnerQuestionDTO[] questions; } [System.Serializable] public class RunnerQuestionDTO { public string id, text, correctAnswer; public RemoteChoiceDTO[] options; } }

@@ -574,3 +574,7 @@
 }
 .eq-theme.eq-compact .logo-text { width: 274px; height: 68px; }
 .eq-theme.eq-compact .logo-star { width: 108px; height: 98px; }
+
+/* Opciones multiples evaluativas: botones tactiles, sin ancho horizontal. */
+.eq-theme .answer-options { width: 100%; min-width: 0; }
+.eq-theme .choice-answer { min-height: 54px; margin-bottom: 10px; white-space: normal; width: 100%; }

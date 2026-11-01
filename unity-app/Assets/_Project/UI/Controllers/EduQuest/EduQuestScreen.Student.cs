@@ -122,7 +122,7 @@ namespace EduQuest.Student
                     " · " + item.teacherName + " · " + item.gameType;
                 ListRow(list, item.title, details, item.completed ? "VOLVER A JUGAR" : "JUGAR", () =>
                 {
-                    if (chosen.gameType != "true_false") { Status("Este tipo de juego todavía no tiene adaptador de corrección en el servidor."); return; }
+                    if (chosen.gameType != "true_false" && chosen.gameType != "multiple_choice") { Status("Este tipo de juego todavía no tiene adaptador de corrección en Unity."); return; }
                     StudentNavigation.ActivityId = chosen.id;
                     StudentNavigation.ActivityName = chosen.title;
                     StudentNavigation.PracticeMode = false;

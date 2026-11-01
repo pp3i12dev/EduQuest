@@ -44,6 +44,7 @@ model Course {
   institution Institution @relation(fields: [institutionId], references: [id])
   careerId Int?
   career Career? @relation(fields: [careerId], references: [id])
+  ActivityCourse ActivityCourse[]
   students StudentCourse[]
   teachers TeacherSubject[]
   schedules SubjectSchedule[]

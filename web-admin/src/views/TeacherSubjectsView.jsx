@@ -11,6 +11,7 @@ import {
     LoaderCircle,
     Layers3,
     ArrowRight,
+    Sparkles,
 } from 'lucide-react';
 
 import { useMyTeacherSubjects } from '../hooks/useTeacherSubject';
@@ -26,7 +27,7 @@ export default function TeacherSubjectsView() {
     const [selectedId, setSelectedId] = useState(null);
 
     const activeCount = rows.filter(
-        row => Boolean(row.activities?.[0])
+        row => (row.activities || []).some(a => a.status === 'ACTIVE')
     ).length;
 
     const pendingCount = rows.length - activeCount;
@@ -106,7 +107,7 @@ export default function TeacherSubjectsView() {
                             </h1>
 
                             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400 sm:text-base">
-                                Consultá tus materias asignadas, revisá sus actividades y administrá su contenido.
+                                Seleccioná una materia para cargar material, generar preguntas con IA, revisar y publicar actividades para Unity.
                             </p>
                         </div>
                     </div>
@@ -256,8 +257,8 @@ export default function TeacherSubjectsView() {
 
                                         <tbody className="divide-y divide-slate-800">
                                             {rows.map(row => {
-                                                const game = row.activities?.[0];
-                                                const active = Boolean(game);
+                                                const game = row.activities?.find(a => a.status === 'ACTIVE') || row.activities?.[0];
+                                                const active = game?.status === 'ACTIVE';
 
                                                 return (
                                                     <tr
@@ -330,7 +331,8 @@ export default function TeacherSubjectsView() {
 
                                                         <td className="px-6 py-5 text-right">
                                                             <div className="inline-flex items-center gap-2">
-                                                                {renderUnitsButton(row)}
+                                                                <Link to={`/dashboard/my-subjects/${row.id}/studio`} className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-3 py-2 text-sm font-bold text-slate-950 hover:bg-amber-400"><Sparkles size={16} /> Crear actividades</Link>
+                                                    {renderUnitsButton(row)}
                                                                 {renderEditButton(row)}
                                                             </div>
                                                         </td>
@@ -344,8 +346,8 @@ export default function TeacherSubjectsView() {
                                 {/* TARJETAS MOBILE */}
                                 <div className="divide-y divide-slate-800 md:hidden">
                                     {rows.map(row => {
-                                        const game = row.activities?.[0];
-                                        const active = Boolean(game);
+                                        const game = row.activities?.find(a => a.status === 'ACTIVE') || row.activities?.[0];
+                                        const active = game?.status === 'ACTIVE';
 
                                         return (
                                             <div
@@ -379,7 +381,7 @@ export default function TeacherSubjectsView() {
 
                                                 <div className="rounded-xl border border-slate-700/60 bg-slate-800/40 p-3">
                                                     <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-                                                        Actividad vinculada
+                                                        Actividad destacada
                                                     </p>
 
                                                     <div className="flex items-center gap-2 text-sm text-slate-200">
@@ -395,6 +397,7 @@ export default function TeacherSubjectsView() {
                                                 </div>
 
                                                 <div className="flex justify-end gap-2">
+                                                    <Link to={`/dashboard/my-subjects/${row.id}/studio`} className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-3 py-2 text-sm font-bold text-slate-950 hover:bg-amber-400"><Sparkles size={16} /> Crear actividades</Link>
                                                     {renderUnitsButton(row)}
                                                     {renderEditButton(row)}
                                                 </div>

@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { authenticate, requirePermission } from '../middlewares/auth.middleware.js';
+import * as ctrl from '../controllers/aiActivity.controller.js';
+const router = Router();
+router.use(authenticate, requirePermission('subjectContent:manage'));
+router.post('/preview', ctrl.preview);
+router.post('/drafts', ctrl.saveDraft);
+router.put('/drafts/:activityId', ctrl.editDraft);
+router.post('/drafts/:activityId/publish', ctrl.publish);
+export default router;

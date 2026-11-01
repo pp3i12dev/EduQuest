@@ -13,15 +13,19 @@ model Activity {
   content          Json
   pointsAwarded    Int             @default(100)
   status           ActivityStatus  @default(ACTIVE)
+  isPublished      Boolean         @default(false)
+  publishedAt      DateTime?
   createdAt        DateTime        @default(now())
   teacherId        Int
   teacher          TeacherProfile  @relation(fields: [teacherId], references: [id])
   teacherSubjectId Int?
   teacherSubject   TeacherSubject? @relation(fields: [teacherSubjectId], references: [id], onDelete: SetNull)
+  ActivityCourse   ActivityCourse[]
   attempts         GameAttempt[]
   unitLinks UnitActivity[]
 
   @@index([teacherSubjectId])
+  @@index([teacherId, isPublished])
 }
 
 model GameAttempt {
