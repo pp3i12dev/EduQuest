@@ -23,8 +23,11 @@ model Activity {
   ActivityCourse   ActivityCourse[]
   attempts         GameAttempt[]
   unitLinks UnitActivity[]
+  topicId Int?
+  topic Topic? @relation(fields: [topicId], references: [id], onDelete: SetNull)
 
   @@index([teacherSubjectId])
+  @@index([topicId])
   @@index([teacherId, isPublished])
 }
 
@@ -38,6 +41,20 @@ model GameAttempt {
   activity    Activity       @relation(fields: [activityId], references: [id])
   studentId   Int
   student     StudentProfile @relation(fields: [studentId], references: [id])
+  // Snapshot inmutable de cada respuesta, generado por el servidor al corregir.
+  answerReview Json?
+  earnedPoints Int?
+  subjectNameSnapshot String?
+  courseNameSnapshot String?
+  unitNameSnapshot String?
+  topicNameSnapshot String?
+  activityNameSnapshot String?
+  teacherSubjectIdSnapshot Int?
+  studentHiddenAt DateTime?
+  teacherArchivedAt DateTime?
+
+  @@index([teacherSubjectIdSnapshot, createdAt])
+  @@index([studentId, createdAt])
 }
 
 model AvatarConfig {

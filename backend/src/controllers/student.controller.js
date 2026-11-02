@@ -16,3 +16,8 @@ export const practiceQuestions = action(req => service.practiceQuestions(req.use
 export const practiceCheck = action(req => service.practiceCheck(req.user, req.body));
 
 export const runnerPracticeBank = action(req => service.runnerPracticeBank(req.user));
+
+export const contentTree = action(req => service.contentTree(req.user, req.params.assignmentId));
+
+export const historyDetail = action(req => service.historyDetail(req.user, req.params.attemptId));
+export const hideHistoryItem = action(req => service.hideHistoryItem(req.user, req.params.attemptId));

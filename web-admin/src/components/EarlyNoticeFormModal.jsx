@@ -1,3 +1,4 @@
+import { todayArgentina } from '../utils/institutionDate';
 import { createPortal } from 'react-dom';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
@@ -61,7 +62,7 @@ export default function EarlyNoticeFormModal(props) {
   }, [teachers, teacherId]);
   const teacherAssignments = useMemo(() => assignments.filter(a => String(groupId(a)) === teacherId), [assignments, teacherId]);
   const effectiveEnd = duration === 'single' ? start : end;
-  const periodError = !start || !effectiveEnd ? '' : effectiveEnd < start ? 'La fecha final debe ser igual o posterior a la inicial.' : Math.round((dateAtUTC(effectiveEnd) - dateAtUTC(start))/86400000) > 90 ? 'El período no puede superar los 91 días.' : '';
+  const periodError = !start || !effectiveEnd ? '' : start < todayArgentina() ? 'No se pueden generar avisos para fechas anteriores a hoy.' : effectiveEnd < start ? 'La fecha final debe ser igual o posterior a la inicial.' : Math.round((dateAtUTC(effectiveEnd) - dateAtUTC(start))/86400000) > 90 ? 'El período no puede superar los 91 días.' : '';
   const classes = useMemo(() => {
     if (!start || !effectiveEnd || periodError || !teacherId) return [];
     const days = Math.round((dateAtUTC(effectiveEnd) - dateAtUTC(start))/86400000);
@@ -127,8 +128,8 @@ export default function EarlyNoticeFormModal(props) {
           <section className="space-y-3 border-t border-slate-700 pt-5">
             <h3 className="text-lg font-bold">Período del aviso</h3>
             <div className="flex flex-wrap gap-5 text-sm"><label className="flex cursor-pointer items-center gap-2"><input type="radio" checked={duration==='single'} onChange={()=>{setDuration('single');setSelected([]);}}/> Un día</label><label className="flex cursor-pointer items-center gap-2"><input type="radio" checked={duration==='multiple'} onChange={()=>{setDuration('multiple');setSelected([]);}}/> Varios días</label></div>
-            <div className="grid gap-4 md:grid-cols-2"><label className="space-y-2 text-sm font-semibold">Fecha de inicio<input type="date" className={FIELD} value={start} onChange={e=>changePeriod(setStart,e.target.value)} required/></label>
-            {duration==='multiple' && <label className="space-y-2 text-sm font-semibold">Fecha de finalización (inclusive)<input type="date" min={start || undefined} className={FIELD} value={end} onChange={e=>changePeriod(setEnd,e.target.value)} required/></label>}</div>
+            <div className="grid gap-4 md:grid-cols-2"><label className="space-y-2 text-sm font-semibold">Fecha de inicio<input type="date" min={todayArgentina()} className={FIELD} value={start} onChange={e=>changePeriod(setStart,e.target.value)} required/></label>
+            {duration==='multiple' && <label className="space-y-2 text-sm font-semibold">Fecha de finalización (inclusive)<input type="date" min={start || todayArgentina()} className={FIELD} value={end} onChange={e=>changePeriod(setEnd,e.target.value)} required/></label>}</div>
             {periodError && <p className="text-sm text-red-300">{periodError}</p>}
           </section>
           <section className="space-y-3 border-t border-slate-700 pt-5">

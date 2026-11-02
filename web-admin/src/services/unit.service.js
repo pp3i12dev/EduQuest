@@ -1,12 +1,8 @@
 import api from '../api/axios';
 
 export const unitService = {
-    list: async (teacherSubjectId) => {
-        const { data } = await api.get('/units', { params: { teacherSubjectId } });
-        return data;
-    },
-    create: async (payload) => {
-        const { data } = await api.post('/units', payload);
-        return data;
-    },
+  list: async teacherSubjectId => (await api.get('/units', { params: { teacherSubjectId } })).data,
+  create: async payload => (await api.post('/units', payload)).data,
+  createTopic: async ({ unitId, ...payload }) => (await api.post(`/units/${unitId}/topics`, payload)).data,
+  updateTopic: async ({ unitId, topicId, ...payload }) => (await api.put(`/units/${unitId}/topics/${topicId}`, payload)).data,
 };

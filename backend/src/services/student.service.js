@@ -1,4 +1,6 @@
 import * as repo from '../repositories/student.repository.js';
+import { gradeQuestions, gradeLabel } from '../utils/assessmentGrading.js';
+import { matchingQuestionBank, shuffledMatchingQuestions } from '../utils/matchingQuestions.js';
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const numericId = v => {
@@ -11,6 +13,11 @@ const teacherName = profile => [profile?.user?.firstName, profile?.user?.lastNam
 async function context(requester) {
   const student = await repo.findStudent(requester.id);
   if (!student) throw fail(403, 'Esta cuenta no tiene perfil de alumno');
+  // Defensa adicional: el alumno no puede consultar materias si existen matrículas duplicadas
+  // o de otra institución (por ejemplo, datos heredados anteriores a la migración).
+  if (student.courses.length > 1 || student.courses.some(c => c.course.institutionId !== student.user.institutionId)) {
+    throw fail(409, 'La matrícula del alumno requiere revisión administrativa: debe pertenecer a un solo curso de su institución.');
+  }
   // La matrícula no posee fecha de baja: se toman las materias del año actual.
   const currentYear = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric' }).format(new Date()));
   const currentCourses = student.courses.filter(c => c.course.academicYear === currentYear);
@@ -33,28 +40,18 @@ function questionsFor(activity) {
     if (!Array.isArray(activity.content?.questions) || !activity.content.questions.length) throw fail(409, 'Actividad sin preguntas de opciones múltiples');
     return activity.content.questions;
   }
+  if (activity.gameType === 'matching') return matchingQuestionBank(activity);
   throw fail(409, `El videojuego '${activity.gameType}' todavía no tiene adaptador evaluativo en Unity`);
 }
 function statements(activity) { return questionsFor(activity); }
 function publicQuestions(activity) {
   return {
     id: activity.id, title: activity.title, description: activity.description || '', gameType: activity.gameType,
-    questions: questionsFor(activity).map(q => ({ id: String(q.id), text: q.text,
-      ...(activity.gameType === 'multiple_choice' ? { options: q.options.map(o => ({ id: String(o.id), text: o.text })) } : {}) })),
+    questions: activity.gameType === 'matching'
+      ? shuffledMatchingQuestions(questionsFor(activity))
+      : questionsFor(activity).map(q => ({ id: String(q.id), text: q.text,
+        ...(activity.gameType === 'multiple_choice' ? { options: q.options.map(o => ({ id: String(o.id), text: o.text })) } : {}) })),
   };
-}
-function grade(keys, answers, type = 'true_false') {
-  if (!Array.isArray(answers) || answers.length !== keys.size) throw fail(400, 'Respondé todas las preguntas');
-  const seen = new Set(); let correct = 0;
-  for (const item of answers) {
-    const key = String(item?.id);
-    if (seen.has(key) || !keys.has(key)) throw fail(400, 'Respuestas inválidas o repetidas');
-    seen.add(key);
-    if (type === 'true_false' && typeof item.answer !== 'boolean') throw fail(400, 'Respuestas de verdadero/falso inválidas');
-    if (type === 'multiple_choice' && !['1','2','3','4'].includes(String(item.optionId))) throw fail(400, 'Opción inválida');
-    if ((type === 'true_false' ? item.answer : String(item.optionId)) === keys.get(key)) correct++;
-  }
-  return { score: Math.round(correct * 100 / keys.size), correct, total: keys.size };
 }
 function firstCompleted(attempts) {
   const first = new Map();
@@ -99,39 +96,74 @@ export async function activities(requester, assignmentId) {
     };
   });
 }
+function toAttemptRow(a, name = '') {
+  const assignment = a.activity?.teacherSubject;
+  const score = a.score;
+  return {
+    id: a.id, studentName: name,
+    activityTitle: a.activityNameSnapshot || a.activity?.title || 'Actividad anterior',
+    subjectName: a.subjectNameSnapshot || assignment?.subject?.nombre || 'Materia anterior',
+    courseName: a.courseNameSnapshot || assignment?.course?.nombre || 'Curso anterior',
+    unitName: a.unitNameSnapshot || a.activity?.topic?.unit?.title || 'Sin unidad registrada',
+    topicName: a.topicNameSnapshot || a.activity?.topic?.title || 'Sin tema registrado',
+    score, grade: gradeLabel(score), gradeLabel: `${gradeLabel(score).toFixed(1)}/10`,
+    earnedPoints: a.earnedPoints, durationSeconds: a.timeInSec,
+    completedAt: a.createdAt, reviewAvailable: Array.isArray(a.answerReview),
+    teacherArchived: Boolean(a.teacherArchivedAt),
+    studentHidden: Boolean(a.studentHiddenAt),
+  };
+}
 export async function history(requester) {
   const { student } = await context(requester);
   const records = await repo.findAttempts(student.id);
-  const seen = new Set();
-  const items = records.filter(a => a.isCompleted).map(a => {
-    // Schema actual no guarda puntos obtenidos por partida. Para los registros históricos
-    // esta es una ESTIMACIÓN basada en el valor ACTUAL de pointsAwarded.
-    const first = !seen.has(a.activityId); seen.add(a.activityId);
-    return {
-      id: a.id, activityTitle: a.activity?.title || 'Actividad eliminada',
-      subjectName: a.activity?.teacherSubject?.subject?.nombre || 'Materia anterior',
-      teacherName: teacherName(a.activity?.teacher),
-      score: a.score, activityDate: a.activity?.createdAt ?? null, earnedPoints: first ? Math.round((a.activity?.pointsAwarded || 0) * a.score / 100) : 0,
-      completedAt: a.createdAt, durationSeconds: a.timeInSec,
-    };
-  });
-  return { totalPoints: student.puntosTotales, estimatedHistoricalPoints: true, items: items.reverse() };
+  const latestProtected = new Set(records.filter(a => a.isCompleted).slice(-5).map(a => a.id));
+  const minAge = Date.now() - 7 * 24 * 3600 * 1000;
+  const items = records.filter(a => a.isCompleted && !a.studentHiddenAt).reverse().map(a => ({
+    ...toAttemptRow(a, [student.user.firstName, student.user.lastName].filter(Boolean).join(' ')),
+    canHide: !latestProtected.has(a.id) && new Date(a.createdAt).getTime() < minAge,
+  }));
+  return { totalPoints: student.puntosTotales, estimatedHistoricalPoints: records.some(a => a.earnedPoints == null),
+    retentionPolicy: 'No se pueden ocultar los últimos 5 intentos ni los de los últimos 7 días. Ocultar no borra las calificaciones.',
+    items };
+}
+export async function hideHistoryItem(requester, rawAttemptId) {
+  const { student } = await context(requester);
+  const records = (await repo.findAttempts(student.id)).filter(a => a.isCompleted);
+  const id = numericId(rawAttemptId);
+  const item = records.find(a => a.id === id);
+  if (!item) throw fail(404, 'Resultado no encontrado.');
+  if (records.slice(-5).some(a => a.id === id) || Date.now() - new Date(item.createdAt).getTime() < 7 * 86400000)
+    throw fail(409, 'Se conservan visibles los últimos 5 resultados y los de los últimos 7 días.');
+  await repo.hideStudentAttempt(id, student.id);
+  return { message: 'Resultado oculto de tu historial. La calificación académica permanece registrada.' };
+}
+export async function historyDetail(requester, rawAttemptId) {
+  const { student } = await context(requester);
+  const item = await repo.findStudentAttempt(numericId(rawAttemptId), student.id);
+  if (!item || item.studentHiddenAt) throw fail(404, 'Resultado no disponible.');
+  return { ...toAttemptRow(item, [student.user.firstName, student.user.lastName].filter(Boolean).join(' ')), review: Array.isArray(item.answerReview) ? item.answerReview : null };
 }
 export async function play(requester, activityId) {
   const { activity } = await assignedActivity(requester, activityId);
   return publicQuestions(activity); // correctAnswer NUNCA sale al cliente.
 }
 export async function complete(requester, activityId, body = {}) {
-  const { student, activity } = await assignedActivity(requester, activityId);
-  const keys = new Map(statements(activity).map(q => [String(q.id), q.correctAnswer]));
-  const result = grade(keys, body.answers, activity.gameType);
+  const { student, activity, byId } = await assignedActivity(requester, activityId);
+  const byAssignment = byId.get(activity.teacherSubjectId);
+  const result = gradeQuestions(statements(activity), body.answers, activity.gameType);
   const duration = Number(body.timeInSec);
   if (!Number.isFinite(duration) || duration < 0 || duration > 86400) throw fail(400, 'Duración inválida');
   const saved = await repo.saveGradedAttempt({
     studentId: student.id, activityId: activity.id, score: result.score,
-    duration: Math.round(duration), pointsAwarded: activity.pointsAwarded,
+    duration: Math.round(duration), pointsAwarded: activity.pointsAwarded, review: result.review,
+    snapshot: {
+      assignmentId: activity.teacherSubjectId,
+      subjectName: byAssignment.subject.nombre, courseName: byAssignment.course.nombre,
+      unitName: activity.topic?.unit?.title || null, topicName: activity.topic?.title || null,
+      activityName: activity.title,
+    },
   });
-  return { ...result, ...saved, message: saved.earnedPoints ? '¡Ganaste puntos!' : 'Partida registrada. Esta actividad ya otorgó su recompensa.' };
+  return { ...result, grade: gradeLabel(result.score), ...saved, message: saved.earnedPoints ? '¡Ganaste puntos!' : 'Partida registrada. Esta actividad ya otorgó su recompensa.' };
 }
 async function publishedTrueFalse(requester) {
   const { byId } = await context(requester);
@@ -154,13 +186,16 @@ export async function practiceCheck(requester, body = {}) {
   const available = await publishedTrueFalse(requester);
   const all = new Map(available.flatMap(a => statements(a).map(q => [`${a.id}:${q.id}`, q.correctAnswer])));
   if (!Array.isArray(body.answers) || !body.answers.length || body.answers.length > 24) throw fail(400, 'Cantidad inválida de respuestas');
+  const allText = new Map(available.flatMap(a => statements(a).map(q => [`${a.id}:${q.id}`, q.text])));
   const keys = new Map();
   for (const answer of body.answers) {
     const key = String(answer?.id);
     if (!all.has(key) || keys.has(key)) throw fail(400, 'Pregunta inválida o repetida');
     keys.set(key, all.get(key));
   }
-  return { ...grade(keys, body.answers), earnedPoints: 0, message: 'La práctica no modifica el historial, los puntos ni las notas.' };
+  const qList = [...keys.entries()].map(([id, correctAnswer]) => ({ id, text: allText.get(id) || '', correctAnswer }));
+  const result = gradeQuestions(qList, body.answers);
+  return { ...result, grade: gradeLabel(result.score), earnedPoints: 0, message: 'La práctica no modifica el historial, los puntos ni las notas.' };
 }
 
 
@@ -177,4 +212,31 @@ export async function runnerPracticeBank(requester) {
       correctAnswer: String(q.correctAnswer),
     }))).slice(0, 40);
   return { mode: 'PRACTICE_ONLY', rewarded: false, questions };
+}
+
+
+// Jerarquía académica: curso actual -> materia -> unidad -> tema -> contenidos publicados.
+// No se devuelven claves de almacenamiento ni respuestas correctas.
+export async function contentTree(requester, assignmentId) {
+  const { byId } = await context(requester);
+  const id = numericId(assignmentId);
+  if (!byId.has(id)) throw fail(404, 'Esta materia no pertenece a tu curso vigente.');
+  const units = await repo.findStudentContentTree(id);
+  return {
+    teacherSubjectId: id,
+    courseId: byId.get(id).courseId,
+    subjectName: byId.get(id).subject.nombre,
+    units: units.map(unit => ({
+      id: unit.id, title: unit.title, description: unit.description,
+      topics: unit.topics.map(topic => ({
+        id: topic.id, title: topic.title, description: topic.description,
+        materials: topic.materials.map(material => ({
+          id: material.id, title: material.title, filename: material.originalName,
+          mimeType: material.mimeType, sizeBytes: material.sizeBytes,
+          downloadPath: `/api/student/materials/${material.id}/file`,
+        })),
+        activities: topic.activities.map(a => ({ id: a.id, title: a.title, gameType: a.gameType, pointsAwarded: a.pointsAwarded })),
+      })),
+    })),
+  };
 }

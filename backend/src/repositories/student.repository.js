@@ -3,7 +3,10 @@ import { getPrisma } from '../config/prisma.js';
 // Toda la consulta de Prisma queda concentrada en este repositorio.
 export const findStudent = userId => getPrisma().studentProfile.findUnique({
   where: { userId },
-  include: { courses: { include: { course: true } } },
+  include: {
+    user: { select: { institutionId: true, firstName: true, lastName: true } },
+    courses: { include: { course: true } },
+  },
 });
 
 export const findAssignments = courseIds => getPrisma().teacherSubject.findMany({
@@ -21,6 +24,7 @@ export const findPublishedActivities = assignmentIds => getPrisma().activity.fin
   select: {
     id: true, title: true, description: true, gameType: true, content: true,
     pointsAwarded: true, status: true, createdAt: true, teacherSubjectId: true,
+    topic: { select: { title: true, unit: { select: { title: true } } } },
   },
 });
 
@@ -29,6 +33,7 @@ export const findPublishedActivity = id => getPrisma().activity.findUnique({
   select: {
     id: true, title: true, description: true, gameType: true, content: true,
     pointsAwarded: true, status: true, createdAt: true, teacherSubjectId: true,
+    topic: { select: { title: true, unit: { select: { title: true } } } },
   },
 });
 
@@ -38,7 +43,8 @@ export const findAttempts = studentId => getPrisma().gameAttempt.findMany({
   include: {
     activity: {
       select: {
-        title: true, pointsAwarded: true, createdAt: true,
+        title: true, pointsAwarded: true, createdAt: true, topicId: true,
+        topic: { select: { title: true, unit: { select: { title: true } } } },
         teacher: { select: { user: { select: { firstName: true, lastName: true } } } },
         teacherSubject: { select: { subject: { select: { nombre: true } }, course: { select: { nombre: true } } } },
       },
@@ -47,7 +53,7 @@ export const findAttempts = studentId => getPrisma().gameAttempt.findMany({
 });
 
 // Serializable + reintentos evitan duplicar recompensas ante dos entregas simultáneas.
-export const saveGradedAttempt = async ({ studentId, activityId, score, duration, pointsAwarded }) => {
+export const saveGradedAttempt = async ({ studentId, activityId, score, duration, pointsAwarded, review, snapshot }) => {
   const prisma = getPrisma();
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -58,7 +64,11 @@ export const saveGradedAttempt = async ({ studentId, activityId, score, duration
         });
         const earnedPoints = previous ? 0 : Math.max(0, Math.round(pointsAwarded * score / 100));
         const record = await tx.gameAttempt.create({
-          data: { studentId, activityId, score, isCompleted: true, timeInSec: duration },
+          data: { studentId, activityId, score, isCompleted: true, timeInSec: duration,
+            answerReview: review, earnedPoints,
+            subjectNameSnapshot: snapshot.subjectName, courseNameSnapshot: snapshot.courseName,
+            unitNameSnapshot: snapshot.unitName, topicNameSnapshot: snapshot.topicName,
+            activityNameSnapshot: snapshot.activityName, teacherSubjectIdSnapshot: snapshot.assignmentId },
           select: { id: true },
         });
         let profile;
@@ -89,3 +99,32 @@ export const saveGradedAttempt = async ({ studentId, activityId, score, duration
     }
   }
 };
+
+
+export const findStudentContentTree = assignmentId => getPrisma().unit.findMany({
+  where: { teacherSubjectId: assignmentId },
+  orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  select: {
+    id: true, title: true, description: true,
+    topics: {
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
+      select: {
+        id: true, title: true, description: true,
+        materials: { where: { isPublished: true }, orderBy: { createdAt: 'desc' },
+          select: { id: true, title: true, originalName: true, mimeType: true, sizeBytes: true } },
+        activities: { where: { status: 'ACTIVE', teacherSubjectId: assignmentId },
+          select: { id: true, title: true, gameType: true, pointsAwarded: true } },
+      },
+    },
+  },
+});
+
+export const hideStudentAttempt = (id, studentId) => getPrisma().gameAttempt.updateMany({
+  where: { id, studentId }, data: { studentHiddenAt: new Date() },
+});
+export const findStudentAttempt = (id, studentId) => getPrisma().gameAttempt.findFirst({
+  where: { id, studentId }, include: {
+    activity: { include: { topic: { include: { unit: true } },
+      teacherSubject: { include: { subject: true, course: true } } } },
+  },
+});

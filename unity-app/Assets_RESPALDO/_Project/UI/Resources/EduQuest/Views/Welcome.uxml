@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <Style src="../../../USS/EduQuest.uss" />
+<ui:VisualElement class="screen eq-theme welcome-screen"><ui:ScrollView class="page-scroll eq-scroll"><ui:VisualElement class="container auth-layout welcome-layout">
+<ui:VisualElement class="logo-group large"><ui:VisualElement class="logo-star art-star" /><ui:VisualElement class="logo-text art-logo" /></ui:VisualElement>
+<ui:Label text="¡Bienvenido a EduQuest!" class="heading title-centered" />
+<ui:Label text="Aprendé jugando, descubrí desafíos y ganá estrellas." class="subheading title-centered" />
+<ui:VisualElement class="auth-actions"><ui:Button name="login" text="Iniciar sesión" class="primary auth-submit" /><ui:Button name="register" text="Registrarse como alumno" class="outline-button" /><ui:Button name="web-admin" text="Ir al Web Admin" class="outline-button" /></ui:VisualElement>
+<ui:Label name="status" class="status" /></ui:VisualElement></ui:ScrollView></ui:VisualElement>
+</ui:UXML>

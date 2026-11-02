@@ -172,19 +172,22 @@ export const assignStudentCourse = async ({
   const prisma = getPrisma();
 
   return prisma.$transaction(async (tx) => {
-    await tx.studentCourse.deleteMany({
-      where: {
-        studentId: studentProfileId,
-      },
+    // La edición del alumno puede TRANSFERIR la matrícula de curso, nunca duplicarla.
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(${studentProfileId}::integer, 817231::integer)`;
+    const profile = await tx.studentProfile.findUnique({
+      where: { id: studentProfileId },
+      select: { user: { select: { institutionId: true } } },
     });
-
-    if (courseId) {
-      await tx.studentCourse.create({
-        data: {
-          studentId: studentProfileId,
-          courseId,
-        },
-      });
+    if (!profile) throw Object.assign(new Error('Alumno inexistente'), { status: 404 });
+    if (courseId != null) {
+      const target = await tx.course.findUnique({ where: { id: courseId }, select: { institutionId: true } });
+      if (!target || target.institutionId !== profile.user.institutionId) {
+        throw Object.assign(new Error('El curso no pertenece a la institución del alumno'), { status: 400 });
+      }
+    }
+    await tx.studentCourse.deleteMany({ where: { studentId: studentProfileId } });
+    if (courseId != null) {
+      await tx.studentCourse.create({ data: { studentId: studentProfileId, courseId } });
     }
   });
 };

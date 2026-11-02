@@ -156,13 +156,14 @@ export const assignStudentToCourseService = async (
             courseId
         );
     } catch (error) {
-        if (error.code === 'P2002') {
-            throw new ServiceError(
-                'El alumno ya está asignado a este curso',
-                409
-            );
+        if (error.code === 'STUDENT_ALREADY_ENROLLED') {
+            throw new ServiceError(error.message, 409);
         }
-
+        if (error.code === 'P2002') {
+            // El índice único protege incluso ante escrituras concurrentes
+            // o matriculaciones efectuadas desde otros servicios.
+            throw new ServiceError('El alumno ya tiene un curso asignado. Quitá la matrícula anterior para cambiarlo.', 409);
+        }
         throw error;
     }
 };

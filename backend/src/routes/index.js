@@ -13,6 +13,8 @@ import unitRoutes from './unit.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import activityRoutes from './activity.routes.js';
 import aiActivityRoutes from './aiActivity.routes.js';
+import studyMaterialRoutes from './studyMaterial.routes.js';
+import assessmentRoutes from './assessment.routes.js';
 
 // Notificaciones
 import notificationRoutes from './notification.routes.js';
@@ -31,6 +33,8 @@ router.use('/teacher-subjects', teacherSubjectRoutes);
 router.use('/activities', activityRoutes);
 router.use('/ai-activities', aiActivityRoutes);
 router.use('/units', unitRoutes);
+router.use('/study-materials', studyMaterialRoutes);
+router.use('/teacher-assessments', assessmentRoutes);
 
 router.use('/assignments', assignmentsRoutes);
 router.use('/dashboard', dashboardRoutes);

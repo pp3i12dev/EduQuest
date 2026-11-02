@@ -17,6 +17,7 @@ export const FRONTEND_PERMISSIONS = {
     'career:manage': ['DIRECTOR', 'PRECEPTOR'],
     'course:manage': ['DIRECTOR', 'PRECEPTOR'],
     'subject:manage': ['DIRECTOR', 'PRECEPTOR'],
+    'grade:manage': ['TEACHER'],
     'subjectContent:manage': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
 };
 

@@ -28,10 +28,7 @@ export function useAssignStudent() {
         mutationFn: assignmentsService.assignStudent,
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: [
-                    'assignment-students',
-                    Number(variables.courseId),
-                ],
+                queryKey: ['assignment-students'],
             });
 
             queryClient.invalidateQueries({
@@ -52,10 +49,7 @@ export function useRemoveStudent() {
         mutationFn: assignmentsService.removeStudent,
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: [
-                    'assignment-students',
-                    Number(variables.courseId),
-                ],
+                queryKey: ['assignment-students'],
             });
 
             queryClient.invalidateQueries({

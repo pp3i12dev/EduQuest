@@ -1,3 +1,4 @@
+import { requireCurrentOrFutureDate } from '../utils/institutionDate.js';
 import { institutionCommunicationRepository as repo } from '../repositories/institutionCommunication.repository.js';
 
 const fail = (message, status = 400) => { const e = new Error(message); e.status = status; throw e; };
@@ -65,6 +66,11 @@ const normalize = async (body, user, current) => {
   if (locationType === 'OTHER' && (!venueName || !venueAddress || venueName.length > 180 || venueAddress.length > 300)) fail('Ingresá lugar y dirección válidos');
   const startsAt = date(body.startsAt, 'Inicio');
   const endsAt = date(body.endsAt, 'Fin');
+  // Bloquea publicar comunicaciones retroactivas. En edición, permite conservar
+  // la fecha pasada de un evento histórico sin reescribirla a otra fecha anterior.
+  if (!current || startsAt.getTime() !== current.startsAt.getTime()) {
+    requireCurrentOrFutureDate(startsAt, 'La fecha de inicio');
+  }
   if (startsAt > endsAt) fail('El fin no puede ser anterior al inicio');
   const scope = body.scope;
   if (!['INSTITUTION', 'CAREERS', 'COURSES'].includes(scope)) fail('Alcance inválido');

@@ -9,6 +9,8 @@ namespace EduQuest.Student
     public partial class EduQuestScreen
     {
         private ActivityDTO[] activities = Array.Empty<ActivityDTO>();
+        private ContentTreeDTO contentTree;
+        private bool showingContent = true;
         private bool showingCompleted;
         private void SetupHome()
         {
@@ -32,24 +34,26 @@ namespace EduQuest.Student
             var drawerName = Q<Label>("drawer-name");
             if (drawerName != null) drawerName.text = studentName;
             var avatar = Q<VisualElement>("avatar");
-            // Silueta genérica por defecto para todos los alumnos.
-            // Podrá sustituirse por el avatar personalizable de Prisma más adelante.
-            var texture = Resources.Load<Texture2D>("EduQuest/Avatar");
-            if (texture == null) texture = Resources.Load<Texture2D>("EduQuest/AvatarIllustration");
+            // Usa el mismo cargador que aplica el arte del menu lateral.
+            // Permite Avatar importado como Texture2D o Sprite y un respaldo visual.
             if (avatar != null)
             {
-                if (texture != null)
+                StyleBackground avatarImage;
+                if (TryLoadArt("Avatar", out avatarImage) ||
+                    TryLoadArt("AvatarIllustration", out avatarImage))
                 {
-                    avatar.style.backgroundImage = new StyleBackground(texture);
+                    avatar.style.backgroundImage = avatarImage;
                     avatar.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
                 }
                 else
                 {
                     avatar.style.backgroundColor = new Color(0.34f, 0.42f, 0.73f);
-                    Debug.LogWarning("EduQuest: no se encontró Avatar.png en Resources/EduQuest");
+                    Debug.LogWarning("EduQuest: no se encontro Avatar ni AvatarIllustration en Resources/EduQuest");
                 }
             }
             Click("edit-profile", () => StudentNavigation.Go("Profile"));
+            // Tocar la foto desde Inicio abre la selección del perfil.
+            if (avatar != null) avatar.RegisterCallback<ClickEvent>(_ => StudentNavigation.Go("Profile"));
             Run(async () =>
             {
                 var data = await EduQuestRuntime.Student.Dashboard();
@@ -100,16 +104,156 @@ namespace EduQuest.Student
         private void SetupActivities()
         {
             if (StudentNavigation.AssignmentId <= 0) { StudentNavigation.Go("Subjects"); return; }
-            Q<Label>("subject-name").text = StudentNavigation.SubjectName ?? "Materia";
+            var subjectLabel = Q<Label>("subject-name");
+            if (subjectLabel != null) subjectLabel.text = StudentNavigation.SubjectName ?? "Materia";
             Click("back", () => StudentNavigation.Go("Subjects"));
-            Click("pending", () => { showingCompleted = false; RenderActivities(); });
-            Click("completed", () => { showingCompleted = true; RenderActivities(); });
+            Click("content", () => { showingContent = true; RenderAcademicContent(); });
+            Click("pending", () => { showingContent = false; showingCompleted = false; RenderAcademicContent(); });
+            Click("completed", () => { showingContent = false; showingCompleted = true; RenderAcademicContent(); });
             Run(async () =>
             {
-                activities = await EduQuestRuntime.Student.Activities(StudentNavigation.AssignmentId) ?? Array.Empty<ActivityDTO>();
-                if (this != null) RenderActivities();
+                // Ambas rutas comprueban matrícula y asignación en el backend.
+                var treeTask = EduQuestRuntime.Student.ContentTree(StudentNavigation.AssignmentId);
+                var activityTask = EduQuestRuntime.Student.Activities(StudentNavigation.AssignmentId);
+                await Task.WhenAll(treeTask, activityTask);
+                if (this == null) return;
+                contentTree = treeTask.Result;
+                activities = activityTask.Result ?? Array.Empty<ActivityDTO>();
+                RenderAcademicContent();
             });
         }
+
+        private void RenderAcademicContent()
+        {
+            UpdateAcademicTabs();
+            if (showingContent) RenderContentTree();
+            else RenderActivities();
+        }
+
+        private void UpdateAcademicTabs()
+        {
+            foreach (var name in new[] { "content", "pending", "completed" })
+            {
+                var button = Q<Button>(name);
+                if (button == null) continue;
+                bool active = name == (showingContent ? "content" : showingCompleted ? "completed" : "pending");
+                button.EnableInClassList("eq-tab-active", active);
+            }
+        }
+
+        private void RenderContentTree()
+        {
+            var list = Items();
+            if (list == null) return;
+            list.Add(Text("UNIDADES DIDÁCTICAS Y TEMAS", "eyebrow"));
+            bool any = false;
+            var referencedActivityIds = new System.Collections.Generic.HashSet<int>();
+            foreach (var unit in contentTree?.units ?? Array.Empty<UnitContentDTO>())
+            {
+                var group = new VisualElement();
+                group.AddToClassList("curriculum-unit");
+                group.Add(Text("UNIDAD DIDÁCTICA", "curriculum-unit-tag"));
+                group.Add(Text(unit.title, "curriculum-unit-title"));
+                if (!string.IsNullOrWhiteSpace(unit.description))
+                    group.Add(Text(unit.description, "curriculum-description"));
+
+                if (unit.topics == null || unit.topics.Length == 0)
+                    group.Add(Text("Todavía no se publicaron temas en esta unidad.", "muted"));
+                foreach (var topic in unit.topics ?? Array.Empty<TopicContentDTO>())
+                {
+                    var topicBox = new VisualElement();
+                    topicBox.AddToClassList("curriculum-topic");
+                    topicBox.Add(Text("TEMA · " + (topic.title ?? "Sin título"), "curriculum-topic-title"));
+                    if (!string.IsNullOrWhiteSpace(topic.description))
+                        topicBox.Add(Text(topic.description, "curriculum-description"));
+
+                    if (topic.materials != null && topic.materials.Length > 0)
+                    {
+                        topicBox.Add(Text("MATERIAL DE ESTUDIO", "curriculum-section"));
+                        foreach (var material in topic.materials)
+                        {
+                            var selected = material;
+                            ListRow(topicBox, "📘 " + material.title,
+                                FriendlyFileSize(material.sizeBytes) + " · " + material.filename,
+                                "DESCARGAR / ABRIR", () => Run(async () =>
+                                {
+                                    var bytes = await EduQuestRuntime.Student.DownloadStudyMaterial(selected.id);
+                                    if (this == null) return;
+                                    Status(StudyMaterialFileAccess.SaveAndOpen(selected, bytes), true);
+                                }));
+                        }
+                        any = true;
+                    }
+                    if (topic.activities != null && topic.activities.Length > 0)
+                    {
+                        topicBox.Add(Text("JUEGOS Y ACTIVIDADES", "curriculum-section"));
+                        foreach (var game in topic.activities)
+                        {
+                            referencedActivityIds.Add(game.id);
+                            var selected = game;
+                            ListRow(topicBox, "🎮 " + game.title,
+                                GameTypeLabel(game.gameType) + " · Hasta " + game.pointsAwarded + " puntos",
+                                "JUGAR", () => LaunchActivity(selected.id, selected.title, selected.gameType));
+                        }
+                        any = true;
+                    }
+                    if ((topic.materials == null || topic.materials.Length == 0) &&
+                        (topic.activities == null || topic.activities.Length == 0))
+                        topicBox.Add(Text("Todavía no hay materiales o juegos publicados en este tema.", "muted"));
+                    group.Add(topicBox);
+                }
+                list.Add(group);
+            }
+            // Mantiene accesibles las actividades anteriores a la creación de Topic.
+            var legacy = activities.Where(a => !referencedActivityIds.Contains(a.id)).ToArray();
+            if (legacy.Length > 0)
+            {
+                list.Add(Text("OTRAS ACTIVIDADES PUBLICADAS", "eyebrow"));
+                foreach (var game in legacy)
+                {
+                    var selected = game;
+                    ListRow(list, game.title, GameTypeLabel(game.gameType) + " · " +
+                        (game.completed ? "Completada" : "Pendiente"), "JUGAR",
+                        () => LaunchActivity(selected.id, selected.title, selected.gameType));
+                }
+                any = true;
+            }
+            if (!any)
+                Empty(list, "Tu docente todavía no publicó actividades ni materiales de estudio para esta materia.");
+        }
+
+        private static string FriendlyFileSize(long bytes)
+        {
+            if (bytes <= 0) return "Tamaño no informado";
+            return bytes < 1024 * 1024 ? Math.Ceiling(bytes / 1024d) + " KB" :
+                (bytes / 1048576d).ToString("0.0") + " MB";
+        }
+
+        private static string GameTypeLabel(string gameType)
+        {
+            switch (gameType)
+            {
+                case "true_false": return "Verdadero o falso";
+                case "multiple_choice": return "Opciones múltiples";
+                case "matching": return "Unir conceptos";
+                default: return gameType ?? "Juego";
+            }
+        }
+
+        private void LaunchActivity(int id, string title, string type)
+        {
+            if (type != "true_false" && type != "multiple_choice" && type != "matching")
+            {
+                Status("Este tipo de juego todavía no está disponible en Unity.");
+                return;
+            }
+            StudentNavigation.ActivityId = id;
+            StudentNavigation.ActivityName = title;
+            StudentNavigation.PracticeMode = false;
+            StudentNavigation.GameType = type;
+            StudentNavigation.Go("Game");
+        }
+
         private void RenderActivities()
         {
             var list = Items();
@@ -119,16 +263,9 @@ namespace EduQuest.Student
             {
                 var chosen = item;
                 var details = (item.completed ? "Mejor nota: " + item.bestScore + "%" : "Hasta " + item.pointsAwarded + " puntos") +
-                    " · " + item.teacherName + " · " + item.gameType;
+                    " · " + item.teacherName + " · " + GameTypeLabel(item.gameType);
                 ListRow(list, item.title, details, item.completed ? "VOLVER A JUGAR" : "JUGAR", () =>
-                {
-                    if (chosen.gameType != "true_false" && chosen.gameType != "multiple_choice") { Status("Este tipo de juego todavía no tiene adaptador de corrección en Unity."); return; }
-                    StudentNavigation.ActivityId = chosen.id;
-                    StudentNavigation.ActivityName = chosen.title;
-                    StudentNavigation.PracticeMode = false;
-                    StudentNavigation.GameType = chosen.gameType;
-                    StudentNavigation.Go("Game");
-                });
+                    LaunchActivity(chosen.id, chosen.title, chosen.gameType));
             }
         }
         private void SetupHistory()
@@ -139,17 +276,61 @@ namespace EduQuest.Student
                 var data = await EduQuestRuntime.Student.History();
                 if (this == null) return;
                 Q<Label>("total-points").text = "★  " + data.totalPoints.ToString("N0") + " puntos totales";
-                Q<Label>("history-note").text = data.estimatedHistoricalPoints
-                    ? "Los puntos por partida son estimaciones históricas; el total es el saldo real." : "Puntos obtenidos por partida.";
-                if (data.items == null || data.items.Length == 0) { Empty(list, "Todavía no hay partidas terminadas."); return; }
-                foreach (var a in data.items)
-                    ListRow(list, a.activityTitle + "  ·  " + a.score + "%",
-                        a.subjectName + " · " + a.teacherName + " · " + Date(a.completedAt) +
-                        " · Puntos: " + a.earnedPoints + " (estimados) · " + a.durationSeconds + " s", null, null);
+                var note = Q<Label>("history-note");
+                if (note != null) note.text = data.retentionPolicy ?? "Las notas permanecen registradas.";
+                if (data.items == null || data.items.Length == 0)
+                {
+                    Empty(list, "Todavía no hay actividades terminadas visibles."); return;
+                }
+                foreach (var item in data.items)
+                {
+                    var selected = item;
+                    var card = new VisualElement();
+                    card.AddToClassList("history-card");
+                    card.Add(Text("ALUMNO · " + (item.studentName ?? "Alumno"), "eyebrow"));
+                    card.Add(Text(item.activityTitle, "list-title"));
+                    card.Add(Text("CURSO " + item.courseName + " · " + item.subjectName, "list-subtitle"));
+                    card.Add(Text("UNIDAD " + item.unitName + " · TEMA " + item.topicName, "list-subtitle"));
+                    card.Add(Text("Puntaje: " + item.score + "%  ·  Nota: " + item.grade.ToString("0.0") + "/10  ·  " +
+                        (item.earnedPoints.HasValue ? item.earnedPoints.Value + " puntos obtenidos" : "Puntos históricos sin detalle"), "list-subtitle"));
+                    card.Add(Text("Fecha y hora: " + Date(item.completedAt), "list-subtitle"));
+                    var actions = new VisualElement();
+                    actions.AddToClassList("history-actions");
+                    var details = new VisualElement();
+                    var view = new Button(() => Run(async () =>
+                    {
+                        details.Clear();
+                        var result = await EduQuestRuntime.Student.HistoryDetail(selected.id);
+                        if (this == null) return;
+                        RenderAttemptReview(details, result.review);
+                    })) { text = "VER RESPUESTAS" };
+                    view.AddToClassList("secondary"); actions.Add(view);
+                    if (item.canHide)
+                    {
+                        var hide = new Button() { text = "OCULTAR" };
+                        hide.AddToClassList("secondary");
+                        bool confirmed = false;
+                        hide.clicked += () =>
+                        {
+                            if (!confirmed) { confirmed = true; hide.text = "CONFIRMAR OCULTAR"; return; }
+                            hide.SetEnabled(false);
+                            Run(async () =>
+                            {
+                                var done = await EduQuestRuntime.Student.HideHistory(selected.id);
+                                if (this == null) return;
+                                Status(done.message, true);
+                                SetupHistory();
+                            });
+                        };
+                        actions.Add(hide);
+                    }
+                    card.Add(actions); card.Add(details); list.Add(card);
+                }
             });
         }
         private void SetupProfile()
         {
+            SetupAvatarPicker();
             foreach (var f in new[]{"current-password", "new-password", "confirm-password"}) Password(f);
             Click("save", () => Run(async () =>
             {

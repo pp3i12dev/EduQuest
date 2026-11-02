@@ -1,4 +1,5 @@
 import { notificationService } from './notification.service.js';
+import { requireCurrentOrFutureDate } from '../utils/institutionDate.js';
 
 import { earlyNoticeRepository as repo, createNoticeWithClasses } from '../repositories/earlyNotice.repository.js';
 
@@ -337,6 +338,8 @@ const validateAssignment = async (
     }
 
     const date = parseDate(classDate);
+    // También se aplica a avisos múltiples y al editor de clases afectadas.
+    requireCurrentOrFutureDate(classDate, 'La fecha de la clase');
 
     if (DAYS[date.getUTCDay()] !== schedule.day) {
         fail(
@@ -364,6 +367,7 @@ export const earlyNoticeService = {
         }
         const periodStart = parseDate(body.periodStart);
         const periodEnd = parseDate(body.periodEnd || body.periodStart);
+        requireCurrentOrFutureDate(body.periodStart, 'El comienzo del período');
         const span = Math.round((periodEnd - periodStart) / 86400000);
         if (span < 0 || span > 90) fail(400, 'El período debe tener entre 1 y 91 días inclusive');
         const reason = cleanReason(body.reason);
@@ -456,6 +460,7 @@ export const earlyNoticeService = {
         }
         const periodStart = parseDate(body.periodStart);
         const periodEnd = parseDate(body.periodEnd || body.periodStart);
+        requireCurrentOrFutureDate(body.periodStart, 'El comienzo del período');
         const span = Math.round((periodEnd - periodStart) / 86400000);
         if (span < 0 || span > 90) fail(400, 'El período debe tener entre 1 y 91 días inclusive');
         const classes = [];

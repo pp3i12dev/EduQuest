@@ -30,15 +30,19 @@ export async function readOwnedPdf(assignment, documentId) {
   return { name: doc.name, buffer };
 }
 
-export const createReviewedDraft = ({ teacherId, teacherSubjectId, title, description, gameType, content }) =>
+export const createReviewedDraft = ({ teacherId, teacherSubjectId, title, description, gameType, content, topicId }) =>
   getPrisma().activity.create({
-    data: { teacherId, teacherSubjectId, title, description: description || null, gameType, content, status: 'DRAFT' },
+    data: { teacherId, teacherSubjectId, topicId, title, description: description || null, gameType, content, status: 'DRAFT' },
   });
 
 export const getOwnedDraft = ({ teacherSubjectId, teacherId, activityId }) =>
   getPrisma().activity.findFirst({ where: { id: activityId, teacherSubjectId, teacherId } });
 
-export const updateOwnedStatus = (id, status) => getPrisma().activity.update({ where: { id }, data: { status } });
+// Publicar actualiza tanto el estado de juego como los campos de publicación.
+export const updateOwnedStatus = (id, status) => getPrisma().activity.update({
+  where: { id },
+  data: { status, isPublished: status === 'ACTIVE', publishedAt: status === 'ACTIVE' ? new Date() : null },
+});
 
 export const updateReviewedDraft = (id, data) => getPrisma().activity.update({
   where: { id }, data,

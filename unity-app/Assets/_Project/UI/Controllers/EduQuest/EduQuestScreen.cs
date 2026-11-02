@@ -88,6 +88,8 @@ namespace EduQuest.Student
                 case "Result": SetupResult(); break;
                 default: Status("Vista desconocida: " + currentScene); break;
             }
+            // Luego de inicializar la vista, consulta el avatar de esta cuenta.
+            if (EduQuestRuntime.Session.IsStudent()) { ShowSavedAvatar(); RefreshSavedAvatar(); }
         }
         private void Update()
         {
@@ -140,20 +142,53 @@ namespace EduQuest.Student
             }
         }
 
+        // Carga tanto texturas por defecto como imagenes importadas como Sprite.
+        // Devuelve false si el recurso no esta disponible o su tipo no es compatible.
+        private static bool TryLoadArt(string resourceName, out StyleBackground background)
+        {
+            string resourcePath = "EduQuest/" + resourceName;
+            var texture = Resources.Load<Texture2D>(resourcePath);
+            if (texture != null)
+            {
+                background = new StyleBackground(texture);
+                return true;
+            }
+            var sprite = Resources.Load<Sprite>(resourcePath);
+            if (sprite != null)
+            {
+                background = new StyleBackground(sprite);
+                return true;
+            }
+            background = default(StyleBackground);
+            return false;
+        }
+
         private void PaintClass(string className, string resourceName, bool stretch = false)
         {
-            var texture = Resources.Load<Texture2D>("EduQuest/" + resourceName);
-            if (texture == null)
-            {
-                Debug.LogWarning("EduQuest: falta el recurso visual " + resourceName);
-                return;
-            }
+            bool hasElements = false;
+            bool triedLoad = false;
+            bool resourceExists = false;
+            StyleBackground background = default(StyleBackground);
+
             root.Query<VisualElement>(className: className).ForEach(element =>
             {
-                element.style.backgroundImage = new StyleBackground(texture);
+                hasElements = true;
+                if (!triedLoad)
+                {
+                    triedLoad = true;
+                    resourceExists = TryLoadArt(resourceName, out background);
+                    if (!resourceExists && resourceName == "Avatar")
+                        resourceExists = TryLoadArt("AvatarIllustration", out background);
+                }
+                if (!resourceExists) return;
+
+                element.style.backgroundImage = background;
                 element.style.unityBackgroundScaleMode = stretch ? ScaleMode.StretchToFill : ScaleMode.ScaleToFit;
                 if (stretch) element.style.backgroundColor = Color.clear;
             });
+
+            if (hasElements && !resourceExists)
+                Debug.LogWarning("EduQuest: falta el recurso visual " + resourceName + " en Resources/EduQuest");
         }
 
         private void BindSidebar()

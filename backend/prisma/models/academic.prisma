@@ -77,6 +77,7 @@ model TeacherSubject {
   activities Activity[]
   contents TeacherSubjectContent[]
   units Unit[]
+  studyMaterials StudyMaterial[]
   earlyNotices EarlyNotice[]
   affectedNoticeClasses EarlyNoticeClass[]
   @@unique([teacherId, subjectId, courseId])
@@ -85,7 +86,7 @@ model TeacherSubject {
 
 model StudentCourse {
   id Int @id @default(autoincrement())
-  studentId Int
+  studentId Int @unique
   student StudentProfile @relation(fields: [studentId], references: [id])
   courseId Int
   course Course @relation(fields: [courseId], references: [id])

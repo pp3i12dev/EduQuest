@@ -98,13 +98,13 @@ export const listStudentsForCourse = async (
                     isActive: true,
                 },
             },
+            // Mostramos también la matrícula en OTRO curso para impedir
+            // asignaciones simultáneas y explicar al administrativo el conflicto.
             courses: {
-                where: {
-                    courseId,
-                },
                 select: {
                     id: true,
                     courseId: true,
+                    course: { select: { nombre: true, academicYear: true, institutionId: true } },
                 },
             },
         },
@@ -119,18 +119,36 @@ export const listStudentsForCourse = async (
         id: student.id,
         legajoStudent: student.legajoStudent,
         user: student.user,
-        assigned: student.courses.length > 0,
+        assigned: student.courses.some((enrollment) => enrollment.courseId === courseId),
+        assignedCourse: student.courses[0]
+            ? {
+                id: student.courses[0].courseId,
+                nombre: student.courses[0].course.nombre,
+                academicYear: student.courses[0].course.academicYear,
+            }
+            : null,
+        assignedToOtherCourse: student.courses.some((enrollment) => enrollment.courseId !== courseId),
     }));
 };
 
 export const createStudentCourse = (studentId, courseId) => {
     const prisma = getPrisma();
-
-    return prisma.studentCourse.create({
-        data: {
-            studentId,
-            courseId,
-        },
+    return prisma.$transaction(async (tx) => {
+        // Bloquea la matrícula de este alumno hasta terminar la transacción.
+        // $executeRaw evita deserializar el resultado void de pg_advisory_xact_lock.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${studentId}::integer, 817231::integer)`;
+        const existing = await tx.studentCourse.findFirst({
+            where: { studentId },
+            include: { course: { select: { id: true, nombre: true } } },
+        });
+        if (existing) {
+            const error = new Error(existing.courseId === courseId
+                ? 'El alumno ya está asignado a este curso'
+                : `El alumno ya está inscripto en ${existing.course.nombre}. Primero quitá esa matrícula antes de asignarle otro curso.`);
+            error.code = 'STUDENT_ALREADY_ENROLLED';
+            throw error;
+        }
+        return tx.studentCourse.create({ data: { studentId, courseId } });
     });
 };
 

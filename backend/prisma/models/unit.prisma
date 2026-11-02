@@ -9,6 +9,7 @@ model Unit {
   teacherSubject   TeacherSubject @relation(fields: [teacherSubjectId], references: [id], onDelete: Cascade)
 
   activities UnitActivity[]
+  topics Topic[]
 
   @@index([teacherSubjectId])
 }
@@ -23,4 +24,39 @@ model UnitActivity {
   activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
   @@unique([unitId, activityId])
+}
+
+// Tema o contenido perteneciente a una única unidad didáctica.
+model Topic {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  position    Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  unitId      Int
+  unit        Unit     @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  activities  Activity[]
+  materials   StudyMaterial[]
+
+  @@index([unitId, position])
+}
+
+// Documento publicado para los alumnos. No es un PDF fuente para Gemini.
+model StudyMaterial {
+  id               Int      @id @default(autoincrement())
+  title            String
+  originalName     String
+  storageKey       String   @unique
+  mimeType         String
+  sizeBytes        Int
+  isPublished      Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  topicId          Int
+  topic            Topic    @relation(fields: [topicId], references: [id], onDelete: Restrict)
+  teacherSubjectId Int
+  teacherSubject   TeacherSubject @relation(fields: [teacherSubjectId], references: [id], onDelete: Restrict)
+
+  @@index([teacherSubjectId, isPublished])
+  @@index([topicId])
 }

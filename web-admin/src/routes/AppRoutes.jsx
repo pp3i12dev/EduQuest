@@ -36,6 +36,7 @@ import RoleRoute from './RoleRoute';
 import TeacherSubjectsView from '../views/TeacherSubjectsView';
 import UnitsView from '../views/UnitsView';
 import TeacherActivityStudioView from '../views/TeacherActivityStudioView';
+import TeacherAssessmentsView from '../views/TeacherAssessmentsView';
 import EarlyNoticesView from '../views/EarlyNoticesView';
 import InstitutionCommunicationsView from '../views/InstitutionCommunicationsView';
 
@@ -191,6 +192,9 @@ export default function AppRoutes() {
                         }
                     />
 
+                    {/* Dirección histórica: el seguimiento ahora es contextual a una materia. */}
+                    <Route path="teacher-assessments" element={<Navigate to="/dashboard/my-subjects" replace />} />
+
                     <Route
                         path="my-subjects"
                         element={
@@ -204,6 +208,7 @@ export default function AppRoutes() {
                         path="my-subjects/:teacherSubjectId/studio"
                         element={<RoleRoute action="subjectContent:manage"><TeacherActivityStudioView /></RoleRoute>}
                     />
+                    <Route path="my-subjects/:teacherSubjectId/results" element={<RoleRoute action="grade:manage"><TeacherAssessmentsView /></RoleRoute>} />
                     <Route
                         path="my-subjects/:teacherSubjectId/units"
                         element={

@@ -1,3 +1,4 @@
+import { getPrisma } from '../config/prisma.js';
 import { findTeacherProfileByUserId } from '../repositories/teacherSubject.repository.js';
 import { getOwnedTeacherSubject, readOwnedPdf, createReviewedDraft, getOwnedDraft, updateOwnedStatus, updateReviewedDraft } from '../repositories/aiActivity.repository.js';
 
@@ -50,7 +51,11 @@ export function normalizeGenerated(type, rows) {
   const normalized = rows.map((row, i) => normalizeQuestion(row, type, i));
   if (type === 'true_false') return { statements: normalized };
   if (type === 'multiple_choice') return { questions: normalized };
-  if (new Set(normalized.map(x => x.left.toLowerCase())).size !== normalized.length) throw fail(422, 'Los conceptos para unir deben ser distintos.');
+  if (normalized.length < 2) throw fail(422, 'Para unir conceptos necesitás al menos dos pares.');
+  if (new Set(normalized.map(x => x.left.toLocaleLowerCase('es'))).size !== normalized.length)
+    throw fail(422, 'Los conceptos para unir deben ser distintos.');
+  if (new Set(normalized.map(x => x.right.toLocaleLowerCase('es'))).size !== normalized.length)
+    throw fail(422, 'Las definiciones para unir deben ser distintas.');
   return { pairs: normalized };
 }
 
@@ -153,6 +158,8 @@ Antes de responder comprobá internamente las soluciones. No incluyas markdown.`
 
 export async function previewQuestions(user, body = {}) {
   const { assignment } = await teacherAssignment(user, body.teacherSubjectId);
+  const topicId = await validTopic(assignment.id, body.topicId);
+  const topic = await getPrisma().topic.findUnique({ where: { id: topicId }, include: { unit: { select: { title: true } } } });
   const type = body.gameType;
   if (!TYPES.includes(type)) throw fail(400, 'Elegí verdadero/falso, opciones múltiples o unir conceptos.');
   const count = Number(body.count);
@@ -163,20 +170,32 @@ export async function previewQuestions(user, body = {}) {
   if (instructions.length > 1500) throw fail(400, 'Las instrucciones superan 1500 caracteres.');
   const pdf = docId ? await readOwnedPdf(assignment, docId) : null;
   checkLimit(user.id);
-  const prompt = `Materia: ${assignment.subject.nombre}; Curso: ${assignment.course.nombre}; Año: ${assignment.course.academicYear}. ${instructions || 'Generar preguntas de los contenidos principales del material suministrado.'}`;
+  const prompt = `Materia: ${assignment.subject.nombre}; Curso: ${assignment.course.nombre}; Año: ${assignment.course.academicYear}. Unidad: ${topic.unit.title}. Tema: ${topic.title}. ${instructions || 'Generar preguntas de los contenidos principales del material suministrado.'}`;
   const rows = await callGemini({ prompt, type, count, pdf });
   const content = normalizeGenerated(type, rows);
   return { gameType: type, content, questionCount: Object.values(content)[0].length, sourceDocument: pdf?.name || null,
     message: 'Borrador generado por IA. Revisá cada pregunta y su solución antes de guardar. Ninguna actividad se publicó.' };
 }
 
+async function validTopic(teacherSubjectId, rawId) {
+  const id = Number(rawId);
+  if (!Number.isSafeInteger(id) || id <= 0) throw fail(400, 'Seleccioná un tema antes de guardar la actividad.');
+  const topic = await getPrisma().topic.findFirst({
+    where: { id, unit: { teacherSubjectId } },
+    select: { id: true },
+  });
+  if (!topic) throw fail(403, 'El tema no pertenece a esta materia o curso.');
+  return topic.id;
+}
+
 export async function saveReviewedDraft(user, body = {}) {
   const { assignment, teacherId } = await teacherAssignment(user, body.teacherSubjectId);
   const title = cleanString(body.title, 120, 'Título');
+  const topicId = await validTopic(assignment.id, body.topicId);
   const type = body.gameType;
   const rows = type === 'true_false' ? body.content?.statements : type === 'multiple_choice' ? body.content?.questions : body.content?.pairs;
   const content = normalizeGenerated(type, rows);
-  return createReviewedDraft({ teacherId, teacherSubjectId: assignment.id, title, description: typeof body.description === 'string' ? body.description.slice(0, 1500) : '', gameType: type, content });
+  return createReviewedDraft({ teacherId, teacherSubjectId: assignment.id, topicId, title, description: typeof body.description === 'string' ? body.description.slice(0, 1500) : '', gameType: type, content });
 }
 
 export async function publishReviewedDraft(user, { teacherSubjectId, activityId }) {
@@ -185,7 +204,7 @@ export async function publishReviewedDraft(user, { teacherSubjectId, activityId 
   if (!Number.isSafeInteger(id) || id <= 0) throw fail(400, 'Actividad inválida.');
   const activity = await getOwnedDraft({ teacherSubjectId: assignment.id, teacherId, activityId: id });
   if (!activity || activity.status !== 'DRAFT') throw fail(409, 'La actividad no existe o ya no es un borrador.');
-  if (activity.gameType === 'matching') throw fail(409, 'El minijuego de unir conceptos todavía no está integrado en Unity. Guardá el borrador, pero no se puede publicar como evaluable.');
+  if (!activity.topicId) throw fail(409, 'Asigná la actividad a un tema antes de publicarla.');
   const rows = activity.gameType === 'true_false' ? activity.content?.statements : activity.gameType === 'multiple_choice' ? activity.content?.questions : activity.content?.pairs;
   normalizeGenerated(activity.gameType, rows);
   return updateOwnedStatus(id, 'ACTIVE');
@@ -197,8 +216,9 @@ export async function editReviewedDraft(user, activityId, body = {}) {
   const activity = await getOwnedDraft({ teacherSubjectId: assignment.id, teacherId, activityId: id });
   if (!activity || activity.status !== 'DRAFT') throw fail(409, 'Este borrador no existe o ya está publicado.');
   const title = cleanString(body.title, 120, 'Título');
+  const topicId = await validTopic(assignment.id, body.topicId);
   const type = body.gameType;
   const rows = type === 'true_false' ? body.content?.statements : type === 'multiple_choice' ? body.content?.questions : body.content?.pairs;
   const content = normalizeGenerated(type, rows);
-  return updateReviewedDraft(id, { title, gameType: type, description: typeof body.description === 'string' ? body.description.slice(0, 1500) : '', content });
+  return updateReviewedDraft(id, { title, topicId, gameType: type, description: typeof body.description === 'string' ? body.description.slice(0, 1500) : '', content });
 }

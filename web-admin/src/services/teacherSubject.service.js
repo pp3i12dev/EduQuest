@@ -14,9 +14,7 @@ export const teacherSubjectService = {
         files.forEach((file) => formData.append('files', file));
         formData.append('changes', JSON.stringify(changes));
 
-        const { data } = await api.put(`/teacher-subjects/${id}`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const { data } = await api.put(`/teacher-subjects/${id}`, formData);
         return data;
     },
         listMine: async () => {

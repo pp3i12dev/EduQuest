@@ -552,17 +552,16 @@ export default function DashboardView() {
                                 </p>
 
                                 <h3 className="text-xl font-bold text-white">
-                                    Mis materias
+                                    Mis cursos
                                 </h3>
 
                                 <p className="mt-3 text-sm leading-relaxed text-slate-400">
-                                    Accedé a tus materias asignadas,
-                                    contenidos y actividades.
+                                    Elegí primero el curso y luego la materia para planificar contenidos, actividades y evaluaciones.
                                 </p>
 
                                 <div className="mt-6 flex items-center justify-between border-t border-slate-700/60 pt-4">
                                     <span className="text-xs font-semibold text-slate-300">
-                                        Ingresar a mis materias
+                                        Ingresar a mis cursos
                                     </span>
 
                                     <ArrowRight

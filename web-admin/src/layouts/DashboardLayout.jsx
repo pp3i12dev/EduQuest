@@ -65,7 +65,7 @@ const NAVIGATION = [
     },
     {
         to: '/dashboard/my-subjects',
-        label: 'Mis materias',
+        label: 'Mis cursos',
         Icon: BookOpen,
         teacherOnly: true,
     },
