@@ -48,3 +48,30 @@ test('completar: rechaza huecos múltiples y distractores repetidos', () => {
 test('encontrar error: valida índice y explicación', () => {
   assert.throws(() => normalizeExtraGame('spot_error', [1,2,3].map(i => ({ text: 'Error '+i, segments: ['A','B','C'], incorrectIndex: 7, explanation: 'La opción B es incorrecta' }))), /fragmento/);
 });
+
+test('memotest: valida parejas, oculta soluciones y califica', () => {
+  const content = normalizeExtraGame('memory', [
+    { left: 'Agua', right: 'H₂O' }, { left: 'Oxígeno', right: 'O₂' }, { left: 'Hidrógeno', right: 'H₂' },
+  ]);
+  const bank = extraQuestionBank({ id: 1501, gameType: 'memory', content });
+  const publicQuestions = toPublicExtraQuestions(bank);
+  assert.ok(publicQuestions.every(q => q.correctAnswer === undefined));
+  assert.equal(gradeQuestions(bank, bank.map(q => ({ id: q.id, optionId: q.correctAnswer })), 'memory').score, 100);
+  assert.equal(gradeQuestions(bank, bank.map((q, i) => ({ id: q.id, optionId: bank[(i + 1) % 3].correctAnswer })), 'memory').score, 0);
+});
+
+test('etiquetar imagen: marcadores, respuestas protegidas y corrección', () => {
+  const content = normalizeExtraGame('image_label', [
+    { text: 'Corazón', x: 35, y: 30 }, { text: 'Pulmón', x: 55, y: 30 }, { text: 'Estómago', x: 45, y: 65 },
+  ], { imageUrl: '/uploads/123e4567-e89b-12d3-a456-426614174000.png' });
+  const bank = extraQuestionBank({ id: 1502, gameType: 'image_label', content });
+  const publicQuestions = toPublicExtraQuestions(bank);
+  assert.ok(publicQuestions.every(q => q.correctAnswer === undefined && typeof q.x === 'number'));
+  assert.equal(gradeQuestions(bank, bank.map(q => ({ id: q.id, optionId: q.correctAnswer })), 'image_label').score, 100);
+});
+
+test('etiquetar imagen: rechaza URL externas y coordenadas incorrectas', () => {
+  const labels = [{ text: 'A', x: 20, y: 30 }, { text: 'B', x: 30, y: 40 }, { text: 'C', x: 40, y: 50 }];
+  assert.throws(() => normalizeExtraGame('image_label', labels, { imageUrl: 'https://unknown.example/img.png' }), /subí/);
+  assert.throws(() => normalizeExtraGame('image_label', [{ ...labels[0], x: 105 }, ...labels.slice(1)], { imageUrl: '/uploads/123e4567-e89b-12d3-a456-426614174000.png' }), /posiciones/);
+});

@@ -59,10 +59,12 @@ export async function assignments(requester) {
 export async function list(requester, rawAssignmentId, query = {}) {
   const assignment = await assignmentFor(requester, rawAssignmentId);
   const studentId = query.studentId ? idOf(query.studentId) : undefined;
+  const activityId = query.activityId ? idOf(query.activityId) : undefined;
   const includeArchived = query.includeArchived === 'true';
   const rows = await getPrisma().gameAttempt.findMany({
     where: {
       isCompleted: true, ...(studentId ? { studentId } : {}),
+      ...(activityId ? { activityId } : {}),
       ...(includeArchived ? {} : { teacherArchivedAt: null }),
       OR: [{ teacherSubjectIdSnapshot: assignment.id },
         { teacherSubjectIdSnapshot: null, activity: { teacherSubjectId: assignment.id } }],

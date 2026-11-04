@@ -665,3 +665,31 @@
     padding-left: 12px; padding-right: 12px; padding-top: 8px; padding-bottom: 8px;
     margin-bottom: 5px;
 }
+
+/* Entrega 15: memotest y etiquetado interactivo - orientación portrait */
+.eq-theme .eq-memory-board { flex-direction: row; flex-wrap: wrap; justify-content: center; width: 100%; }
+.eq-theme .eq-memory-card { width: 30%; min-width: 0; min-height: 90px; height: auto; margin: 1.5%; padding: 8px; white-space: normal; font-size: 13px; -unity-font-style: bold; background-color: rgb(92, 48, 171); color: white; border-radius: 15px; border-width: 2px; border-color: rgb(235, 205, 255); }
+.eq-theme .eq-memory-flipped { background-color: rgb(255, 215, 111); color: rgb(54, 34, 101); }
+.eq-theme .eq-memory-paired { background-color: rgb(202, 250, 218); color: rgb(41, 90, 58); }
+.eq-theme .eq-diagram-frame { width: 100%; min-height: 130px; position: relative; margin-bottom: 12px; border-radius: 12px; background-color: white; }
+.eq-theme .eq-diagram-pin { position: absolute; width: 36px; height: 36px; border-radius: 18px; border-width: 2px; border-color: white; background-color: rgb(104, 65, 210); color: white; -unity-font-style: bold; translate: -50% -50%; }
+.eq-theme .eq-diagram-answered { background-color: rgb(58, 177, 101); color: white; }
+.eq-theme .eq-diagram-selected { background-color: rgb(255, 180, 32); color: rgb(43, 31, 89); border-color: rgb(80, 50, 145); }
+
+/* Entrega 16: resultados adaptados a celulares + tabla de posiciones */
+.eq-theme .stat-number, .eq-theme .result-compact-number { width: 100%; min-width: 0; max-width: 100%; white-space: normal; -unity-text-align: middle-center; font-size: 23px; }
+.eq-theme .generic-result .stat-number { font-size: 22px; margin-bottom: 8px; }
+.eq-theme .generic-result .text, .eq-theme .history-card .list-subtitle { width: 100%; min-width: 0; max-width: 100%; white-space: normal; font-size: 12px; }
+.eq-theme .generic-result .glass, .eq-theme .generic-history .glass { width: 100%; min-width: 0; padding-left: 12px; padding-right: 12px; }
+.eq-theme .history-card { width: 100%; min-width: 0; max-width: 100%; }
+.eq-theme .eq-ranking-tabs { width: 100%; flex-direction: row; flex-wrap: wrap; margin-bottom: 10px; }
+.eq-theme .eq-ranking-tab { flex-grow: 1; flex-shrink: 1; min-width: 0; margin-right: 4px; padding: 9px; min-height: 46px; border-radius: 11px; color: rgb(67,47,138); background-color: rgb(232,222,250); -unity-font-style: bold; }
+.eq-theme .eq-ranking-tab-active { background-color: rgb(255,203,75); color: rgb(39,29,80); }
+.eq-theme .eq-ranking-entry { width: 100%; flex-direction: row; align-items: center; padding: 10px; margin-bottom: 8px; border-radius: 12px; background-color: rgb(245,239,255); }
+.eq-theme .eq-ranking-place { width: 43px; min-width: 43px; font-size: 18px; color: rgb(107,66,181); -unity-font-style: bold; }
+.eq-theme .eq-ranking-person { flex-grow: 1; flex-shrink: 1; min-width: 0; }
+.eq-theme .eq-ranking-name { color: rgb(54,39,112); -unity-font-style: bold; white-space: normal; font-size: 14px; }
+.eq-theme .eq-ranking-points { color: rgb(65,55,128); white-space: normal; font-size: 12px; }
+.eq-theme .eq-ranking-mine { background-color: rgb(255,237,164); }
+.eq-theme .eq-ranking-home { width: 100%; min-height: 90px; }
+.eq-theme .eq-ranking-activity-select { width: 100%; min-width: 0; margin-bottom: 11px; }

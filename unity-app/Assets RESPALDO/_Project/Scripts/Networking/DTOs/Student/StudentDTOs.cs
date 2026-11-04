@@ -26,7 +26,7 @@ namespace EduQuest.Student
     }
     [Serializable] public class ReviewAnswerDTO
     {
-        public string id, text;
+        public string id, text, explanation;
         // Propiedades JSON: Unity no intenta serializar JToken como campo de escena.
         // Newtonsoft.Json sigue convirtiendo los valores booleanos o las opciones.
         [JsonProperty("givenAnswer")]
@@ -46,8 +46,8 @@ namespace EduQuest.Student
     // Para 'matching', questions[] contiene conceptos a la izquierda y options[]
     // contiene las mismas definiciones desordenadas, identificadas por tokens opacos.
     // correctAnswer JAMÁS aparece en esta respuesta.
-    [Serializable] public class QuestionDTO { public string id, text; public RemoteChoiceDTO[] options; }
-    [Serializable] public class QuestionSetDTO { public int id; public string title, description, gameType; public QuestionDTO[] questions; }
+    [Serializable] public class QuestionDTO { public string id, text; public float x, y; public RemoteChoiceDTO[] options; }
+    [Serializable] public class QuestionSetDTO { public int id; public string title, description, gameType, imageUrl; public QuestionDTO[] questions; }
     [Serializable] public class AnswerDTO { public string id; public bool answer; public string optionId; }
     [Serializable] public class ResultDTO
     {

@@ -9,7 +9,7 @@ const include = (teacherSubjectId) => ({
   topics: {
     orderBy: [{ position: 'asc' }, { id: 'asc' }],
     include: {
-      activities: { select: { id: true, title: true, status: true }, orderBy: { id: 'asc' } },
+      activities: { where: { status: { not: 'INACTIVE' } }, select: { id: true, title: true, status: true }, orderBy: { id: 'asc' } },
       materials: { select: { id: true, title: true, originalName: true, mimeType: true, sizeBytes: true, isPublished: true, createdAt: true }, orderBy: { id: 'asc' } },
     },
   },

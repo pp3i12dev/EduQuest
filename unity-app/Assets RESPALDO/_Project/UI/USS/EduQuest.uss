@@ -647,3 +647,31 @@
 .eq-theme .eq-audio-settings .secondary { margin-top: 10px; width: 100%; min-height: 44px; }
 .eq-theme .eq-audio-volume { margin-top: 12px; min-height: 44px; width: 100%; }
 .eq-theme .eq-review-audio { margin-top: 7px; align-self: flex-start; min-height: 38px; }
+
+/* Entrega 14 — Juegos conceptuales: tarjetas táctiles responsive para portrait. */
+.eq-theme .game-option-tile {
+    width: 100%; min-height: 56px; height: auto; white-space: normal;
+    color: rgb(62, 36, 135); background-color: rgb(249, 244, 255);
+    border-radius: 16px; border-width: 2px; border-color: rgb(185, 170, 235);
+    -unity-text-align: middle-center; font-size: 16px;
+    padding-left: 14px; padding-right: 14px; padding-top: 12px; padding-bottom: 12px;
+    margin-top: 4px; margin-bottom: 8px;
+}
+.eq-theme .game-option-tile:hover { background-color: rgb(231, 219, 253); border-color: rgb(116, 71, 215); }
+.eq-theme .game-selection-list { width: 100%; margin-bottom: 10px; }
+.eq-theme .game-chosen-step {
+    width: 100%; white-space: normal; font-size: 14px; color: rgb(47, 125, 85);
+    background-color: rgb(220, 248, 231); border-radius: 12px;
+    padding-left: 12px; padding-right: 12px; padding-top: 8px; padding-bottom: 8px;
+    margin-bottom: 5px;
+}
+
+/* Entrega 15: memotest y etiquetado interactivo - orientación portrait */
+.eq-theme .eq-memory-board { flex-direction: row; flex-wrap: wrap; justify-content: center; width: 100%; }
+.eq-theme .eq-memory-card { width: 30%; min-width: 0; min-height: 90px; height: auto; margin: 1.5%; padding: 8px; white-space: normal; font-size: 13px; -unity-font-style: bold; background-color: rgb(92, 48, 171); color: white; border-radius: 15px; border-width: 2px; border-color: rgb(235, 205, 255); }
+.eq-theme .eq-memory-flipped { background-color: rgb(255, 215, 111); color: rgb(54, 34, 101); }
+.eq-theme .eq-memory-paired { background-color: rgb(202, 250, 218); color: rgb(41, 90, 58); }
+.eq-theme .eq-diagram-frame { width: 100%; min-height: 130px; position: relative; margin-bottom: 12px; border-radius: 12px; background-color: white; }
+.eq-theme .eq-diagram-pin { position: absolute; width: 36px; height: 36px; border-radius: 18px; border-width: 2px; border-color: white; background-color: rgb(104, 65, 210); color: white; -unity-font-style: bold; translate: -50% -50%; }
+.eq-theme .eq-diagram-answered { background-color: rgb(58, 177, 101); color: white; }
+.eq-theme .eq-diagram-selected { background-color: rgb(255, 180, 32); color: rgb(43, 31, 89); border-color: rgb(80, 50, 145); }

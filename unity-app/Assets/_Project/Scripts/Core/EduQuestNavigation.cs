@@ -10,6 +10,7 @@ namespace EduQuest.Student
         public static int AssignmentId, ActivityId;
         public static string SubjectName, GameType = "true_false", ActivityName;
         public static bool PracticeMode;
+        public static bool RankingRequested;
         public static ResultDTO LastResult;
         public static bool LaunchedCorreAprende { get; private set; }
 
@@ -70,6 +71,7 @@ namespace EduQuest.Student
             SubjectName = null;
             ActivityName = null;
             PracticeMode = false;
+            RankingRequested = false;
             LastResult = null;
             GameType = "true_false";
             LaunchedCorreAprende = false;

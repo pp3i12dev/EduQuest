@@ -46,8 +46,8 @@ function booleanAnswer(value) {
   if (typeof value !== 'boolean') throw fail(422, 'La respuesta correcta de una afirmación debe ser true o false.');
   return value;
 }
-export function normalizeGenerated(type, rows) {
-  if (EXTRA_TYPES.includes(type)) return normalizeExtraGame(type, rows);
+export function normalizeGenerated(type, rows, metadata = {}) {
+  if (EXTRA_TYPES.includes(type)) return normalizeExtraGame(type, rows, metadata);
   if (!TYPES.includes(type)) throw fail(400, 'Formato de juego no permitido.');
   if (!Array.isArray(rows) || rows.length < 1 || rows.length > 20) throw fail(422, 'Debe haber entre 1 y 20 preguntas.');
   const normalized = rows.map((row, i) => normalizeQuestion(row, type, i));
@@ -76,6 +76,7 @@ const geminiFields = type => ({
   classification: '{"text":"concepto","category":"nombre de categoría"} (usar de 2 a 6 categorías repetibles)',
   fill_blank: '{"text":"oración con un único ___","answer":"palabra correcta","wrongAnswers":["distractor1","distractor2","distractor3"]}',
   spot_error: '{"text":"consigna","segments":["fragmento 1","fragmento 2","fragmento 3"],"incorrectIndex":1,"explanation":"por qué el fragmento índice 1 está mal"} (índice empieza en cero)',
+  memory: '{"left":"concepto","right":"definición equivalente"} (cada pareja debe ser única)',
 })[type] || (type === 'true_false' ? '{"text":"...","correctAnswer":true}' : type === 'multiple_choice' ? '{"text":"...","options":[{"text":"..."},{"text":"..."},{"text":"..."},{"text":"..."}],"correctAnswer":"1","explanation":"..."}' : '{"left":"concepto","right":"definición"}');
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const retryableGeminiStatus = (status) => status === 408 || status === 429 || (status >= 500 && status <= 599);
@@ -169,6 +170,7 @@ export async function previewQuestions(user, body = {}) {
   const topicId = await validTopic(assignment.id, body.topicId);
   const topic = await getPrisma().topic.findUnique({ where: { id: topicId }, include: { unit: { select: { title: true } } } });
   const type = body.gameType;
+  if (type === 'image_label') throw fail(400, 'Etiquetar imágenes requiere que el docente suba una imagen y coloque los puntos manualmente.');
   if (!TYPES.includes(type)) throw fail(400, 'Tipo de juego inválido.');
   const count = Number(body.count);
   if (!Number.isInteger(count) || count < 3 || count > 15) throw fail(400, 'Elegí entre 3 y 15 preguntas.');
@@ -202,7 +204,7 @@ export async function saveReviewedDraft(user, body = {}) {
   const topicId = await validTopic(assignment.id, body.topicId);
   const type = body.gameType;
   const rows = gameRows(type, body.content);
-  const content = normalizeGenerated(type, rows);
+  const content = normalizeGenerated(type, rows, body.content);
   return createReviewedDraft({ teacherId, teacherSubjectId: assignment.id, topicId, title, description: typeof body.description === 'string' ? body.description.slice(0, 1500) : '', gameType: type, content });
 }
 
@@ -214,7 +216,7 @@ export async function publishReviewedDraft(user, { teacherSubjectId, activityId 
   if (!activity || activity.status !== 'DRAFT') throw fail(409, 'La actividad no existe o ya no es un borrador.');
   if (!activity.topicId) throw fail(409, 'Asigná la actividad a un tema antes de publicarla.');
   const rows = gameRows(activity.gameType, activity.content);
-  normalizeGenerated(activity.gameType, rows);
+  normalizeGenerated(activity.gameType, rows, activity.content);
   return updateOwnedStatus(id, 'ACTIVE');
 }
 
@@ -227,6 +229,22 @@ export async function editReviewedDraft(user, activityId, body = {}) {
   const topicId = await validTopic(assignment.id, body.topicId);
   const type = body.gameType;
   const rows = gameRows(type, body.content);
-  const content = normalizeGenerated(type, rows);
+  const content = normalizeGenerated(type, rows, body.content);
   return updateReviewedDraft(id, { title, topicId, gameType: type, description: typeof body.description === 'string' ? body.description.slice(0, 1500) : '', content });
+}
+
+// Archivar una actividad retira su publicación de Unity y los árboles de unidades/temas.
+// NO borramos los intentos ni sus notas; quedan disponibles en Resultados.
+export async function archiveReviewedActivity(user, activityId, body = {}) {
+  const { assignment, teacherId } = await teacherAssignment(user, body.teacherSubjectId);
+  if (body.confirm !== 'ELIMINAR') throw fail(400, 'Confirmación requerida: ELIMINAR.');
+  const activity = await getOwnedDraft({ teacherSubjectId: assignment.id, teacherId, activityId: Number(activityId) });
+  if (!activity || activity.status === 'INACTIVE') throw fail(404, 'Actividad no disponible en esta materia.');
+  await getPrisma().$transaction(async tx => {
+    await tx.activity.update({ where: { id: activity.id },
+      data: { status: 'INACTIVE', isPublished: false, publishedAt: null } });
+    await tx.unitActivity.deleteMany({ where: { activityId: activity.id } });
+    await tx.activityCourse.deleteMany({ where: { activityId: activity.id } });
+  });
+  return { id: activity.id, archived: true, message: 'Actividad retirada. Sus resultados históricos se conservan.' };
 }

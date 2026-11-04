@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Archive, ArchiveRestore, BookOpen, CalendarClock, CheckCircle2,
   ChevronLeft, ClipboardCheck, Eye, GraduationCap, RefreshCw,
@@ -35,6 +35,8 @@ const actionBase = 'inline-flex cursor-pointer items-center justify-center gap-1
 
 export default function TeacherAssessmentsView() {
   const { teacherSubjectId: routeAssignmentId } = useParams();
+  const [params] = useSearchParams();
+  const activityId = params.get('activityId') || '';
   const [assignments, setAssignments] = useState([]);
   const [assignmentId, setAssignmentId] = useState('');
   const [rows, setRows] = useState([]);
@@ -69,7 +71,7 @@ export default function TeacherAssessmentsView() {
     setBusy(true);
     setError('');
     try {
-      const data = await assessmentService.list(assignmentId, { includeArchived });
+      const data = await assessmentService.list(assignmentId, { includeArchived, activityId });
       setRows(data.records || []);
     } catch (e) {
       setError(e.response?.data?.message || 'No se pudo consultar el historial.');
@@ -86,7 +88,7 @@ export default function TeacherAssessmentsView() {
     loadAttempts();
     // La consulta depende de la asignación y de si se incluyen los archivados.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assignmentId, includeArchived]);
+  }, [assignmentId, includeArchived, activityId]);
 
   const assignment = assignments.find(item => String(item.id) === String(assignmentId));
   const students = useMemo(() => Array.from(new Map(rows.map(r => [String(r.studentId), r.studentName])).entries())
@@ -150,6 +152,10 @@ export default function TeacherAssessmentsView() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 pb-16 text-slate-100">
+      {activityId && <div className="flex items-center justify-between gap-3 rounded-xl border border-violet-400/40 bg-violet-500/15 p-3 text-sm text-violet-100">
+        <span>Resultados filtrados por actividad #{activityId}</span>
+        <Link to={`/dashboard/my-subjects/${routeAssignmentId}/results`} className="rounded-lg bg-violet-500 px-3 py-2 font-semibold">Ver todas</Link>
+      </div>}
       <header className="relative overflow-hidden rounded-3xl border border-indigo-400/25 bg-gradient-to-r from-[#152449] via-[#162443] to-[#102b33] p-6 shadow-lg shadow-slate-950/20 sm:p-7">
         <div className="pointer-events-none absolute -right-12 -top-16 h-52 w-52 rounded-full bg-indigo-500/15 blur-3xl" />
         <Link to="/dashboard/my-subjects" className="relative mb-4 inline-flex items-center gap-2 text-sm font-medium text-indigo-200 transition hover:text-white">

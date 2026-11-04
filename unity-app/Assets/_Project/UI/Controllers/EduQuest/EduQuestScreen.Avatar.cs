@@ -17,6 +17,7 @@ namespace EduQuest.Student
         private static int savedAvatarUserId = -1;
         private string pendingAvatarId = "boy_01";
         private bool girlsVisible;
+        private static int avatarRequestEpoch;
 
         private static string SafeAvatarId(string value)
         {
@@ -40,14 +41,22 @@ namespace EduQuest.Student
 
             PaintAvatar(Q<VisualElement>("avatar"), savedAvatarId);
             PaintAvatar(Q<VisualElement>("drawer-avatar"), savedAvatarId);
+            // En Perfil no debe conservarse el avatar fijo predefinido.
+            if (currentScene == "Profile")
+                PaintAvatar(Q<VisualElement>("profile-avatar-preview"), pendingAvatarId);
         }
 
         private static void PaintAvatar(VisualElement element, string avatarId)
         {
             if (element == null) return;
-            var tex = Resources.Load<Texture2D>("EduQuest/Avatars/" + SafeAvatarId(avatarId));
-            if (tex == null) return;
-            element.style.backgroundImage = new StyleBackground(tex);
+            // Los PNG de Unity pueden importarse como Texture2D o como Sprite.
+            // No depender de que el importador permita leer la textura directamente.
+            var key = "EduQuest/Avatars/" + SafeAvatarId(avatarId);
+            var sprite = Resources.Load<Sprite>(key);
+            var tex = Resources.Load<Texture2D>(key);
+            if (sprite != null) element.style.backgroundImage = new StyleBackground(sprite);
+            else if (tex != null) element.style.backgroundImage = new StyleBackground(tex);
+            else { Debug.LogWarning("EduQuest: avatar no importado en Resources: " + key); return; }
             element.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
         }
 
@@ -56,10 +65,11 @@ namespace EduQuest.Student
         private async void RefreshSavedAvatar()
         {
             if (!EduQuestRuntime.Session.IsStudent()) return;
+            int epoch = avatarRequestEpoch;
             try
             {
                 var response = await EduQuestRuntime.Student.Avatar();
-                if (this == null || !EduQuestRuntime.Session.IsStudent()) return;
+                if (this == null || !EduQuestRuntime.Session.IsStudent() || epoch != avatarRequestEpoch) return;
                 var user = EduQuestRuntime.Session.CurrentUser;
                 if (user == null) return;
                 SetCachedAvatar(user.id, response?.avatarId);
@@ -87,7 +97,10 @@ namespace EduQuest.Student
             Click("avatar-girls", () => { girlsVisible = true; RenderAvatarOptions(); });
             Click("save-avatar", () => Run(async () =>
             {
-                var response = await EduQuestRuntime.Student.UpdateAvatar(pendingAvatarId);
+                string chosen = pendingAvatarId;
+                // Impide que una consulta anterior pise la selección recién guardada.
+                avatarRequestEpoch++;
+                var response = await EduQuestRuntime.Student.UpdateAvatar(chosen);
                 if (this == null) return;
                 var user = EduQuestRuntime.Session.CurrentUser;
                 if (user != null) SetCachedAvatar(user.id, response.avatarId);

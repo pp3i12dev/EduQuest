@@ -2,10 +2,15 @@ import { Router } from 'express';
 import { authenticate, requirePermission } from '../middlewares/auth.middleware.js';
 import * as controller from '../controllers/student.controller.js';
 import { downloadStudent } from '../controllers/studyMaterial.controller.js';
+import * as avatarController from '../controllers/studentAvatar.controller.js';
+import { studentLeaderboard } from '../controllers/leaderboard.controller.js';
 
 const router = Router();
 router.use(authenticate, requirePermission('game:play'));
 router.get('/dashboard', controller.dashboard);
+router.get('/leaderboard', studentLeaderboard);
+router.get('/avatar', avatarController.getMyAvatar);
+router.patch('/avatar', avatarController.updateMyAvatar);
 router.get('/subjects', controller.subjects);
 router.get('/subjects/:assignmentId/activities', controller.activities);
 router.get('/history', controller.history);

@@ -40,14 +40,31 @@ namespace EduQuest.Student
     {
         public ReviewAnswerDTO[] review;
     }
+    [Serializable] public class LeaderboardDTO
+    {
+        public int courseId, academicYear, totalActivities;
+        public string courseName, mode, activityName, policy;
+        public int? activityId, myPosition;
+        public LeaderboardActivityDTO[] activities;
+        public LeaderboardRowDTO[] rows;
+    }
+    [Serializable] public class LeaderboardActivityDTO { public int id; public string title; }
+    [Serializable] public class LeaderboardRowDTO
+    {
+        public int? studentId, position;
+        public string name;
+        public float score, grade;
+        public int completedCount, totalActivities, coverage;
+        public bool isMe;
+    }
     [Serializable] public class AvatarDTO { public string avatarId; }
     [Serializable] public class ProfileDTO { public int id; public string dni, firstName, lastName, email, telefono; public bool isActive; public string[] roles; }
     [Serializable] public class GameTypeDTO { public string gameType, name; public int activities; }
     // Para 'matching', questions[] contiene conceptos a la izquierda y options[]
     // contiene las mismas definiciones desordenadas, identificadas por tokens opacos.
     // correctAnswer JAMÁS aparece en esta respuesta.
-    [Serializable] public class QuestionDTO { public string id, text; public RemoteChoiceDTO[] options; }
-    [Serializable] public class QuestionSetDTO { public int id; public string title, description, gameType; public QuestionDTO[] questions; }
+    [Serializable] public class QuestionDTO { public string id, text; public float x, y; public RemoteChoiceDTO[] options; }
+    [Serializable] public class QuestionSetDTO { public int id; public string title, description, gameType, imageUrl; public QuestionDTO[] questions; }
     [Serializable] public class AnswerDTO { public string id; public bool answer; public string optionId; }
     [Serializable] public class ResultDTO
     {

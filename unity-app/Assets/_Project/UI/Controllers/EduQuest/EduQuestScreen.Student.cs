@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -13,6 +14,7 @@ namespace EduQuest.Student
         private bool showingContent = true;
         private bool showingCompleted;
         private bool historyShowHidden;
+        private bool historyTabsBound;
         private void SetupHome()
         {
             var screen = root.Q<VisualElement>(className: "screen");
@@ -25,7 +27,8 @@ namespace EduQuest.Student
             }
             Click("go-practice", () => StudentNavigation.Go("Practice"));
             Click("go-subjects", () => StudentNavigation.Go("Subjects"));
-            Click("go-history", () => StudentNavigation.Go("History"));
+            Click("go-history", () => { StudentNavigation.RankingRequested = false; StudentNavigation.Go("History"); });
+            Click("go-ranking", () => { StudentNavigation.RankingRequested = true; StudentNavigation.Go("History"); });
             Click("go-profile", () => StudentNavigation.Go("Profile"));
             ApplyIcon("level-icon", "LevelIcon");
             ApplyIcon("points-icon", "StarIcon");
@@ -34,24 +37,10 @@ namespace EduQuest.Student
             Q<Label>("student-name").text = "¡Hola, " + studentName + "!";
             var drawerName = Q<Label>("drawer-name");
             if (drawerName != null) drawerName.text = studentName;
+            // No volver a dibujar el avatar genérico en Inicio.
+            // ShowSavedAvatar() pinta siempre la elección de la cuenta actual.
             var avatar = Q<VisualElement>("avatar");
-            // Usa el mismo cargador que aplica el arte del menu lateral.
-            // Permite Avatar importado como Texture2D o Sprite y un respaldo visual.
-            if (avatar != null)
-            {
-                StyleBackground avatarImage;
-                if (TryLoadArt("Avatar", out avatarImage) ||
-                    TryLoadArt("AvatarIllustration", out avatarImage))
-                {
-                    avatar.style.backgroundImage = avatarImage;
-                    avatar.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
-                }
-                else
-                {
-                    avatar.style.backgroundColor = new Color(0.34f, 0.42f, 0.73f);
-                    Debug.LogWarning("EduQuest: no se encontro Avatar ni AvatarIllustration en Resources/EduQuest");
-                }
-            }
+            ShowSavedAvatar();
             Click("edit-profile", () => StudentNavigation.Go("Profile"));
             // Tocar la foto desde Inicio abre la selección del perfil.
             if (avatar != null) avatar.RegisterCallback<ClickEvent>(_ => StudentNavigation.Go("Profile"));
@@ -241,13 +230,15 @@ namespace EduQuest.Student
                 case "classification": return "Clasificar conceptos";
                 case "fill_blank": return "Completar oraciones";
                 case "spot_error": return "Encontrar el error";
+                case "memory": return "Memotest educativo";
+                case "image_label": return "Etiquetar imagen";
                 default: return gameType ?? "Juego";
             }
         }
 
         private void LaunchActivity(int id, string title, string type)
         {
-            if (type != "true_false" && type != "multiple_choice" && type != "matching" && type != "sequence" && type != "classification" && type != "fill_blank" && type != "spot_error")
+            if (type != "true_false" && type != "multiple_choice" && type != "matching" && type != "sequence" && type != "classification" && type != "fill_blank" && type != "spot_error" && type != "memory" && type != "image_label")
             {
                 Status("Este tipo de juego todavía no está disponible en Unity.");
                 return;
@@ -277,6 +268,24 @@ namespace EduQuest.Student
         {
             var list = Items();
             if (list == null) return;
+            var historyTab = Q<Button>("history-tab");
+            var rankingTab = Q<Button>("ranking-tab");
+            if (historyTab != null)
+            {
+                historyTab.EnableInClassList("eq-ranking-tab-active", !StudentNavigation.RankingRequested);
+                if (!historyTabsBound) historyTab.clicked += () => { StudentNavigation.RankingRequested = false; SetupHistory(); };
+            }
+            if (rankingTab != null)
+            {
+                rankingTab.EnableInClassList("eq-ranking-tab-active", StudentNavigation.RankingRequested);
+                if (!historyTabsBound) rankingTab.clicked += () => { StudentNavigation.RankingRequested = true; SetupHistory(); };
+            }
+            historyTabsBound = true;
+            if (StudentNavigation.RankingRequested)
+            {
+                SetupLeaderboard(list);
+                return;
+            }
             bool includeHidden = historyShowHidden;
             var toggle = new Button(() =>
             {
@@ -288,7 +297,7 @@ namespace EduQuest.Student
             Run(async () =>
             {
                 var data = await EduQuestRuntime.Student.History(includeHidden);
-                if (this == null || historyShowHidden != includeHidden) return;
+                if (this == null || historyShowHidden != includeHidden || StudentNavigation.RankingRequested) return;
                 var points = Q<Label>("total-points");
                 if (points != null) points.text = "★  " + data.totalPoints.ToString("N0") + " puntos totales";
                 var note = Q<Label>("history-note");
@@ -308,8 +317,8 @@ namespace EduQuest.Student
                     card.Add(Text(item.activityTitle, "list-title"));
                     card.Add(Text("CURSO " + item.courseName + " · " + item.subjectName, "list-subtitle"));
                     card.Add(Text("UNIDAD " + item.unitName + " · TEMA " + item.topicName, "list-subtitle"));
-                    card.Add(Text("Puntaje: " + item.score + "%  ·  Nota: " + item.grade.ToString("0.0") + "/10  ·  " +
-                        (item.earnedPoints.HasValue ? item.earnedPoints.Value + " puntos obtenidos" : "Puntos históricos sin detalle"), "list-subtitle"));
+                    card.Add(Text("Puntaje: " + item.score + "%  ·  Nota: " + item.grade.ToString("0.0") + "/10", "list-subtitle"));
+                    card.Add(Text(item.earnedPoints.HasValue ? item.earnedPoints.Value + " puntos obtenidos" : "Puntos históricos sin detalle", "list-subtitle"));
                     card.Add(Text("Fecha y hora: " + Date(item.completedAt), "list-subtitle"));
                     var actions = new VisualElement();
                     actions.AddToClassList("history-actions");
@@ -355,6 +364,76 @@ namespace EduQuest.Student
                 }
             });
         }
+        private void SetupLeaderboard(VisualElement list)
+        {
+            var points = Q<Label>("total-points");
+            if (points != null) points.text = "🏆 CLASIFICACIONES DEL CURSO";
+            var note = Q<Label>("history-note");
+            if (note != null) note.text = "Solo compañeros de tu curso. Se muestra el nombre de pila y la inicial del apellido.";
+            Run(async () =>
+            {
+                var data = await EduQuestRuntime.Student.Leaderboard();
+                if (this == null || !StudentNavigation.RankingRequested) return;
+                RenderLeaderboard(list, data);
+            });
+        }
+
+        private void RenderLeaderboard(VisualElement list, LeaderboardDTO data)
+        {
+            list.Clear();
+            if (data == null) { Empty(list, "No se pudo cargar la clasificación."); return; }
+            list.Add(Text(data.courseName + " · " + data.academicYear, "list-title"));
+            var myRank = Text("", "eyebrow");
+            list.Add(myRank);
+            list.Add(Text("Los intentos repetidos no suman: se toma la mejor puntuación.", "muted"));
+            var options = new List<string> { "General · Todas las actividades" };
+            foreach (var activity in data.activities ?? Array.Empty<LeaderboardActivityDTO>())
+                options.Add(activity.title + " (#" + activity.id + ")");
+            var select = new DropdownField("Ver clasificación", options, 0);
+            select.AddToClassList("eq-ranking-activity-select");
+            list.Add(select);
+            var rankingBoard = new VisualElement();
+            list.Add(rankingBoard);
+            void Paint(LeaderboardDTO result)
+            {
+                rankingBoard.Clear();
+                var ownRow = result?.rows?.FirstOrDefault(x => x.isMe);
+                myRank.text = ownRow?.position != null
+                    ? "Mi puesto " + (result.mode == "GENERAL" ? "general" : "en esta actividad") + ": #" + ownRow.position.Value
+                    : "Jugá una actividad para aparecer en la clasificación.";
+                if (result?.rows == null || result.rows.Length == 0)
+                {
+                    rankingBoard.Add(Text("Todavía no hay resultados disponibles.", "muted"));
+                    return;
+                }
+                rankingBoard.Add(Text(result.mode == "GENERAL" ? "Promedio de todas las actividades" : (result.activityName ?? "Actividad"), "list-title"));
+                foreach (var row in result.rows)
+                {
+                    var card = new VisualElement();
+                    card.AddToClassList("eq-ranking-entry");
+                    if (row.isMe) card.AddToClassList("eq-ranking-mine");
+                    card.Add(Text(row.position.HasValue ? "#" + row.position.Value : "—", "eq-ranking-place"));
+                    var details = new VisualElement();
+                    details.AddToClassList("eq-ranking-person");
+                    details.Add(Text((row.isMe ? "★ " : "") + row.name, "eq-ranking-name"));
+                    details.Add(Text(row.score.ToString("0.0") + "%  ·  " + row.completedCount + "/" + row.totalActivities + " actividades", "eq-ranking-points"));
+                    card.Add(details);
+                    rankingBoard.Add(card);
+                }
+            }
+            Paint(data);
+            select.RegisterValueChangedCallback(evt =>
+            {
+                int index = options.IndexOf(evt.newValue);
+                int? activityId = index <= 0 ? (int?)null : data.activities[index - 1].id;
+                Run(async () =>
+                {
+                    var result = await EduQuestRuntime.Student.Leaderboard(activityId);
+                    if (this != null && StudentNavigation.RankingRequested && select.value == evt.newValue) Paint(result);
+                });
+            });
+        }
+
         private void SetupProfile()
         {
             SetupAvatarPicker();

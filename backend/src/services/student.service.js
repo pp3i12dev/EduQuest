@@ -50,6 +50,7 @@ function statements(activity) { return questionsFor(activity); }
 function publicQuestions(activity) {
   return {
     id: activity.id, title: activity.title, description: activity.description || '', gameType: activity.gameType,
+    ...(activity.gameType === 'image_label' ? { imageUrl: activity.content.imageUrl } : {}),
     questions: activity.gameType === 'matching'
       ? shuffledMatchingQuestions(questionsFor(activity))
       : EXTRA_TYPES.includes(activity.gameType) ? toPublicExtraQuestions(questionsFor(activity))

@@ -9,8 +9,8 @@ export function gradeQuestions(questions, answers, type = 'true_false') {
     if (answersById.has(id)) throw fail(400, 'Hay respuestas repetidas.');
     answersById.set(id, answer);
   }
-  if (!['true_false', 'multiple_choice', 'matching', 'sequence', 'classification', 'fill_blank', 'spot_error'].includes(type)) throw fail(400, 'Tipo de juego inválido.');
-  if (type === 'matching' || type === 'sequence') {
+  if (!['true_false', 'multiple_choice', 'matching', 'sequence', 'classification', 'fill_blank', 'spot_error', 'memory', 'image_label'].includes(type)) throw fail(400, 'Tipo de juego inválido.');
+  if (type === 'matching' || type === 'sequence' || type === 'memory' || type === 'image_label') {
     const selected = answers.map(a => String(a?.optionId ?? ''));
     if (new Set(selected).size !== selected.length)
       throw fail(400, 'No podés repetir una opción en juegos de relación u ordenamiento.');

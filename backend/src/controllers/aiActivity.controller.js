@@ -9,3 +9,5 @@ export const saveDraft = action(req => service.saveReviewedDraft(req.user, req.b
 export const publish = action(req => service.publishReviewedDraft(req.user, { ...req.body, activityId: req.params.activityId }));
 
 export const editDraft = action(req => service.editReviewedDraft(req.user, req.params.activityId, req.body));
+
+export const archive = action(req => service.archiveReviewedActivity(req.user, req.params.activityId, req.body));

@@ -1,10 +1,15 @@
 import { Router } from 'express';
 import { authenticate, requirePermission } from '../middlewares/auth.middleware.js';
 import * as ctrl from '../controllers/aiActivity.controller.js';
+import * as imageController from '../controllers/activityImage.controller.js';
+import multer from 'multer';
 const router = Router();
 router.use(authenticate, requirePermission('subjectContent:manage'));
 router.post('/preview', ctrl.preview);
+const diagramUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1 } });
+router.post('/diagram', diagramUpload.single('image'), imageController.upload);
 router.post('/drafts', ctrl.saveDraft);
 router.put('/drafts/:activityId', ctrl.editDraft);
 router.post('/drafts/:activityId/publish', ctrl.publish);
+router.delete('/activities/:activityId', ctrl.archive);
 export default router;

@@ -34,24 +34,10 @@ namespace EduQuest.Student
             Q<Label>("student-name").text = "¡Hola, " + studentName + "!";
             var drawerName = Q<Label>("drawer-name");
             if (drawerName != null) drawerName.text = studentName;
+            // No volver a dibujar el avatar genérico en Inicio.
+            // ShowSavedAvatar() pinta siempre la elección de la cuenta actual.
             var avatar = Q<VisualElement>("avatar");
-            // Usa el mismo cargador que aplica el arte del menu lateral.
-            // Permite Avatar importado como Texture2D o Sprite y un respaldo visual.
-            if (avatar != null)
-            {
-                StyleBackground avatarImage;
-                if (TryLoadArt("Avatar", out avatarImage) ||
-                    TryLoadArt("AvatarIllustration", out avatarImage))
-                {
-                    avatar.style.backgroundImage = avatarImage;
-                    avatar.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
-                }
-                else
-                {
-                    avatar.style.backgroundColor = new Color(0.34f, 0.42f, 0.73f);
-                    Debug.LogWarning("EduQuest: no se encontro Avatar ni AvatarIllustration en Resources/EduQuest");
-                }
-            }
+            ShowSavedAvatar();
             Click("edit-profile", () => StudentNavigation.Go("Profile"));
             // Tocar la foto desde Inicio abre la selección del perfil.
             if (avatar != null) avatar.RegisterCallback<ClickEvent>(_ => StudentNavigation.Go("Profile"));
@@ -237,13 +223,19 @@ namespace EduQuest.Student
                 case "true_false": return "Verdadero o falso";
                 case "multiple_choice": return "Opciones múltiples";
                 case "matching": return "Unir conceptos";
+                case "sequence": return "Ordenar secuencias";
+                case "classification": return "Clasificar conceptos";
+                case "fill_blank": return "Completar oraciones";
+                case "spot_error": return "Encontrar el error";
+                case "memory": return "Memotest educativo";
+                case "image_label": return "Etiquetar imagen";
                 default: return gameType ?? "Juego";
             }
         }
 
         private void LaunchActivity(int id, string title, string type)
         {
-            if (type != "true_false" && type != "multiple_choice" && type != "matching")
+            if (type != "true_false" && type != "multiple_choice" && type != "matching" && type != "sequence" && type != "classification" && type != "fill_blank" && type != "spot_error" && type != "memory" && type != "image_label")
             {
                 Status("Este tipo de juego todavía no está disponible en Unity.");
                 return;
