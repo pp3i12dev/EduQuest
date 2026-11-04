@@ -4,10 +4,12 @@ import { AuthContext } from '../context/AuthContext';
 import {
   prepareWebPush, activatePush, deactivatePush,
   currentPushStatus, pushSupport, testWebPush,
+  rememberPushPreference, restorePreferredPush,
 } from '../services/webPush';
 
 export default function WebPushSettings({ compact = false }) {
-  const { token } = useContext(AuthContext);
+  const { token, user } = useContext(AuthContext);
+  const userId = user?.id;
   const [prepared, setPrepared] = useState(null);
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -17,18 +19,46 @@ export default function WebPushSettings({ compact = false }) {
   const capability = pushSupport();
 
   useEffect(() => {
-    if (!token) return undefined;
+    if (!token || userId === null || userId === undefined) return undefined;
     let alive = true;
     setLoading(true);
     prepareWebPush()
       .then(async ready => {
-        const active = await currentPushStatus(ready);
-        if (alive) { setPrepared(ready); setEnabled(active); setFeedback(''); }
+        let active = await currentPushStatus(ready);
+        let subscription = ready.existingSubscription;
+        let notice = '';
+        if (active) {
+          // Las cuentas que ya tenían Push activo conservan esa decisión.
+          rememberPushPreference(userId, true);
+        } else {
+          try {
+            const restored = await restorePreferredPush(ready, userId);
+            if (restored) {
+              subscription = restored;
+              active = true;
+              notice = 'Se restauraron automáticamente los avisos de esta cuenta.';
+            }
+          } catch (error) {
+            // Si iOS o un navegador exige otro gesto, queda el botón manual.
+            notice = error.response?.data?.message || error.message || 'Activá las notificaciones desde el botón.';
+          }
+        }
+        if (alive) {
+          setPrepared({ ...ready, existingSubscription: subscription });
+          setEnabled(active);
+          setFeedback(notice);
+        }
       })
-      .catch(error => { if (alive) { setPrepared(null); setEnabled(false); setFeedback(error.message); } })
+      .catch(error => {
+        if (alive) {
+          setPrepared(null);
+          setEnabled(false);
+          setFeedback(error.message);
+        }
+      })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [token]);
+  }, [token, userId]);
 
   async function handleActivate() {
     setBusy(true); setFeedback('');
@@ -36,6 +66,7 @@ export default function WebPushSettings({ compact = false }) {
       const sub = await activatePush(prepared);
       setPrepared(old => ({ ...old, existingSubscription: sub }));
       setEnabled(true);
+      rememberPushPreference(userId, true);
       setFeedback('Notificaciones habilitadas en este navegador. Podés enviarte una prueba.');
     } catch (error) { setFeedback(error.message || 'No se pudieron activar las notificaciones.'); }
     finally { setBusy(false); }
@@ -46,6 +77,7 @@ export default function WebPushSettings({ compact = false }) {
     try {
       await deactivatePush(prepared);
       setEnabled(false);
+      rememberPushPreference(userId, false);
       setPrepared(old => old ? { ...old, existingSubscription: null } : null);
       setFeedback('Avisos desactivados en este dispositivo. Permanecen disponibles dentro de EduQuest.');
     } catch (error) { setFeedback(error.response?.data?.message || error.message); }

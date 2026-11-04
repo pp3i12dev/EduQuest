@@ -100,3 +100,42 @@ export async function revokePushOnLogout(token) {
     await sub.unsubscribe();
   }
 }
+
+// La preferencia solo identifica la cuenta que autorizó Push en ESTE navegador.
+// No contiene tokens, endpoints ni credenciales; nunca se comparte entre usuarios.
+const preferenceKey = userId => `eduquest.push.preferido.usuario.${String(userId)}`;
+export function preferredPushEnabled(userId) {
+  if (userId === null || userId === undefined || userId === '') return false;
+  try { return localStorage.getItem(preferenceKey(userId)) === '1'; }
+  catch { return false; }
+}
+export function rememberPushPreference(userId, enabled) {
+  if (userId === null || userId === undefined || userId === '') return;
+  try {
+    if (enabled) localStorage.setItem(preferenceKey(userId), '1');
+    else localStorage.removeItem(preferenceKey(userId));
+  } catch { /* Almacenamiento no disponible: la activación manual continúa funcionando. */ }
+}
+
+// En React hay dos controles Push (Perfil y encabezado). Compartir la misma
+// promesa evita que intenten subscribir el mismo navegador simultáneamente.
+const restoringByUser = new Map();
+export function restorePreferredPush(prepared, userId) {
+  if (!prepared || !preferredPushEnabled(userId) || Notification.permission !== 'granted') {
+    return Promise.resolve(null);
+  }
+  const key = String(userId);
+  if (restoringByUser.has(key)) return restoringByUser.get(key);
+  const task = (async () => {
+    const existing = await prepared.registration.pushManager.getSubscription();
+    if (existing) {
+      const { data } = await api.post('/push/status', { endpoint: existing.endpoint });
+      if (data?.active) return existing;
+    }
+    // El permiso ya fue concedido por el usuario. No se vuelve a solicitar.
+    // Reasociamos exclusivamente con el usuario actualmente autenticado.
+    return activatePush({ ...prepared, existingSubscription: existing });
+  })().finally(() => restoringByUser.delete(key));
+  restoringByUser.set(key, task);
+  return task;
+}
