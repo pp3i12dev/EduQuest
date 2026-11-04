@@ -3,23 +3,24 @@ import { getPrisma } from '../config/prisma.js';
 
 export const listAssignmentOptions = async (institutionId) => {
     const prisma = getPrisma();
+    const institutionWhere = institutionId == null ? {} : { institutionId };
 
     const [courses, subjects, students, teachers] = await Promise.all([
         prisma.course.findMany({
-            where: { institutionId },
-            include: { career: true },
+            where: institutionWhere,
+            include: { career: true, institution: { select: { id: true, nombre: true } } },
             orderBy: { nombre: 'asc' },
         }),
 
         prisma.subject.findMany({
-            where: { institutionId, deletedAt: null },
+            where: { ...institutionWhere, deletedAt: null },
             orderBy: { nombre: 'asc' },
         }),
 
         prisma.studentProfile.findMany({
             where: {
                 user: {
-                    institutionId, isActive: true, deletedAt: null,
+                    ...institutionWhere, isActive: true, deletedAt: null,
                 },
             },
             include: {
@@ -44,7 +45,7 @@ export const listAssignmentOptions = async (institutionId) => {
         prisma.teacherProfile.findMany({
             where: {
                 user: {
-                    institutionId, isActive: true, deletedAt: null,
+                    ...institutionWhere, isActive: true, deletedAt: null,
                 },
             },
             include: {
@@ -189,7 +190,7 @@ export const findCourse = (institutionId, courseId) => {
     return prisma.course.findFirst({
         where: {
             id: courseId,
-            institutionId,
+            ...(institutionId == null ? {} : { institutionId }),
         },
     });
 };
@@ -454,7 +455,7 @@ export const listSchedules = async (
             courseId,
             subjectId,
             course: {
-                institutionId,
+                ...(institutionId == null ? {} : { institutionId }),
             },
         },
         include: {
@@ -475,7 +476,7 @@ export const findSchedule = (institutionId, id) => {
         where: {
             id,
             course: {
-                institutionId,
+                ...(institutionId == null ? {} : { institutionId }),
             },
         },
     });
@@ -494,7 +495,7 @@ export const listSchedulesForConflict = async (
             courseId,
             day,
             course: {
-                institutionId,
+                ...(institutionId == null ? {} : { institutionId }),
             },
             ...(excludeId
                 ? { NOT: { id: excludeId } }
