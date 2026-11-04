@@ -1,7 +1,8 @@
 
 import { Router } from 'express';
 
-import { authenticate } from '../middlewares/auth.middleware.js';
+import { authenticate, requirePermission } from '../middlewares/auth.middleware.js';
+import { signupController } from '../controllers/studentSignup.controller.js';
 
 import {
     listUsers,
@@ -40,6 +41,13 @@ router.patch('/me/password', changeMyPassword);
 // Se mantienen las rutas originales.
 // Los permisos se verifican en los servicios.
 // ======================================================
+
+// Solicitudes de alta pública de alumnos, en Gestión de usuarios.
+// Requiere permiso de dirección o preceptoría; no puede usarse desde cuentas docentes.
+router.get('/signup-requests', requirePermission('selfSignup:approve'), signupController.list);
+router.get('/signup-requests/groups', requirePermission('selfSignup:approve'), signupController.groups);
+router.post('/signup-requests/approve', requirePermission('selfSignup:approve'), signupController.approve);
+router.post('/signup-requests/reject', requirePermission('selfSignup:approve'), signupController.reject);
 
 // Listar usuarios.
 router.get('/', listUsers);

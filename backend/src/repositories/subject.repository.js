@@ -67,10 +67,10 @@ export const listSubjects = (institutionId = null) => {
     const prisma = getPrisma();
 
     return prisma.subject.findMany({
-        where:
-            institutionId == null
-                ? {}
-                : { institutionId },
+        where: {
+            deletedAt: null,
+            ...(institutionId != null ? { institutionId } : {}),
+        },
         include: subjectInclude,
         orderBy: { nombre: 'asc' },
     });
@@ -82,6 +82,7 @@ export const findSubject = (id, institutionId = null) => {
     return prisma.subject.findFirst({
         where: {
             id,
+            deletedAt: null,
             ...(institutionId != null
                 ? { institutionId }
                 : {}),
@@ -147,6 +148,7 @@ export const createSubject = ({
                     courseId,
                     day: schedule.day,
                     shift: schedule.shift,
+                    modality: schedule.modality,
                     startTime: schedule.startTime,
                     endTime: schedule.endTime,
                 })),
@@ -177,6 +179,7 @@ export const updateSubject = (
         const subject = await tx.subject.findFirst({
             where: {
                 id,
+                deletedAt: null,
                 ...(institutionId != null
                     ? { institutionId }
                     : {}),
@@ -323,6 +326,7 @@ export const updateSubject = (
                 const data = {
                     day: schedule.day,
                     shift: schedule.shift,
+                    modality: schedule.modality,
                     startTime: schedule.startTime,
                     endTime: schedule.endTime,
                 };
@@ -371,6 +375,47 @@ export const updateSubject = (
         });
     });
 };
+
+// Eliminar del catálogo sin destruir la evidencia histórica de actividades.
+// Todas las asignaciones vigentes quedan desvinculadas de la docencia operativa.
+export const archiveSubjectWithAssignments = (id, institutionId) => getPrisma().$transaction(async (tx) => {
+    const subject = await tx.subject.findFirst({
+        where: { id, deletedAt: null, ...(institutionId != null ? { institutionId } : {}) },
+        select: { id: true },
+    });
+    if (!subject) throw Object.assign(new Error('Materia inexistente'), { status: 404 });
+    const assignments = await tx.teacherSubject.findMany({
+        where: { subjectId: id }, select: { id: true },
+    });
+    const assignmentIds = assignments.map(a => a.id);
+    // Sin contenido ni historial, borramos físicamente materia y asignaciones.
+    // Si existe evidencia académica, la archivamos para que siga siendo consultable.
+    const [notices, affectedClasses, activities, units, materials, contents] = await Promise.all([
+        tx.earlyNotice.count({ where: { subjectId: id } }),
+        tx.earlyNoticeClass.count({ where: { teacherSubjectId: { in: assignmentIds } } }),
+        tx.activity.count({ where: { teacherSubjectId: { in: assignmentIds } } }),
+        tx.unit.count({ where: { teacherSubjectId: { in: assignmentIds } } }),
+        tx.studyMaterial.count({ where: { teacherSubjectId: { in: assignmentIds } } }),
+        tx.teacherSubjectContent.count({ where: { teacherSubjectId: { in: assignmentIds } } }),
+    ]);
+    if (![notices, affectedClasses, activities, units, materials, contents].some(Boolean)) {
+        // Los horarios tienen onDelete Cascade y no hay avisos vinculados.
+        await tx.teacherSubject.deleteMany({ where: { subjectId: id } });
+        await tx.subject.delete({ where: { id } });
+        return { id, permanentlyDeleted: true };
+    }
+    if (assignmentIds.length) {
+        await tx.teacherSubject.updateMany({ where: { id: { in: assignmentIds } }, data: { isActive: false } });
+        await tx.activity.updateMany({
+            where: { teacherSubjectId: { in: assignmentIds } },
+            data: { isPublished: false, status: 'INACTIVE' },
+        });
+        await tx.studyMaterial.updateMany({
+            where: { teacherSubjectId: { in: assignmentIds } }, data: { isPublished: false },
+        });
+    }
+    return tx.subject.update({ where: { id }, data: { isActive: false, deletedAt: new Date() } });
+});
 
 export const deleteSubject = (id, institutionId) => {
     const prisma = getPrisma();

@@ -1,4 +1,5 @@
 enum NotificationType {
+  STUDENT_REGISTRATION_REQUEST
   EARLY_NOTICE_PENDING
   EARLY_NOTICE_CONFIRMED
   EARLY_NOTICE_REJECTED
@@ -36,13 +37,19 @@ model Notification {
   // Avisos y eventos son orígenes alternativos; el servicio exige exactamente uno.
   earlyNoticeId Int?
   earlyNotice EarlyNotice? @relation("EarlyNoticeNotifications", fields: [earlyNoticeId], references: [id], onDelete: Cascade)
+  // Notificación a las autoridades cuando un alumno solicita registrarse.
+  signupUserId Int?
+  signupUser User? @relation("StudentSignupNotifications", fields: [signupUserId], references: [id], onDelete: Cascade)
   institutionEventId Int?
   institutionEvent InstitutionEvent? @relation("InstitutionEventNotifications", fields: [institutionEventId], references: [id], onDelete: Cascade)
   // Cada modificación confirmada genera una versión distinta por destinatario.
   revision Int @default(1)
   deliveries NotificationDelivery[]
+  webPushDeliveries WebPushDelivery[] @relation("NotificationWebPushDeliveries")
 
   @@unique([userId, earlyNoticeId, type, revision])
+  @@unique([userId, signupUserId, type, revision])
+  @@index([signupUserId])
   @@unique([userId, institutionEventId, type, revision])
   @@index([userId, isRead, createdAt])
   @@index([earlyNoticeId])

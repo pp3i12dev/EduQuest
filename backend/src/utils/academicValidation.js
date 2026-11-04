@@ -1,7 +1,7 @@
 
 import {
     createValidationError,
-} from './accessControl.js';
+} from './accesControl.js';
 
 export const SCHEDULE_DAYS = Object.freeze([
     'LUNES',

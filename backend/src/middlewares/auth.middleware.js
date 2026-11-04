@@ -58,7 +58,7 @@ export async function authenticate(req, res, next) {
             });
         }
 
-        if (!user.isActive) {
+        if (!user.isActive || user.deletedAt) {
             return res.status(403).json({
                 message: 'Tu cuenta está desactivada',
             });

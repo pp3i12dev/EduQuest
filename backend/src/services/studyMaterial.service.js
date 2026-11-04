@@ -16,7 +16,7 @@ const toId = raw => {
 
 async function permittedAssignment(user, rawId, write = false) {
   const assignment = await getTeacherSubjectDetail(user, toId(rawId));
-  if (write && (!assignment.isActive || !assignment.subject.isActive)) throw fail(409, 'La materia no está vigente.');
+  if (write && (!assignment.isActive || !assignment.subject.isActive || assignment.subject.deletedAt)) throw fail(409, 'La materia no está vigente.');
   return assignment;
 }
 async function topicForAssignment(assignment, rawTopicId) {
@@ -87,7 +87,7 @@ export async function getDownload(user, rawId, audience) {
     const memberships = student.courses.filter(row => row.course.academicYear === currentYear);
     if (memberships.length !== 1) throw fail(403, 'No existe un único curso vigente para este alumno.');
     const allowed = await getPrisma().teacherSubject.findFirst({
-      where: { id: record.teacherSubjectId, courseId: memberships[0].courseId, isActive: true, subject: { isActive: true },
+      where: { id: record.teacherSubjectId, courseId: memberships[0].courseId, isActive: true, subject: { isActive: true, deletedAt: null },
         units: { some: { topics: { some: { id: record.topicId } } } } }, select: { id: true },
     });
     if (!allowed) throw fail(403, 'El material no corresponde a tu curso.');

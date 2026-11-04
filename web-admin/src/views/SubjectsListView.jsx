@@ -29,6 +29,12 @@ const DAY_ORDER = {
     SABADO: 6,
 };
 
+const MODALITY_NAMES = {
+    PRESENCIAL: 'Presencial',
+    VIRTUAL_SINCRONA: 'Virtual sincrónica',
+    VIRTUAL_ASINCRONA: 'Virtual asincrónica',
+};
+
 const SHIFT_NAMES = {
     MANANA: 'Mañana',
     TARDE: 'Tarde',
@@ -267,6 +273,9 @@ export default function SubjectsListView() {
                                             {SHIFT_NAMES[schedule.shift] ??
                                                 schedule.shift}
                                         </span>
+                                        <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-xs text-violet-200">
+                                            {MODALITY_NAMES[schedule.modality ?? 'PRESENCIAL'] ?? 'Presencial'}
+                                        </span>
                                     </div>
 
                                     <p className="mt-1 text-xs text-slate-400">
@@ -285,16 +294,7 @@ export default function SubjectsListView() {
     return (
         <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-white">
-                        Materias
-                    </h2>
 
-                    <p className="mt-1 text-sm text-slate-400">
-                        Administrá las materias, sus docentes,
-                        horarios y disponibilidad.
-                    </p>
-                </div>
 
                 <button
                     type="button"
@@ -538,12 +538,12 @@ export default function SubjectsListView() {
 
             <ConfirmDialog
                 open={deletingId != null}
-                title="Eliminar materia"
-                message="Esta acción no se puede deshacer. Si la materia tiene asignaciones u horarios, deberás desactivarla en lugar de eliminarla. ¿Confirmás que querés eliminarla?"
+                title="Retirar materia del catálogo"
+                message="La materia desaparecerá del catálogo incluso si tiene docentes y horarios asociados. Todas sus asignaciones vigentes quedarán libres y sus juegos/materiales dejarán de publicarse. Los avisos y las calificaciones históricas se conservarán para auditoría. ¿Confirmás?"
                 confirmLabel={
                     deleteMutation.isPending
-                        ? 'Eliminando...'
-                        : 'Eliminar'
+                        ? 'Retirando...'
+                        : 'Retirar materia'
                 }
                 onCancel={() => {
                     if (!deleteMutation.isPending) {

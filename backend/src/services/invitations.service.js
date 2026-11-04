@@ -21,6 +21,7 @@ export const listInvitationsService = async (requester) => {
     if (!canAnyRole(requester.roles, 'invitation:list')) {
         throw new ServiceError('No tenés permisos para esta acción', 403);
     }
+    if (requester.isSuperAdmin) return invitationRepository.listAllInvitations();
     return isOnlyTeacher(requester.roles)
         ? invitationRepository.findInvitationsByInviter(requester.id)
         : invitationRepository.findInvitationsByInstitution(requester.institutionId);
@@ -48,6 +49,7 @@ export const createInvitationService = async ({ email, role, courseId }, request
         email,
         role,
         invitedById: requester.id,
+        institutionId: requester.institutionId,
         courseId: resolvedCourseId,
         expiresAt: new Date(Date.now() + INVITATION_TTL_HOURS * 60 * 60 * 1000),
     });
@@ -75,19 +77,42 @@ export const createInvitationService = async ({ email, role, courseId }, request
     return safeInvitation;
 };
 
+// Se aplica el mismo alcance a borrado simple y masivo, incluso si se manipula la API.
+function canManageInvitation(invitation, requester) {
+    if (requester.isSuperAdmin) return true;
+    if (isOnlyTeacher(requester.roles)) return Number(invitation.invitedById) === Number(requester.id);
+    return Number(invitation.institutionId) === Number(requester.institutionId);
+}
+function canRemove(requester) {
+    if (!requester.isSuperAdmin && !canAnyRole(requester.roles, 'invitation:cancel'))
+        throw new ServiceError('No tenés permisos para eliminar invitaciones.', 403);
+}
+const validId = value => {
+    const n = Number(value);
+    if (!Number.isSafeInteger(n) || n <= 0) throw new ServiceError('Identificador inválido.', 400);
+    return n;
+};
 export const cancelInvitationService = async (id, requester) => {
-    if (!canAnyRole(requester.roles, 'invitation:cancel')) {
-        throw new ServiceError('No tenés permisos para esta acción', 403);
-    }
-
-    const invitation = await invitationRepository.findInvitationById(Number(id));
-    if (!invitation) throw new ServiceError('Invitación no encontrada', 404);
-
-    if (isOnlyTeacher(requester.roles) && invitation.invitedById !== requester.id) {
-        throw new ServiceError('Solo podés cancelar invitaciones que vos mismo enviaste', 403);
-    }
-
-    await invitationRepository.deleteInvitation(Number(id));
+    canRemove(requester);
+    const invitation = await invitationRepository.findInvitationById(validId(id));
+    if (!invitation) throw new ServiceError('Invitación no encontrada.', 404);
+    if (!canManageInvitation(invitation, requester)) throw new ServiceError('No podés eliminar invitaciones de otra institución.', 403);
+    // Borrar pendientes equivale a revocar el token. Las utilizadas no afectan al usuario creado.
+    await invitationRepository.deleteInvitation(invitation.id);
+};
+export const cleanupInvitationsService = async (body, requester) => {
+    canRemove(requester);
+    const ids = Array.isArray(body?.ids) ? body.ids.map(validId) : [];
+    if (!ids.length || ids.length > 100 || new Set(ids).size !== ids.length)
+        throw new ServiceError('Seleccioná entre 1 y 100 invitaciones distintas.', 400);
+    const items = await Promise.all(ids.map(id => invitationRepository.findInvitationById(id)));
+    const now = Date.now();
+    if (items.some(item => !item || !canManageInvitation(item, requester)))
+        throw new ServiceError('El lote contiene invitaciones inexistentes o fuera de tu institución.', 403);
+    if (items.some(item => !item.isUsed && new Date(item.expiresAt).getTime() > now))
+        throw new ServiceError('Las invitaciones pendientes deben cancelarse individualmente antes de la limpieza masiva.', 409);
+    const result = await invitationRepository.cleanupInvitations(ids);
+    return { deleted: result.count };
 };
 
 export const acceptInvitationService = async (token, body) => {

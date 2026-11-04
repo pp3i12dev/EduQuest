@@ -71,6 +71,7 @@ namespace EduQuest.Student
                 StudentNavigation.Go("Welcome");
                 return;
             }
+            SetupGlobalAudio();
             BindSidebar();
             switch (currentScene)
             {

@@ -8,7 +8,7 @@ const action = callback => async (req, res) => {
 export const dashboard = action(req => service.dashboard(req.user));
 export const subjects = action(req => service.subjects(req.user));
 export const activities = action(req => service.activities(req.user, req.params.assignmentId));
-export const history = action(req => service.history(req.user));
+export const history = action(req => service.history(req.user, req.query));
 export const play = action(req => service.play(req.user, req.params.activityId));
 export const complete = action(req => service.complete(req.user, req.params.activityId, req.body));
 export const practiceGames = action(req => service.practiceGames(req.user));
@@ -21,3 +21,5 @@ export const contentTree = action(req => service.contentTree(req.user, req.param
 
 export const historyDetail = action(req => service.historyDetail(req.user, req.params.attemptId));
 export const hideHistoryItem = action(req => service.hideHistoryItem(req.user, req.params.attemptId));
+
+export const deleteHistoryPermanently = action(req => service.deleteHistoryPermanently(req.user, req.params.attemptId, req.body));

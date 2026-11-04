@@ -16,10 +16,14 @@ namespace EduQuest.Student
         // Nunca abrir downloadPath en navegador sin JWT: se descarga por la API autorizada.
         public Task<byte[]> DownloadStudyMaterial(int materialId) =>
             api.GetBytesAsync("/student/materials/" + materialId + "/file");
-        public Task<HistoryDTO> History() => api.GetAsync<HistoryDTO>("/student/history");
+        public Task<HistoryDTO> History(bool includeHidden = false) =>
+            api.GetAsync<HistoryDTO>("/student/history" + (includeHidden ? "?includeHidden=true" : ""));
         public Task<AttemptDetailDTO> HistoryDetail(int attemptId) => api.GetAsync<AttemptDetailDTO>("/student/history/" + attemptId);
         // Oculta de la vista del alumno; la evidencia académica continúa en PostgreSQL.
         public Task<MessageDTO> HideHistory(int attemptId) => api.Request<MessageDTO>("DELETE", "/student/history/" + attemptId);
+        // Operación DESTRUCTIVA nueva; confirmación explícita, autorización y reglas en el servidor.
+        public Task<DeleteHistoryDTO> DeleteHistoryPermanently(int attemptId) =>
+            api.Request<DeleteHistoryDTO>("DELETE", "/student/history/" + attemptId + "/permanent", new { confirm = "BORRAR" });
         public Task<AvatarDTO> Avatar() => api.GetAsync<AvatarDTO>("/student/avatar");
         public Task<AvatarDTO> UpdateAvatar(string avatarId) =>
             api.PatchAsync<object, AvatarDTO>("/student/avatar", new { avatarId });

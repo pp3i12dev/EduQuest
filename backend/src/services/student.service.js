@@ -1,6 +1,8 @@
 import * as repo from '../repositories/student.repository.js';
 import { gradeQuestions, gradeLabel } from '../utils/assessmentGrading.js';
 import { matchingQuestionBank, shuffledMatchingQuestions } from '../utils/matchingQuestions.js';
+import { EXTRA_TYPES, extraQuestionBank, toPublicExtraQuestions } from '../utils/gameMechanics.js';
+import { historyDeletionBlockReason, HISTORY_PROTECTED_LATEST, HISTORY_PROTECTED_DAYS } from '../utils/historyRetention.js';
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const numericId = v => {
@@ -41,6 +43,7 @@ function questionsFor(activity) {
     return activity.content.questions;
   }
   if (activity.gameType === 'matching') return matchingQuestionBank(activity);
+  if (EXTRA_TYPES.includes(activity.gameType)) return extraQuestionBank(activity);
   throw fail(409, `El videojuego '${activity.gameType}' todavía no tiene adaptador evaluativo en Unity`);
 }
 function statements(activity) { return questionsFor(activity); }
@@ -49,6 +52,7 @@ function publicQuestions(activity) {
     id: activity.id, title: activity.title, description: activity.description || '', gameType: activity.gameType,
     questions: activity.gameType === 'matching'
       ? shuffledMatchingQuestions(questionsFor(activity))
+      : EXTRA_TYPES.includes(activity.gameType) ? toPublicExtraQuestions(questionsFor(activity))
       : questionsFor(activity).map(q => ({ id: String(q.id), text: q.text,
         ...(activity.gameType === 'multiple_choice' ? { options: q.options.map(o => ({ id: String(o.id), text: o.text })) } : {}) })),
   };
@@ -113,34 +117,52 @@ function toAttemptRow(a, name = '') {
     studentHidden: Boolean(a.studentHiddenAt),
   };
 }
-export async function history(requester) {
+export async function history(requester, query = {}) {
   const { student } = await context(requester);
-  const records = await repo.findAttempts(student.id);
-  const latestProtected = new Set(records.filter(a => a.isCompleted).slice(-5).map(a => a.id));
-  const minAge = Date.now() - 7 * 24 * 3600 * 1000;
-  const items = records.filter(a => a.isCompleted && !a.studentHiddenAt).reverse().map(a => ({
-    ...toAttemptRow(a, [student.user.firstName, student.user.lastName].filter(Boolean).join(' ')),
-    canHide: !latestProtected.has(a.id) && new Date(a.createdAt).getTime() < minAge,
-  }));
-  return { totalPoints: student.puntosTotales, estimatedHistoricalPoints: records.some(a => a.earnedPoints == null),
-    retentionPolicy: 'No se pueden ocultar los últimos 5 intentos ni los de los últimos 7 días. Ocultar no borra las calificaciones.',
-    items };
+  const records = (await repo.findAttempts(student.id)).filter(a => a.isCompleted);
+  // Los 5 últimos se calculan sobre TODOS los intentos, incluso los ocultos.
+  const latestProtected = new Set(records.slice(-HISTORY_PROTECTED_LATEST).map(a => a.id));
+  const includeHidden = query.includeHidden === 'true';
+  const studentName = [student.user.firstName, student.user.lastName].filter(Boolean).join(' ');
+  const items = records.filter(a => includeHidden || !a.studentHiddenAt).reverse().map(a => {
+    const reason = historyDeletionBlockReason(a, latestProtected);
+    return {
+      ...toAttemptRow(a, studentName),
+      canHide: !a.studentHiddenAt && !latestProtected.has(a.id) &&
+        Date.now() - new Date(a.createdAt).getTime() >= HISTORY_PROTECTED_DAYS * 86400000,
+      canDelete: reason === null,
+      deleteBlockedReason: reason,
+    };
+  });
+  return {
+    totalPoints: student.puntosTotales,
+    estimatedHistoricalPoints: records.some(a => a.earnedPoints == null),
+    retentionPolicy: `Se conservan los últimos ${HISTORY_PROTECTED_LATEST} intentos y todos los de los últimos ${HISTORY_PROTECTED_DAYS} días. Borrar es irreversible: también elimina la nota del docente y descuenta los puntos ganados en ese intento.`,
+    items,
+  };
 }
+// Compatibilidad: clientes antiguos usan DELETE /history/:id para OCULTAR, nunca para borrar.
 export async function hideHistoryItem(requester, rawAttemptId) {
   const { student } = await context(requester);
   const records = (await repo.findAttempts(student.id)).filter(a => a.isCompleted);
   const id = numericId(rawAttemptId);
   const item = records.find(a => a.id === id);
   if (!item) throw fail(404, 'Resultado no encontrado.');
-  if (records.slice(-5).some(a => a.id === id) || Date.now() - new Date(item.createdAt).getTime() < 7 * 86400000)
+  if (records.slice(-HISTORY_PROTECTED_LATEST).some(a => a.id === id) ||
+      Date.now() - new Date(item.createdAt).getTime() < HISTORY_PROTECTED_DAYS * 86400000)
     throw fail(409, 'Se conservan visibles los últimos 5 resultados y los de los últimos 7 días.');
   await repo.hideStudentAttempt(id, student.id);
   return { message: 'Resultado oculto de tu historial. La calificación académica permanece registrada.' };
 }
+export async function deleteHistoryPermanently(requester, rawAttemptId, body = {}) {
+  if (body.confirm !== 'BORRAR') throw fail(400, 'Confirmación requerida: BORRAR.');
+  const { student } = await context(requester);
+  return repo.deleteStudentAttemptPermanently(numericId(rawAttemptId), student.id);
+}
 export async function historyDetail(requester, rawAttemptId) {
   const { student } = await context(requester);
   const item = await repo.findStudentAttempt(numericId(rawAttemptId), student.id);
-  if (!item || item.studentHiddenAt) throw fail(404, 'Resultado no disponible.');
+  if (!item) throw fail(404, 'Resultado no disponible.');
   return { ...toAttemptRow(item, [student.user.firstName, student.user.lastName].filter(Boolean).join(' ')), review: Array.isArray(item.answerReview) ? item.answerReview : null };
 }
 export async function play(requester, activityId) {

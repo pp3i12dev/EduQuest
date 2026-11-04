@@ -1,5 +1,9 @@
 
 import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { hasAny } from '../config/permissions';
 import {
     useUsersByRole,
     useCreateUser,
@@ -69,6 +73,9 @@ const getSearchableText = (user) => {
 };
 
 export default function UsersListView({ role, title }) {
+    const { user: currentUser } = useContext(AuthContext);
+    const canReviewSignups = role === 'student' && hasAny(currentUser?.roles, 'selfSignup:approve');
+    const canManageRole = hasAny(currentUser?.roles, `${role}:manage`);
     const { data: users, isLoading } = useUsersByRole(role);
 
     const createMutation = useCreateUser(role);
@@ -142,16 +149,19 @@ export default function UsersListView({ role, title }) {
         <div>
             {/* Encabezado */}
             <div className="flex justify-between items-center mb-6 gap-4">
-                <h2 className="text-2xl font-bold">
-                    {title}
-                </h2>
+                <div className="flex flex-wrap items-center gap-3">
+                    {canReviewSignups && <Link to="/dashboard/students/requests"
+                        className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20">
+                        Solicitudes de inscripción
+                    </Link>}
+                </div>
 
-                <button
+                {canManageRole && <button
                     onClick={openCreate}
                     className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium cursor-pointer"
                 >
                     + Agregar
-                </button>
+                </button>}
             </div>
 
             {/* Barra de búsqueda */}
@@ -285,42 +295,36 @@ export default function UsersListView({ role, title }) {
                                                     : 'bg-slate-700 text-slate-400'
                                                 }`}
                                         >
-                                            {u.isActive
-                                                ? 'Activo'
-                                                : 'Inactivo'}
+                                            {u.signupStatus === 'PENDING' ? 'Pendiente de aprobación'
+                                                : u.signupStatus === 'REJECTED' ? 'Solicitud rechazada'
+                                                : u.isActive ? 'Activo' : 'Inactivo'}
                                         </span>
                                     </td>
 
                                     <td className="text-right space-x-2">
-                                        <button
+                                        {canManageRole && <button
                                             onClick={() => openEdit(u)}
                                             className="text-blue-400 hover:underline text-xs cursor-pointer"
                                         >
                                             Editar
-                                        </button>
+                                        </button>}
 
-                                        <button
-                                            onClick={() =>
-                                                toggleMutation.mutate({
-                                                    id: u.id,
-                                                    isActive: !u.isActive
-                                                })
-                                            }
+                                        {canManageRole && (u.signupStatus === 'PENDING' || u.signupStatus === 'REJECTED' ? (
+                                            canReviewSignups ? <Link to="/dashboard/students/requests"
+                                                className="text-emerald-300 hover:underline text-xs">Revisar</Link> : null
+                                        ) : <button
+                                            onClick={() => toggleMutation.mutate({ id: u.id, isActive: !u.isActive })}
                                             className="text-amber-400 hover:underline text-xs cursor-pointer"
-                                        >
-                                            {u.isActive
-                                                ? 'Desactivar'
-                                                : 'Activar'}
-                                        </button>
+                                        >{u.isActive ? 'Desactivar' : 'Activar'}</button>)}
 
-                                        <button
+                                        {canManageRole && <button
                                             onClick={() =>
                                                 setDeletingId(u.id)
                                             }
                                             className="text-red-400 hover:underline text-xs cursor-pointer"
                                         >
                                             Eliminar
-                                        </button>
+                                        </button>}
                                     </td>
                                 </tr>
                             ))}
@@ -405,12 +409,14 @@ export default function UsersListView({ role, title }) {
                 }
             />
 
+            {deleteMutation.isError && <div role="alert" className="mb-3 rounded-xl border border-rose-500/50 bg-rose-500/10 p-3 text-sm text-rose-200">{deleteMutation.error?.response?.data?.message || deleteMutation.error?.message || 'No se pudo retirar el usuario.'}</div>}
+
             {/* Confirmación de eliminación */}
             <ConfirmDialog
                 open={Boolean(deletingId)}
-                title="Eliminar usuario"
-                message="Esta acción no se puede deshacer. ¿Confirmás?"
-                confirmLabel="Eliminar"
+                title="Retirar usuario de EduQuest"
+                message="El usuario perderá acceso y desaparecerá de Gestión de usuarios. Se liberarán sus asignaciones docentes y matrículas activas. Los avisos, calificaciones y registros históricos se conservarán para auditoría. ¿Confirmás?"
+                confirmLabel="Retirar usuario"
                 onCancel={() => setDeletingId(null)}
                 onConfirm={() =>
                     deleteMutation.mutate(deletingId, {

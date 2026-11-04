@@ -1,0 +1,26 @@
+{
+  "name": "EduQuest — Portal educativo",
+  "short_name": "EduQuest",
+  "id": "/",
+  "start_url": "/login",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#243a85",
+  "lang": "es-AR",
+  "description": "Aprendizaje, gestión académica y avisos institucionales",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

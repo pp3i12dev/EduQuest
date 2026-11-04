@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useInstitutions } from '../hooks/useInstitution';
 import { useCareersAdmin } from '../hooks/useCareerAdmin';
 
 const currentYear = new Date().getFullYear();
@@ -8,6 +9,7 @@ const emptyForm = () => ({
     nombre: '',
     academicYear: String(currentYear),
     careerId: '',
+    institutionId: '',
 });
 
 export default function CourseFormModal({
@@ -18,8 +20,11 @@ export default function CourseFormModal({
     isSaving = false,
     formError = '',
     institutionId = null,
+    isSuperAdmin = false,
 }) {
     const { data: careers = [], isLoading } = useCareersAdmin();
+    const { data: institutions = [] } = useInstitutions(open && isSuperAdmin);
+    const availableInstitutions = Array.isArray(institutions) ? institutions : (institutions?.institutions ?? []);
 
     const [form, setForm] = useState(emptyForm);
 
@@ -33,21 +38,20 @@ export default function CourseFormModal({
                     academicYear: String(
                         initialData.academicYear ?? currentYear
                     ),
+                    institutionId: String(initialData.institutionId ?? institutionId ?? ''),
                     careerId:
                         initialData.careerId != null
                             ? String(initialData.careerId)
                             : '',
                 }
-                : emptyForm()
+                : { ...emptyForm(), institutionId: String(institutionId ?? '') }
         );
-    }, [initialData, open]);
+    }, [initialData, open, institutionId]);
 
     if (!open) return null;
 
     const availableCareers = careers.filter(
-        (career) =>
-            institutionId == null ||
-            Number(career.institutionId) === Number(institutionId)
+        career => Number(career.institutionId) === Number(form.institutionId)
     );
 
     const handleSubmit = (event) => {
@@ -71,11 +75,11 @@ export default function CourseFormModal({
             return;
         }
 
-        const payload = {
-            nombre,
-            academicYear,
-            careerId,
-        };
+        const payload = { nombre, academicYear, careerId };
+        if (isSuperAdmin && !initialData?.id) {
+            if (!Number(form.institutionId)) return;
+            payload.institutionId = Number(form.institutionId);
+        }
 
         if (initialData?.id) {
             payload.id = initialData.id;
@@ -99,6 +103,16 @@ export default function CourseFormModal({
                     {initialData ? 'Editar' : 'Nuevo'} curso
                 </h3>
 
+                {isSuperAdmin && <label className="block space-y-1 text-sm font-medium">
+                    Institución
+                    <select value={form.institutionId} disabled={Boolean(initialData)} required
+                        onChange={e => setForm(old => ({ ...old, institutionId: e.target.value, careerId: '' }))}
+                        className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-white">
+                        <option value="">Seleccionar institución</option>
+                        {availableInstitutions.filter(i => i.isActive || i.id === Number(form.institutionId)).map(i =>
+                            <option key={i.id} value={i.id}>{i.nombre}</option>)}
+                    </select>
+                </label>}
                 <div className="space-y-2">
                     <label
                         htmlFor="course-name"

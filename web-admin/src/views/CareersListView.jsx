@@ -37,7 +37,7 @@ function getErrorMessage(error) {
 export default function CareersListView() {
     const { user } = useContext(AuthContext);
 
-    const isSuperAdmin = user?.roles?.includes('SUPER_ADMIN');
+    const isSuperAdmin = user?.isSuperAdmin === true || user?.roles?.includes('SUPER_ADMIN');
 
     const { data: careers = [], isLoading, error } =
         useCareersAdmin();
@@ -145,18 +145,7 @@ export default function CareersListView() {
 
     return (
         <div className="space-y-6 text-white">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h2 className="flex items-center gap-3 text-2xl font-bold">
-                        <GraduationCap className="text-blue-400" />
-                        Carreras y niveles educativos
-                    </h2>
-
-                    <p className="mt-1 text-sm text-slate-300">
-                        Administrá las carreras y los niveles de cada institución.
-                    </p>
-                </div>
-
+            <div className="flex flex-wrap items-center justify-end gap-4">
                 <button
                     type="button"
                     onClick={openCreate}

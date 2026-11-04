@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 
 import authRoutes from './auth.routes.js';
@@ -18,6 +17,7 @@ import assessmentRoutes from './assessment.routes.js';
 
 // Notificaciones
 import notificationRoutes from './notification.routes.js';
+import webPushRoutes from './webPush.routes.js';
 
 const router = Router();
 
@@ -41,5 +41,6 @@ router.use('/dashboard', dashboardRoutes);
 
 // Notificaciones
 router.use('/notifications', notificationRoutes);
+router.use('/push', webPushRoutes);
 
 export default router;

@@ -18,6 +18,8 @@ export const findTeacherSubjectsByTeacher = (teacherId) => {
         where: {
             teacherId,
             isActive: true,
+            subject: { deletedAt: null },
+            teacher: { user: { isActive: true, deletedAt: null } },
         },
         include: {
             subject: true,
@@ -39,6 +41,8 @@ export const findTeacherSubjectsByInstitution = (institutionId = null) => {
     return prisma.teacherSubject.findMany({
         where: {
             isActive: true,
+            subject: { deletedAt: null },
+            teacher: { user: { isActive: true, deletedAt: null } },
             ...(institutionId != null
                 ? {
                     subject: {

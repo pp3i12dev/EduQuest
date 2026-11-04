@@ -21,6 +21,12 @@ const VALID_SHIFTS = [
     'NOCHE',
 ];
 
+const VALID_MODALITIES = [
+    'PRESENCIAL',
+    'VIRTUAL_SINCRONA',
+    'VIRTUAL_ASINCRONA',
+];
+
 class ServiceError extends Error {
     constructor(message, status = 400) {
         super(message);
@@ -95,6 +101,7 @@ function validateSchedules(schedules) {
     return schedules.map((schedule, index) => {
         const day = schedule?.day;
         const shift = schedule?.shift;
+        const modality = schedule?.modality ?? 'PRESENCIAL';
         const startTime = schedule?.startTime;
         const endTime = schedule?.endTime;
 
@@ -107,6 +114,12 @@ function validateSchedules(schedules) {
         if (!VALID_SHIFTS.includes(shift)) {
             throw new ServiceError(
                 `Turno inválido en el horario ${index + 1}.`
+            );
+        }
+
+        if (!VALID_MODALITIES.includes(modality)) {
+            throw new ServiceError(
+                `Modalidad inválida en el encuentro ${index + 1}.`
             );
         }
 
@@ -149,6 +162,7 @@ function validateSchedules(schedules) {
                 : {}),
             day,
             shift,
+            modality,
             startTime,
             endTime,
         };
@@ -346,19 +360,10 @@ export const deleteSubjectService = async (
         );
     }
 
-    // Evitamos eliminar materias con relaciones históricas.
-    if (
-        existing.teachers.length > 0 ||
-        existing.schedules.length > 0
-    ) {
-        throw new ServiceError(
-            'Esta materia tiene asignaciones u horarios. Desactivala en lugar de eliminarla.',
-            409
-        );
-    }
-
+    // Baja operativa inmediata, incluso con asignaciones y horarios.
+    // Se conservan avisos, evaluaciones y resultados para auditoría académica.
     try {
-        await subjectRepository.deleteSubject(
+        await subjectRepository.archiveSubjectWithAssignments(
             subjectId,
             getInstitutionScope(requester)
         );

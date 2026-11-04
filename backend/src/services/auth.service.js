@@ -5,6 +5,7 @@ import { getRolesFromUser } from '../utils/rols.js';
 
 import * as userRepository from '../repositories/user.repository.js';
 import * as academicRepository from '../repositories/academic.repository.js';
+import { safeQueueSignupForAuthorities } from './studentSignup.service.js';
 
 class ServiceError extends Error {
     constructor(message, status = 400) {
@@ -47,10 +48,12 @@ export const loginService = async ({ email, dni, password }) => {
     }
 
     if (!user.isActive) {
-        throw new ServiceError(
-            'Tu cuenta todavía no fue aprobada. Contactá a tu institución.',
-            403
-        );
+        const message = user.signupStatus === 'REJECTED'
+            ? 'Tu solicitud fue rechazada. Contactá a tu institución para consultar.'
+            : user.signupStatus === 'PENDING'
+              ? 'Tu inscripción está pendiente de aprobación institucional.'
+              : 'Tu cuenta está desactivada. Contactá a tu institución.';
+        throw new ServiceError(message, 403);
     }
 
     const isSuperAdmin = user.isSuperAdmin === true;
@@ -117,6 +120,13 @@ export const registerStudentService = async (data) => {
         );
     }
 
+    if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
+        throw new ServiceError('La contraseña debe tener entre 8 y 128 caracteres', 400);
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) {
+        throw new ServiceError('Ingresá un correo electrónico válido', 400);
+    }
+
     const course =
         await academicRepository.findCourseInInstitution(
             Number(courseId),
@@ -181,6 +191,10 @@ export const registerStudentService = async (data) => {
         throw new ServiceError('Ya existe un registro con alguno de los datos ingresados. Revisá correo y DNI.', 409);
     }
 
+    await safeQueueSignupForAuthorities({
+        studentUserId: user.id,
+        institutionId: user.institutionId,
+    });
     return {
         message:
             'Registro exitoso. Tu cuenta queda pendiente de aprobación por la institución.',

@@ -152,3 +152,21 @@ export const sendPasswordResetEmail = async ({ to, token, expiresAt }) => {
     html: `<div style="font:16px Arial,sans-serif;color:#1e293b;max-width:500px"><h2>EduQuest · Recuperar acceso</h2><p>Recibimos una solicitud para cambiar tu contraseña.</p><p><a href="${escapeHtml(link)}" style="display:inline-block;background:#e89c17;color:#171717;text-decoration:none;font-weight:bold;padding:14px 20px;border-radius:10px">Crear nueva contraseña</a></p><p>El enlace vence en 15 minutos y puede usarse una sola vez.</p><p>Si no lo pediste, ignorá este mensaje.</p></div>`,
   });
 };
+
+
+// La aprobación/rechazo de una cuenta nueva es un correo informativo; no utiliza
+// plantillas WhatsApp ni incluye contraseñas, tokens o datos académicos sensibles.
+export const sendStudentSignupDecisionEmail = ({ to, name, status, reason }) => {
+  const approved = status === 'APPROVED';
+  const title = approved ? 'Tu inscripción fue aprobada' : 'Novedades sobre tu inscripción';
+  const url = `${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')}/login`;
+  const message = approved
+    ? 'Tu institución aprobó tu solicitud. Ya podés iniciar sesión en EduQuest.'
+    : `Tu institución no aprobó tu solicitud. Motivo: ${reason || 'Consultá con la institución'}`;
+  return getTransporter().sendMail({
+    from: process.env.MAIL_FROM, to,
+    subject: `[EduQuest] ${title}`,
+    text: `Hola, ${name}.\n\n${message}\n\n${approved ? `Ingresá desde: ${url}` : 'Podés contactar a la institución para consultar.'}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;color:#172554"><h2>${escapeHtml(title)}</h2><p>Hola, ${escapeHtml(name)}.</p><p>${escapeHtml(message)}</p>${approved ? `<p><a href="${escapeHtml(url)}">Ingresar a EduQuest</a></p>` : '<p>Consultá con tu institución.</p>'}</div>`,
+  });
+};

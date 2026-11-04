@@ -8,6 +8,7 @@ export const FRONTEND_PERMISSIONS = {
     'student:view': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
 
     'student:enroll': ['DIRECTOR', 'PRECEPTOR'],
+    'selfSignup:approve': ['DIRECTOR', 'PRECEPTOR'],
     'teacher:assignSubject': ['DIRECTOR', 'PRECEPTOR'],
     'schedule:manage': ['DIRECTOR', 'PRECEPTOR'],
 

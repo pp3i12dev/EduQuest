@@ -1,4 +1,5 @@
 import { getPrisma } from '../config/prisma.js';
+import { enqueueWebPushForNotification } from '../services/webPush.service.js';
 
 const prisma = () => getPrisma();
 const relations = {
@@ -84,6 +85,7 @@ export const institutionCommunicationRepository = {
         const n = await tx.notification.create({ data: {
           userId: id, institutionEventId: record.id, type, title: `${label}: ${data.title}`, message: body, revision: version,
         } });
+        await enqueueWebPushForNotification(tx, id, n.id);
         const user = await tx.user.findUnique({ where: { id }, select: { email: true } });
         if (user?.email) await tx.notificationDelivery.create({ data: { notificationId: n.id, channel: 'EMAIL', recipient: user.email } });
       }
@@ -93,6 +95,7 @@ export const institutionCommunicationRepository = {
           title: `Ya no estás incluido: ${data.title}`,
           message: 'La comunicación institucional se actualizó y ya no está dirigida a tu grupo.', revision: version,
         } });
+        await enqueueWebPushForNotification(tx, id, n.id);
         const user = await tx.user.findUnique({ where: { id }, select: { email: true } });
         if (user?.email) await tx.notificationDelivery.create({ data: { notificationId: n.id, channel: 'EMAIL', recipient: user.email } });
       }
@@ -120,6 +123,7 @@ export const institutionCommunicationRepository = {
             ? `La suspensión de clases fue cancelada. Las clases se desarrollarán normalmente según el horario habitual, salvo que la institución comunique otra disposición.${reason ? ` Motivo: ${reason}` : ''}`
             : `El evento institucional fue cancelado y no se realizará según lo anunciado.${reason ? ` Motivo: ${reason}` : ''}`, revision: version,
         } });
+        await enqueueWebPushForNotification(tx, id, n.id);
         const user = await tx.user.findUnique({ where: { id }, select: { email: true } });
         if (user?.email) await tx.notificationDelivery.create({ data: { notificationId: n.id, channel: 'EMAIL', recipient: user.email } });
       }

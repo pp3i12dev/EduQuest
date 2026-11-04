@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -21,6 +20,7 @@ import {
 import { useLogin } from '../hooks/useAuth';
 import logo from '../assets/images/logo2.png';
 import BackgroundLayout from '../layouts/BackgroundLayout';
+import InstallPwaButton from '../components/InstallPwaButton';
 
 export default function LoginView() {
     const [showPassword, setShowPassword] = useState(false);
@@ -48,10 +48,10 @@ export default function LoginView() {
         'No pudimos iniciar sesión. Verificá tus credenciales e intentá nuevamente.';
 
     const inputBase =
-        'w-full rounded-xl border bg-slate-950/65 py-3.5 pl-12 pr-12 text-sm text-white shadow-sm outline-none backdrop-blur-sm transition-all placeholder:text-slate-500 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10';
+        'w-full rounded-xl border bg-slate-950/65 py-3 pl-12 pr-12 text-sm text-white shadow-sm outline-none backdrop-blur-sm transition-all placeholder:text-slate-500 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10';
 
     return (
-        <div className="relative flex min-h-screen flex-col overflow-hidden bg-slate-950 text-white">
+        <div className="relative flex min-h-[100dvh] flex-col overflow-x-hidden bg-slate-950 text-white">
 
             {/* FONDO ORIGINAL */}
             <div className="pointer-events-none absolute inset-0 z-0">
@@ -65,74 +65,18 @@ export default function LoginView() {
 
             <div className="pointer-events-none absolute left-1/2 top-[40%] z-0 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600/10 blur-[110px]" />
 
-            {/* HEADER */}
-            <header className="relative z-10 w-full border-b border-white/10 bg-slate-950/40 backdrop-blur-xl">
-                <div className="mx-auto flex min-h-[86px] w-full max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-8 lg:px-12">
-
-                    <div className="flex items-center gap-3">
-                        <img
-                            src={logo}
-                            alt="EduQuest"
-                            className="h-12 w-auto max-w-[115px] object-contain drop-shadow-[0_0_12px_rgba(59,130,246,0.25)] sm:h-14"
-                        />
-
-                        <div className="hidden border-l border-slate-700 pl-4 sm:block">
-                            <p className="text-sm font-semibold tracking-wide text-slate-100">
-                                Plataforma educativa
-                            </p>
-
-                            <p className="mt-0.5 text-xs text-slate-400">
-                                Aprendizaje y gestión académica
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-300">
-                        <GraduationCap size={16} />
-                        <span className="hidden sm:inline">
-                            Portal de acceso
-                        </span>
-                        <span className="sm:hidden">
-                            Acceso
-                        </span>
-                    </div>
-                </div>
-            </header>
-
             {/* CONTENIDO CENTRAL */}
-            <main className="relative z-10 flex w-full flex-1 items-center justify-center px-5 py-12 sm:px-8 sm:py-16">
+            <main className="relative z-10 flex w-full flex-1 items-center justify-center px-4 py-5 sm:px-8 sm:py-6">
 
-                <div className="flex w-full max-w-[440px] flex-col items-center">
+                <div className="flex w-full max-w-[410px] flex-col items-center">
 
-                    {/* IDENTIDAD Y BIENVENIDA */}
-                    <div className="mb-9 flex w-full flex-col items-center text-center">
-
-                        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-400/25 bg-blue-500/10 text-blue-300 shadow-[0_0_35px_rgba(59,130,246,0.12)] backdrop-blur-md">
-                            <LockKeyhole
-                                size={29}
-                                strokeWidth={1.6}
-                            />
-                        </div>
-
-                        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-900/40 px-3 py-1.5 text-xs font-medium text-slate-300 backdrop-blur-sm">
-                            <Sparkles
-                                size={13}
-                                className="text-blue-400"
-                            />
-                            Tu espacio de aprendizaje
-                        </div>
-
-                        <h1 className="text-3xl font-bold tracking-tight text-white sm:text-[38px]">
-                            Bienvenido a{' '}
-                            <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-                                EduQuest
-                            </span>
+                    {/* Una sola cabecera, integrada al formulario para aprovechar la altura móvil. */}
+                    <div className="mb-5 flex w-full flex-col items-center text-center sm:mb-6">
+                        <img src={logo} alt="EduQuest" className="mb-2 h-14 w-auto max-w-[145px] object-contain sm:h-16" />
+                        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+                            Bienvenido a <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">EduQuest</span>
                         </h1>
-
-                        <p className="mt-4 max-w-sm text-sm leading-7 text-slate-300 sm:text-base">
-                            Todo comienza con un nuevo desafío.
-                            Ingresá con tus credenciales para continuar.
-                        </p>
+                        <p className="mt-1.5 text-sm leading-5 text-slate-300">Ingresá a tu espacio educativo.</p>
                     </div>
 
                     {/* FORMULARIO SIN TARJETA EXTERIOR */}
@@ -142,7 +86,7 @@ export default function LoginView() {
                         {loginMutation.isError && (
                             <div
                                 role="alert"
-                                className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-950/50 p-4 text-sm text-red-200 backdrop-blur-md"
+                                className="mb-3 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-950/50 p-4 text-sm text-red-200 backdrop-blur-md"
                             >
                                 <AlertCircle
                                     size={19}
@@ -164,7 +108,7 @@ export default function LoginView() {
                         <form
                             onSubmit={handleSubmit(onSubmit)}
                             noValidate
-                            className="space-y-5"
+                            className="space-y-3"
                         >
                             {/* CORREO */}
                             <div>
@@ -300,7 +244,7 @@ export default function LoginView() {
                                 <button
                                     type="submit"
                                     disabled={loginMutation.isPending}
-                                    className="group flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-4 text-sm font-bold text-white shadow-[0_8px_30px_rgba(37,99,235,0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:from-blue-500 hover:to-blue-400 hover:shadow-[0_12px_35px_rgba(37,99,235,0.32)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                                    className="group flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-3 text-sm font-bold text-white shadow-[0_8px_30px_rgba(37,99,235,0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:from-blue-500 hover:to-blue-400 hover:shadow-[0_12px_35px_rgba(37,99,235,0.32)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                                 >
                                     {loginMutation.isPending ? (
                                         <>
@@ -323,8 +267,16 @@ export default function LoginView() {
                             </div>
                         </form>
 
+                        <div className="mt-4 rounded-xl border border-blue-500/25 bg-blue-500/10 p-3 text-center">
+                            <p className="text-sm font-semibold text-white">¿Sos alumno y todavía no tenés una cuenta?</p>
+                            <Link to="/registro-alumno" className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-900 transition hover:bg-white">
+                                <GraduationCap size={18}/> Registrarme como alumno
+                            </Link>
+                            <p className="mt-1.5 text-xs text-slate-300">Tu institución deberá aprobar el registro.</p>
+                        </div>
+                        <div className="mt-3"><InstallPwaButton /></div>
                         {/* NOTA DE SEGURIDAD */}
-                        <div className="mt-8 flex items-center justify-center gap-2 text-center">
+                        <div className="mt-3 flex items-center justify-center gap-2 text-center">
                             <ShieldCheck
                                 size={16}
                                 className="shrink-0 text-emerald-400"
@@ -338,34 +290,8 @@ export default function LoginView() {
                 </div>
             </main>
 
-            {/* FOOTER */}
-            <footer className="relative z-10 w-full border-t border-white/10 bg-slate-950/55 backdrop-blur-xl">
-                <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-3 px-5 py-5 text-center sm:flex-row sm:px-8 sm:text-left lg:px-12">
-
-                    <div className="flex items-center gap-2">
-                        <GraduationCap
-                            size={17}
-                            className="text-blue-400"
-                        />
-
-                        <span className="text-xs font-semibold tracking-wide text-slate-300">
-                            EduQuest
-                        </span>
-
-                        <span className="text-xs text-slate-600">
-                            © {new Date().getFullYear()}
-                        </span>
-                    </div>
-
-                    <p className="text-xs text-slate-400">
-                        Aprendé. Superate. Alcanzá nuevas metas.
-                    </p>
-
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-                        Plataforma de gestión educativa
-                    </div>
-                </div>
+            <footer className="relative z-10 w-full px-4 pb-3 text-center text-[11px] text-slate-500">
+                © {new Date().getFullYear()} EduQuest · Acceso institucional seguro
             </footer>
         </div>
     );

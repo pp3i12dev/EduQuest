@@ -1,4 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { useInstitutions, useMyInstitution } from '../hooks/useInstitution';
+import { useCoursesAdmin } from '../hooks/useCourseAdmin';
 import { useUserRoles, useUpdateUserRoles } from '../hooks/useUsers';
 
 const baseEmpty = {
@@ -7,6 +10,7 @@ const baseEmpty = {
     firstName: '',
     lastName: '',
     password: '',
+    institutionId: '',
 };
 
 const ROLE_EXTRA_FIELDS = {
@@ -32,8 +36,16 @@ export default function UserFormModal({
     isSaving,
 }) {
     const isEditing = Boolean(initialData?.id);
+    const { user: currentUser } = useContext(AuthContext);
+    const isSuperAdmin = currentUser?.isSuperAdmin === true || currentUser?.roles?.includes('SUPER_ADMIN');
+    const { data: institutionData = [] } = useInstitutions(open && isSuperAdmin);
+    const { data: myInstitution } = useMyInstitution(open && !isSuperAdmin);
+    const { data: courseData = [] } = useCoursesAdmin();
+    const institutions = Array.isArray(institutionData) ? institutionData : (institutionData?.institutions ?? []);
+    const courses = Array.isArray(courseData) ? courseData : (courseData?.courses ?? []);
 
     const [showPassword, setShowPassword] = useState(false);
+    const [confirmInstitutionTransfer, setConfirmInstitutionTransfer] = useState(false);
 
     /*
      * Roles actuales del usuario.
@@ -77,6 +89,7 @@ export default function UserFormModal({
         if (!open) return;
 
         setShowPassword(false);
+        setConfirmInstitutionTransfer(false);
         setRoleExtraData({});
 
         if (initialData) {
@@ -86,10 +99,11 @@ export default function UserFormModal({
                 firstName: initialData.firstName ?? '',
                 lastName: initialData.lastName ?? '',
                 password: '',
-
+                institutionId: String(initialData.institutionId ?? currentUser?.institutionId ?? ''),
                 ...(role === 'student' && {
                     legajoStudent:
                         initialData.profile?.legajoStudent ?? '',
+                    courseId: '',
                 }),
 
                 ...(role === 'teacher' && {
@@ -115,6 +129,8 @@ export default function UserFormModal({
             setForm({
                 ...baseEmpty,
                 ...ROLE_EXTRA_FIELDS[role],
+                institutionId: String(currentUser?.institutionId ?? ''),
+                ...(role === 'student' ? { courseId: '' } : {}),
             });
 
             setRoleChecks({
@@ -124,7 +140,7 @@ export default function UserFormModal({
                 director: false,
             });
         }
-    }, [initialData, open, role]);
+    }, [initialData, open, role, currentUser?.institutionId]);
 
     /*
      * Cambiar un rol del usuario.
@@ -183,9 +199,17 @@ export default function UserFormModal({
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        const payload = {
-            ...form,
-        };
+        const payload = { ...form };
+        // La institución nunca se elige libremente salvo por el superadministrador.
+        if (!isSuperAdmin) delete payload.institutionId;
+        else {
+            payload.institutionId = Number(payload.institutionId);
+            if (isEditing && payload.institutionId !== Number(initialData?.institutionId)) {
+                payload.confirmInstitutionTransfer = confirmInstitutionTransfer;
+            }
+        }
+        if (role !== 'student' || isEditing || !payload.courseId) delete payload.courseId;
+        else payload.courseId = Number(payload.courseId);
 
         /*
          * Al editar:
@@ -222,6 +246,28 @@ export default function UserFormModal({
                 <h3 className="text-lg font-semibold">
                     {isEditing ? 'Editar' : 'Nuevo'} {role}
                 </h3>
+
+                {/* Institución obligatoria para todos los usuarios: la autoridad local no puede cambiarla. */}
+                {isSuperAdmin ? <label className="block space-y-1.5 text-sm text-slate-200">
+                    <span className="font-semibold">Institución del usuario</span>
+                    <select name="institutionId" required value={form.institutionId} onChange={e => setForm(old => ({ ...old, institutionId: e.target.value, courseId: '' }))}
+                        className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white">
+                        <option value="">Seleccionar institución</option>
+                        {institutions.filter(i => i.isActive).map(i => <option key={i.id} value={i.id}>{i.nombre}</option>)}
+                    </select>
+                </label> : <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 text-sm text-slate-300">
+                    <span className="block text-xs uppercase tracking-wider text-slate-400">Institución asignada</span>
+                    {myInstitution?.nombre ? `${myInstitution.nombre} (asignación automática)` : 'Se asigna automáticamente la institución de tu cuenta.'}
+                </div>}
+
+                {isSuperAdmin && isEditing && Number(form.institutionId) !== Number(initialData?.institutionId) && <div className="rounded-xl border-2 border-amber-400/70 bg-amber-500/10 p-3 text-sm text-amber-100">
+                    <p className="font-bold">Traslado de institución</p>
+                    <p className="mt-1">El usuario perderá sus matrículas y asignaciones docentes vigentes. Su historial académico se conservará y deberá asignarse nuevamente al curso o materia de destino.</p>
+                    <label className="mt-3 flex cursor-pointer items-start gap-2">
+                        <input type="checkbox" checked={confirmInstitutionTransfer} onChange={e => setConfirmInstitutionTransfer(e.target.checked)} className="mt-1 accent-amber-400" required />
+                        <span>Confirmo el traslado a otra institución y la desvinculación de asignaciones vigentes.</span>
+                    </label>
+                </div>}
 
                 {/* ========================= */}
                 {/* NOMBRE Y APELLIDO */}
@@ -329,6 +375,15 @@ export default function UserFormModal({
                             className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
                         />
 
+                        {!isEditing && <label className="block space-y-1.5 text-sm text-slate-200">
+                            <span className="font-semibold">Curso de matrícula (opcional)</span>
+                            <select name="courseId" value={form.courseId || ''} onChange={handleChange}
+                                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white">
+                                <option value="">Asignar más adelante</option>
+                                {courses.filter(c => Number(c.institutionId) === Number(isSuperAdmin ? form.institutionId : currentUser?.institutionId))
+                                    .map(c => <option key={c.id} value={c.id}>{c.nombre} · {c.career?.nombre || 'Sin carrera'} · {c.academicYear}</option>)}
+                            </select>
+                        </label>}
                     </div>
                 )}
 

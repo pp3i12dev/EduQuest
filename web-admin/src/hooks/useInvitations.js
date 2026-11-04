@@ -29,3 +29,13 @@ export function useCancelInvitation() {
         },
     });
 }
+export function useCleanupInvitations() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: invitationsService.cleanup,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invitations'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+        },
+    });
+}

@@ -12,6 +12,7 @@ namespace EduQuest.Student
         private ContentTreeDTO contentTree;
         private bool showingContent = true;
         private bool showingCompleted;
+        private bool historyShowHidden;
         private void SetupHome()
         {
             var screen = root.Q<VisualElement>(className: "screen");
@@ -236,13 +237,17 @@ namespace EduQuest.Student
                 case "true_false": return "Verdadero o falso";
                 case "multiple_choice": return "Opciones múltiples";
                 case "matching": return "Unir conceptos";
+                case "sequence": return "Ordenar secuencias";
+                case "classification": return "Clasificar conceptos";
+                case "fill_blank": return "Completar oraciones";
+                case "spot_error": return "Encontrar el error";
                 default: return gameType ?? "Juego";
             }
         }
 
         private void LaunchActivity(int id, string title, string type)
         {
-            if (type != "true_false" && type != "multiple_choice" && type != "matching")
+            if (type != "true_false" && type != "multiple_choice" && type != "matching" && type != "sequence" && type != "classification" && type != "fill_blank" && type != "spot_error")
             {
                 Status("Este tipo de juego todavía no está disponible en Unity.");
                 return;
@@ -271,22 +276,34 @@ namespace EduQuest.Student
         private void SetupHistory()
         {
             var list = Items();
+            if (list == null) return;
+            bool includeHidden = historyShowHidden;
+            var toggle = new Button(() =>
+            {
+                historyShowHidden = !historyShowHidden;
+                SetupHistory();
+            }) { text = includeHidden ? "OCULTAR RESULTADOS ARCHIVADOS" : "VER TAMBIÉN RESULTADOS OCULTOS" };
+            toggle.AddToClassList("secondary");
+            list.Add(toggle);
             Run(async () =>
             {
-                var data = await EduQuestRuntime.Student.History();
-                if (this == null) return;
-                Q<Label>("total-points").text = "★  " + data.totalPoints.ToString("N0") + " puntos totales";
+                var data = await EduQuestRuntime.Student.History(includeHidden);
+                if (this == null || historyShowHidden != includeHidden) return;
+                var points = Q<Label>("total-points");
+                if (points != null) points.text = "★  " + data.totalPoints.ToString("N0") + " puntos totales";
                 var note = Q<Label>("history-note");
-                if (note != null) note.text = data.retentionPolicy ?? "Las notas permanecen registradas.";
+                if (note != null) note.text = data.retentionPolicy ?? "Se conservan los resultados recientes.";
                 if (data.items == null || data.items.Length == 0)
                 {
-                    Empty(list, "Todavía no hay actividades terminadas visibles."); return;
+                    Empty(list, includeHidden ? "No hay resultados registrados." : "No hay resultados visibles.");
+                    return;
                 }
                 foreach (var item in data.items)
                 {
                     var selected = item;
                     var card = new VisualElement();
                     card.AddToClassList("history-card");
+                    if (item.studentHidden) card.Add(Text("OCULTO EN VERSIONES ANTERIORES", "eyebrow"));
                     card.Add(Text("ALUMNO · " + (item.studentName ?? "Alumno"), "eyebrow"));
                     card.Add(Text(item.activityTitle, "list-title"));
                     card.Add(Text("CURSO " + item.courseName + " · " + item.subjectName, "list-subtitle"));
@@ -305,24 +322,34 @@ namespace EduQuest.Student
                         RenderAttemptReview(details, result.review);
                     })) { text = "VER RESPUESTAS" };
                     view.AddToClassList("secondary"); actions.Add(view);
-                    if (item.canHide)
+                    if (item.canDelete)
                     {
-                        var hide = new Button() { text = "OCULTAR" };
-                        hide.AddToClassList("secondary");
                         bool confirmed = false;
-                        hide.clicked += () =>
+                        var delete = new Button() { text = "ELIMINAR" };
+                        delete.AddToClassList("danger");
+                        delete.clicked += () =>
                         {
-                            if (!confirmed) { confirmed = true; hide.text = "CONFIRMAR OCULTAR"; return; }
-                            hide.SetEnabled(false);
+                            if (!confirmed)
+                            {
+                                confirmed = true;
+                                delete.text = "CONFIRMAR BORRADO";
+                                Status("Se borrará para siempre, también del docente. Se descontarán los puntos obtenidos. Tocá de nuevo para confirmar.");
+                                return;
+                            }
+                            delete.SetEnabled(false);
                             Run(async () =>
                             {
-                                var done = await EduQuestRuntime.Student.HideHistory(selected.id);
+                                var done = await EduQuestRuntime.Student.DeleteHistoryPermanently(selected.id);
                                 if (this == null) return;
-                                Status(done.message, true);
                                 SetupHistory();
+                                Status(done.message, true);
                             });
                         };
-                        actions.Add(hide);
+                        actions.Add(delete);
+                    }
+                    else
+                    {
+                        card.Add(Text(item.deleteBlockedReason ?? "Resultado protegido.", "muted"));
                     }
                     card.Add(actions); card.Add(details); list.Add(card);
                 }
@@ -331,6 +358,7 @@ namespace EduQuest.Student
         private void SetupProfile()
         {
             SetupAvatarPicker();
+            SetupAudioPreferences();
             foreach (var f in new[]{"current-password", "new-password", "confirm-password"}) Password(f);
             Click("save", () => Run(async () =>
             {

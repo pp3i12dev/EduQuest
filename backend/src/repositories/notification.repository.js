@@ -1,4 +1,5 @@
 import { getPrisma } from '../config/prisma.js';
+import { enqueueWebPushForNotification } from '../services/webPush.service.js';
 
 const prisma = getPrisma();
 
@@ -39,9 +40,9 @@ export const notificationRepository = {
                     create: { userId: user.id, earlyNoticeId: notice.id, type, title, message, revision },
                     update: {},
                 });
+                await enqueueWebPushForNotification(tx, user.id, notification.id);
                 const channels = [
                     user.email && { channel: 'EMAIL', recipient: user.email },
-                    user.telefono && { channel: 'WHATSAPP', recipient: user.telefono },
                 ].filter(Boolean);
                 for (const delivery of channels) {
                     await tx.notificationDelivery.upsert({

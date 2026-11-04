@@ -1,18 +1,17 @@
 import { Router } from 'express';
 import { authenticate, requirePermission } from '../middlewares/auth.middleware.js';
 import * as controller from '../controllers/student.controller.js';
-import * as avatarController from '../controllers/studentAvatar.controller.js';
 import { downloadStudent } from '../controllers/studyMaterial.controller.js';
 
 const router = Router();
 router.use(authenticate, requirePermission('game:play'));
-router.get('/avatar', avatarController.getMyAvatar);
-router.patch('/avatar', avatarController.updateMyAvatar);
 router.get('/dashboard', controller.dashboard);
 router.get('/subjects', controller.subjects);
 router.get('/subjects/:assignmentId/activities', controller.activities);
 router.get('/history', controller.history);
 router.get('/history/:attemptId', controller.historyDetail);
+// Nuevo endpoint destructivo separado: los clientes antiguos siguen pudiendo OCULTAR.
+router.delete('/history/:attemptId/permanent', controller.deleteHistoryPermanently);
 router.delete('/history/:attemptId', controller.hideHistoryItem);
 router.get('/subjects/:assignmentId/content', controller.contentTree);
 router.get('/materials/:id/file', downloadStudent);

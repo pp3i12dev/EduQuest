@@ -24,6 +24,13 @@ enum Shift {
   NOCHE
 }
 
+// Modalidad de cada encuentro: compatible con clases presenciales o a distancia.
+enum ClassModality {
+  PRESENCIAL
+  VIRTUAL_SINCRONA
+  VIRTUAL_ASINCRONA
+}
+
 model Career {
   id Int @id @default(autoincrement())
   nombre String
@@ -58,11 +65,14 @@ model Subject {
   nombre String
   createdAt DateTime @default(now())
   isActive Boolean @default(true)
+  // Archivo administrativo: ocultar la materia sin borrar actas ni intentos.
+  deletedAt DateTime?
   institutionId Int
   institution Institution @relation(fields: [institutionId], references: [id])
   teachers TeacherSubject[]
   schedules SubjectSchedule[]
   earlyNotices EarlyNotice[]
+  @@index([deletedAt])
 }
 
 model TeacherSubject {
@@ -101,6 +111,7 @@ model SubjectSchedule {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
   day ScheduleDay
   shift Shift
+  modality ClassModality @default(PRESENCIAL)
   startTime String
   endTime String
   createdAt DateTime @default(now())

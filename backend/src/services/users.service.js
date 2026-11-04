@@ -9,6 +9,7 @@ import { canAnyRole } from '../config/permissions.js';
 import * as userRepository from '../repositories/user.repository.js';
 import { ROLE_CONFIG, getRoleConfig } from '../config/userRoles.js';
 import { getRolesFromUser } from '../utils/rols.js';
+import { getPrisma } from '../config/prisma.js';
 
 class ServiceError extends Error {
     constructor(message, status = 400) {
@@ -205,6 +206,7 @@ function serializeUser(user, profileField) {
         lastName: user.lastName,
         institutionId: user.institutionId,
         isActive: user.isActive,
+        signupStatus: user.signupStatus ?? null,
         createdAt: user.createdAt,
         profile: user[profileField] ?? null,
     };
@@ -297,6 +299,27 @@ export const createUserService = async (role, body, requester) => {
         }
     }
 
+    const isSuperAdmin = requester.isSuperAdmin === true || requester.roles?.includes('SUPER_ADMIN');
+    const institutionId = isSuperAdmin ? Number(body.institutionId) : Number(requester.institutionId);
+    if (!Number.isSafeInteger(institutionId) || institutionId < 1) {
+        throw new ServiceError('Seleccioná una institución válida para el usuario.', 400);
+    }
+    const institution = await getPrisma().institution.findFirst({
+        where: { id: institutionId, isActive: true }, select: { id: true },
+    });
+    if (!institution) throw new ServiceError('La institución no existe o está inactiva.', 400);
+    if (role === 'student' && rest.courseId != null && rest.courseId !== '') {
+        const courseId = Number(rest.courseId);
+        if (!Number.isSafeInteger(courseId) || courseId < 1) throw new ServiceError('Curso inválido.', 400);
+        const course = await getPrisma().course.findFirst({
+            where: { id: courseId, institutionId }, select: { id: true },
+        });
+        if (!course) throw new ServiceError('El curso no pertenece a la institución seleccionada.', 400);
+    }
+    if (role === 'student' && rest.courseId !== undefined && !canAnyRole(requester.roles, 'student:enroll')) {
+        throw new ServiceError('No tenés permisos para matricular alumnos.', 403);
+    }
+
     const passwordHash = await hashPassword(password);
 
     try {
@@ -307,7 +330,7 @@ export const createUserService = async (role, body, requester) => {
                 passwordHash,
                 firstName,
                 lastName,
-                institutionId: requester.institutionId,
+                institutionId,
             },
             profileField: config.profileField,
             profileData: config.buildProfileCreate(rest),
@@ -387,14 +410,38 @@ export const updateUserService = async (
         }
     }
 
+    const isSuperAdmin = requester.isSuperAdmin === true || requester.roles?.includes('SUPER_ADMIN');
+    const existingUser = await getPrisma().user.findFirst({
+        where: { id: Number(id), deletedAt: null, ...(isSuperAdmin ? {} : { institutionId: requester.institutionId }) },
+        select: { institutionId: true, deletedAt: true, isSuperAdmin: true },
+    });
+    if (!existingUser) throw new ServiceError('Usuario no encontrado en tu institución.', 404);
+    const changesInstitution = rest.institutionId !== undefined && Number(rest.institutionId) !== existingUser.institutionId;
+    if (changesInstitution) {
+        if (!isSuperAdmin) throw new ServiceError('Solamente superadministración puede trasladar usuarios.', 403);
+        if (existingUser.isSuperAdmin || Number(id) === Number(requester.id)) {
+            throw new ServiceError('No se permite trasladar esta cuenta administrativa.', 403);
+        }
+        const targetId = Number(rest.institutionId);
+        if (!Number.isSafeInteger(targetId) || targetId <= 0) throw new ServiceError('Institución de destino inválida.', 400);
+        if (rest.confirmInstitutionTransfer !== true) {
+            throw new ServiceError('Confirmá expresamente el traslado institucional y la baja de asignaciones y matrículas actuales.', 409);
+        }
+    }
+    if (rest.courseId !== undefined && changesInstitution) {
+        throw new ServiceError('Primero trasladá al alumno y luego matriculalo en un curso de la nueva institución.', 400);
+    }
     try {
-        const user = await userRepository.updateUserWithProfile({
-            id: Number(id),
-            institutionId: requester.institutionId,
-            userData,
-            profileField: config.profileField,
-            profileData,
-        });
+        const user = changesInstitution
+            ? await userRepository.transferUserInstitution({
+                id: Number(id), previousInstitutionId: existingUser.institutionId,
+                targetInstitutionId: Number(rest.institutionId), userData,
+                profileField: config.profileField, profileData,
+              })
+            : await userRepository.updateUserWithProfile({
+                id: Number(id), institutionId: existingUser.institutionId,
+                userData, profileField: config.profileField, profileData,
+              });
 
         if (role === 'student' && rest.courseId !== undefined) {
             if (!canAnyRole(requester.roles, 'student:enroll')) {
@@ -453,16 +500,27 @@ export const toggleUserStatusService = async (
 
     assertPermission(requester.roles, permissionKey);
 
+    // Las altas públicas se revisan desde Solicitudes de inscripción.
+    // Reactivación administrativa sigue funcionando para cuentas ya aprobadas.
+    if (role === 'student' && Boolean(isActive)) {
+        const existing = await userRepository.findUserByIdForInstitution({
+            id: Number(id), institutionId: requester.isSuperAdmin ? null : requester.institutionId,
+        });
+        if (existing?.signupStatus === 'PENDING' || existing?.signupStatus === 'REJECTED') {
+            throw new ServiceError('Usá Solicitudes de inscripción para aprobar o rechazar esta cuenta', 409);
+        }
+    }
     try {
         const user = await userRepository.setUserActive({
             id: Number(id),
-            institutionId: requester.institutionId,
+            institutionId: requester.isSuperAdmin || requester.roles?.includes('SUPER_ADMIN') ? null : requester.institutionId,
             isActive: Boolean(isActive),
         });
 
         return {
             id: user.id,
             isActive: user.isActive,
+            signupStatus: user.signupStatus ?? null,
         };
     } catch (error) {
         if (error.code === 'P2025') {
@@ -480,33 +538,29 @@ export const toggleUserStatusService = async (
 // ELIMINAR USUARIO
 // ======================================================
 
-export const deleteUserService = async (
-    role,
-    id,
-    requester
-) => {
+export const deleteUserService = async (role, id, requester) => {
     const config = assertRoleConfig(role);
+    assertPermission(requester.roles, config.permissions.delete);
+    const userId = Number(id);
+    if (!Number.isSafeInteger(userId) || userId <= 0) throw new ServiceError('Usuario inválido.', 400);
+    if (userId === Number(requester.id)) throw new ServiceError('No podés eliminar tu propia cuenta.', 403);
 
-    assertPermission(
-        requester.roles,
-        config.permissions.delete
-    );
-
-    try {
-        await userRepository.deleteUserById({
-            id: Number(id),
-            institutionId: requester.institutionId,
-        });
-    } catch (error) {
-        if (error.code === 'P2025') {
-            throw new ServiceError(
-                'Usuario no encontrado',
-                404
-            );
-        }
-
-        throw error;
+    const isSuperAdmin = requester.isSuperAdmin === true || requester.roles?.includes('SUPER_ADMIN');
+    const prisma = getPrisma();
+    const user = await prisma.user.findFirst({
+        where: { id: userId, deletedAt: null, ...(isSuperAdmin ? {} : { institutionId: requester.institutionId }) },
+        include: { directorProfile: true, preceptorProfile: true, teacherProfile: true, studentProfile: true },
+    });
+    if (!user) throw new ServiceError('Usuario no encontrado en tu institución.', 404);
+    if (user.isSuperAdmin) throw new ServiceError('Una cuenta superadministradora no puede eliminarse desde Gestión de usuarios.', 403);
+    // No permitir borrar un usuario con perfil de mayor privilegio usando la vista docente.
+    for (const [otherRole, profile] of Object.entries({
+        director: user.directorProfile, preceptor: user.preceptorProfile,
+        teacher: user.teacherProfile, student: user.studentProfile,
+    })) {
+        if (profile) assertPermission(requester.roles, assertRoleConfig(otherRole).permissions.delete);
     }
+    await userRepository.archiveUserWithRelations({ id: userId, institutionId: isSuperAdmin ? null : requester.institutionId });
 };
 
 // ======================================================
@@ -522,6 +576,7 @@ function serializeUserWithRoles(user) {
         firstName: user.firstName,
         lastName: user.lastName,
         isActive: user.isActive,
+        signupStatus: user.signupStatus ?? null,
         roles: getRolesFromUser(user),
         profiles: {
             student: user.studentProfile,
@@ -679,6 +734,7 @@ function serializeMyProfile(user) {
         lastName: user.lastName,
         institutionId: user.institutionId,
         isActive: user.isActive,
+        signupStatus: user.signupStatus ?? null,
         isSuperAdmin,
         createdAt: user.createdAt,
         roles: allRoles,

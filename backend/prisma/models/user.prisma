@@ -7,11 +7,22 @@ model User {
   firstName String
   lastName String
   isActive Boolean @default(true)
+  // Eliminacion administrativa: conserva evidencias historicas (notas y avisos).
+  deletedAt DateTime?
+  // Solo las altas públicas de alumnos tienen este estado.
+  // null = cuenta anterior o creada directamente por una autoridad.
+  signupStatus StudentSignupStatus?
+  signupReviewedAt DateTime?
+  signupReviewedById Int?
+  signupReviewReason String? @db.Text
+  studentSignupNotifications Notification[] @relation("StudentSignupNotifications")
   isSuperAdmin Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   institutionId Int?
   institution Institution? @relation(fields: [institutionId], references: [id])
+  @@index([institutionId, signupStatus])
+  @@index([deletedAt])
   studentProfile StudentProfile?
   teacherProfile TeacherProfile?
   preceptorProfile PreceptorProfile?
@@ -25,6 +36,7 @@ model User {
   confirmedEarlyNotices EarlyNotice[] @relation("EarlyNoticeConfirmer")
   notifications Notification[] @relation("UserNotifications")
   devices       UserDevice[]   @relation("UserDevices") //
+  webPushSubscriptions WebPushSubscription[] @relation("UserWebPushSubscriptions")
   earlyNoticeRevisions EarlyNoticeRevision[] @relation("EarlyNoticeRevisionAuthor")
   createdInstitutionEvents InstitutionEvent[] @relation("InstitutionEventCreator")
   updatedInstitutionEvents InstitutionEvent[] @relation("InstitutionEventUpdater")

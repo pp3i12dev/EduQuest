@@ -1,5 +1,4 @@
-
-import { useContext, useState } from 'react';
+import { useContext, useState, useCallback } from 'react';
 import { useUnreadNotifications } from '../hooks/useNotifications';
 
 import {
@@ -7,6 +6,7 @@ import {
     NavLink,
     Outlet,
     useLocation,
+    useNavigate,
 } from 'react-router-dom';
 
 import {
@@ -29,6 +29,9 @@ import {
 } from 'lucide-react';
 
 import { AuthContext } from '../context/AuthContext';
+import WebPushSettings from '../components/WebPushSettings';
+import InstallPwaButton from '../components/InstallPwaButton';
+import { revokePushOnLogout } from '../services/webPush';
 import BackgroundLayout from './BackgroundLayout';
 import logo from '../assets/images/logo2.png';
 
@@ -176,13 +179,16 @@ function UserAvatar({ user, size = 'normal' }) {
 }
 
 export default function DashboardLayout() {
-    const { user, logoutContext } = useContext(AuthContext);
+    const { user, token, logoutContext } = useContext(AuthContext);
     const location = useLocation();
+    const navigate = useNavigate();
     const unreadCount = useUnreadNotifications(Boolean(user));
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+    const [dashboardHeader, setDashboardHeader] = useState(null);
+    const updateDashboardHeader = useCallback(value => setDashboardHeader(value), []);
 
     const isRoot =
         location.pathname === '/dashboard' ||
@@ -223,13 +229,59 @@ export default function DashboardLayout() {
             )?.label ||
         (isRoot ? 'Panel principal' : 'Gestión académica');
 
+    const todayLabel = new Intl.DateTimeFormat('es-AR', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    }).format(new Date());
+    const routeNames = {
+        directors: 'Directivos', preceptors: 'Preceptores', teachers: 'Docentes',
+        students: 'Alumnos', invitations: 'Invitaciones', careers: 'Carreras',
+        courses: 'Cursos', subjects: 'Materias', institution: 'Institución',
+        'subject-schedules': 'Horarios de materias', 'my-subjects': 'Mis cursos',
+        'early-notices': 'Avisos tempranos',
+        'institution-communications': 'Comunicaciones institucionales',
+        profile: 'Mi perfil',
+    };
+    const routePart = location.pathname.split('/')[2];
+    const assignmentRouteTitles = {
+        students: 'Matrículas de alumnos', teachers: 'Asignación de docentes', schedules: 'Horarios y turnos',
+    };
+    const headerTitle = isRoot
+        ? (dashboardHeader?.title || `¡Hola, ${user?.firstName || 'Usuario'}!`)
+        : (location.pathname.startsWith('/dashboard/students/requests')
+            ? 'Solicitudes de inscripción'
+            : routePart === 'assignments'
+                ? (assignmentRouteTitles[location.pathname.split('/')[3]] || 'Asignaciones')
+                : routeNames[routePart] || currentPage);
+    const headerEyebrow = isRoot
+        ? (dashboardHeader?.eyebrow || todayLabel)
+        : (['students', 'teachers', 'preceptors', 'directors', 'invitations'].includes(routePart)
+            ? 'Gestión de usuarios'
+            : ['careers', 'courses', 'subjects', 'subject-schedules', 'institution', 'assignments'].includes(routePart)
+                ? 'Gestión académica' : 'EduQuest');
+
+    // Respeta el historial del usuario. Si llegó por enlace directo, utiliza un destino seguro.
+    const previousView = () => {
+        if (location.pathname.startsWith('/dashboard/students/requests')) navigate('/dashboard/students');
+        else if (location.pathname.startsWith('/dashboard/assignments/')) navigate('/dashboard', { state: { section: 'academic' } });
+        else if (location.pathname.startsWith('/dashboard/my-subjects/')) navigate('/dashboard/my-subjects');
+        else if (/^\/dashboard\/(students|teachers|preceptors|directors|invitations|careers|courses|subjects)(\/.*)?$/.test(location.pathname)) {
+            navigate('/dashboard', { state: { section: /students|teachers|preceptors|directors|invitations/.test(location.pathname) ? 'users' : 'academic' } });
+        } else {
+            const idx = window.history.state?.idx;
+            if (typeof idx === 'number' && idx > 0) navigate(-1);
+            else navigate('/dashboard');
+        }
+    };
+
     const closeMobileMenu = () => {
         setMobileMenuOpen(false);
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         setMobileMenuOpen(false);
         setProfileMenuOpen(false);
+        try { await revokePushOnLogout(token); }
+        catch (error) { console.warn('[EduQuest] No se pudo desvincular Push de este dispositivo:', error); }
         logoutContext();
     };
 
@@ -265,7 +317,7 @@ export default function DashboardLayout() {
                             <Link
                                 to="/dashboard"
                                 onClick={closeMobileMenu}
-                                className="flex shrink-0 cursor-pointer items-center gap-3"
+                                className="hidden shrink-0 cursor-pointer items-center gap-3 sm:flex"
                                 aria-label="Ir al panel principal"
                             >
                                 <img
@@ -277,21 +329,21 @@ export default function DashboardLayout() {
 
                             <div className="hidden h-8 w-px bg-slate-700/80 sm:block" />
 
-                            <div className="hidden min-w-0 sm:block">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-400">
-                                    Plataforma educativa
+                            <div className="min-w-0">
+                                <p className="max-w-[200px] truncate text-[9px] font-semibold uppercase tracking-[0.09em] text-sky-400 sm:max-w-[400px] sm:text-[10px] sm:tracking-[0.14em]">
+                                    {headerEyebrow}
                                 </p>
-
-                                <p className="mt-0.5 truncate text-sm font-semibold text-slate-200">
-                                    {currentPage}
-                                </p>
+                                <h1 className="mt-0.5 max-w-[165px] truncate text-xs font-bold text-white sm:max-w-[420px] sm:text-base" title={headerTitle}>
+                                    {headerTitle}
+                                </h1>
                             </div>
                         </div>
 
                         {/* DERECHA */}
-                        <div className="flex items-center gap-3">
-
-                            <div className="hidden items-center gap-2 rounded-full border border-emerald-500/15 bg-emerald-500/5 px-3 py-1.5 text-xs text-emerald-300 md:flex">
+                        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                            <InstallPwaButton compact />
+                            <WebPushSettings compact />
+                            <div className="hidden items-center gap-2 rounded-full border border-emerald-500/15 bg-emerald-500/5 px-3 py-1.5 text-xs text-emerald-300 xl:flex">
                                 <ShieldCheck size={14} />
                                 Sesión activa
                             </div>
@@ -514,6 +566,11 @@ export default function DashboardLayout() {
                         {!isRoot && (
                             <div className="border-b border-slate-700/40 bg-slate-950/30 px-4 py-3 backdrop-blur-sm sm:px-6 lg:px-8">
                                 <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                                    <button type="button" onClick={previousView}
+                                        className="mr-3 inline-flex items-center gap-2 rounded-xl border-2 border-amber-200 bg-amber-400 px-4 py-2.5 text-sm font-extrabold text-slate-950 shadow-lg shadow-amber-500/25 transition hover:bg-amber-300 hover:scale-[1.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                        aria-label="Volver a la vista anterior">
+                                        <ArrowLeft size={20} strokeWidth={3} /> Volver atrás
+                                    </button>
                                     <Link
                                         to="/dashboard"
                                         className="inline-flex cursor-pointer items-center gap-2 text-slate-400 transition-colors hover:text-blue-300"
@@ -535,7 +592,7 @@ export default function DashboardLayout() {
                         )}
 
                         <main className="mx-auto w-full max-w-[1700px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-                            <Outlet />
+                            <Outlet context={{ updateDashboardHeader }} />
                         </main>
                     </div>
                 </div>

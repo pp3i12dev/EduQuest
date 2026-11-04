@@ -29,6 +29,11 @@ const DAYS = [
 ];
 
 const SHIFTS = ['MANANA', 'TARDE', 'NOCHE'];
+const MODALITIES = [
+    ['PRESENCIAL', 'Presencial'],
+    ['VIRTUAL_SINCRONA', 'Virtual sincrónica (en vivo)'],
+    ['VIRTUAL_ASINCRONA', 'Virtual asincrónica (sin encuentro en vivo)'],
+];
 
 const DAY_NAMES = {
     LUNES: 'Lunes',
@@ -48,6 +53,7 @@ const SHIFT_NAMES = {
 const newSchedule = () => ({
     day: 'LUNES',
     shift: 'MANANA',
+    modality: 'PRESENCIAL',
     startTime: '08:00',
     endTime: '09:00',
 });
@@ -58,10 +64,11 @@ const schedulesForCourse = (subject, courseId) =>
             schedule =>
                 Number(schedule.courseId) === Number(courseId)
         )
-        .map(({ id, day, shift, startTime, endTime }) => ({
+        .map(({ id, day, shift, modality, startTime, endTime }) => ({
             id,
             day,
             shift,
+            modality: modality ?? 'PRESENCIAL',
             startTime,
             endTime,
         }));
@@ -306,6 +313,8 @@ export default function SubjectFormModal({
                     (other, j) =>
                         j !== i &&
                         other.day === schedule.day &&
+                        (other.modality ?? 'PRESENCIAL') !== 'VIRTUAL_ASINCRONA' &&
+                        (schedule.modality ?? 'PRESENCIAL') !== 'VIRTUAL_ASINCRONA' &&
                         schedule.startTime < other.endTime &&
                         other.startTime < schedule.endTime
                 )
@@ -662,6 +671,20 @@ export default function SubjectFormModal({
                                             </option>
                                         ))}
                                     </select>
+                                </label>
+
+                                <label className="space-y-1 text-xs text-slate-300 sm:col-span-2">
+                                    <span>Modalidad de cursada</span>
+                                    <select
+                                        value={schedule.modality ?? 'PRESENCIAL'}
+                                        onChange={event => updateSchedule(index, 'modality', event.target.value)}
+                                        className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                                    >
+                                        {MODALITIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                                    </select>
+                                    {schedule.modality === 'VIRTUAL_ASINCRONA' && (
+                                        <span className="block text-[11px] text-amber-200">Las horas son una franja de referencia: no implica videoclase en vivo.</span>
+                                    )}
                                 </label>
 
                                 <label className="space-y-1 text-xs text-slate-300">

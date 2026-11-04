@@ -1,4 +1,3 @@
-
 import { useContext, useEffect, useState } from 'react';
 import {
     UserRound,
@@ -17,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { AuthContext } from '../context/AuthContext';
+import WebPushSettings from '../components/WebPushSettings';
 
 const API_BASE_URL = (
     import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
@@ -730,6 +730,7 @@ export default function ProfileView() {
                 </section>
             </div>
 
+            <WebPushSettings />
             {/* SEGURIDAD DE LA CUENTA */}
             <section className="rounded-2xl border border-slate-700 bg-slate-900/95 p-5 shadow-lg sm:p-7">
                 <div className="mb-6 flex items-center gap-3">

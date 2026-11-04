@@ -16,6 +16,12 @@ namespace EduQuest.Student
         private string selectedMatchingConcept;
         private int questionIndex;
         private float startedAt;
+        private bool IsExtendedGame()
+        {
+            if (currentQuestions == null) return false;
+            string type = currentQuestions.gameType;
+            return type == "sequence" || type == "classification" || type == "fill_blank" || type == "spot_error";
+        }
 
         private void SetupGame()
         {
@@ -34,7 +40,7 @@ namespace EduQuest.Student
                     ? await EduQuestRuntime.Student.PracticeQuestions(StudentNavigation.GameType)
                     : await EduQuestRuntime.Student.Play(StudentNavigation.ActivityId);
                 if (this == null) return;
-                if (currentQuestions == null || (currentQuestions.gameType != "true_false" && currentQuestions.gameType != "multiple_choice" && currentQuestions.gameType != "matching"))
+                if (currentQuestions == null || (currentQuestions.gameType != "true_false" && currentQuestions.gameType != "multiple_choice" && currentQuestions.gameType != "matching" && !IsExtendedGame()))
                     throw new Exception("El servidor todavía no ofrece este juego para Unity.");
                 if (currentQuestions.questions == null || currentQuestions.questions.Length == 0)
                     throw new Exception("Esta actividad no tiene preguntas publicadas.");
@@ -50,6 +56,11 @@ namespace EduQuest.Student
         {
             if (currentQuestions?.questions == null) return;
             bool matching = currentQuestions.gameType == "matching";
+            if (IsExtendedGame())
+            {
+                RenderExtendedGame();
+                return;
+            }
             bool multiple = currentQuestions.gameType == "multiple_choice";
             var matchingBoard = Q<VisualElement>("matching-board");
             if (matchingBoard != null) matchingBoard.style.display = matching ? DisplayStyle.Flex : DisplayStyle.None;
@@ -92,6 +103,101 @@ namespace EduQuest.Student
                 btn.AddToClassList("choice-answer");
                 choicesContainer.Add(btn);
             }
+        }
+        // Cuatro mecánicas táctiles que comparten el contrato QuestionSetDTO. Se mantienen en portrait.
+        // La clave de cada respuesta permanece en Express; Unity solo elige identificadores opacos.
+        private void RenderExtendedGame()
+        {
+            string type = currentQuestions.gameType;
+            var board = Q<VisualElement>("answer-options");
+            var matching = Q<VisualElement>("matching-board");
+            var boolean = Q<VisualElement>("boolean-answers");
+            if (matching != null) matching.style.display = DisplayStyle.None;
+            if (boolean != null) boolean.style.display = DisplayStyle.None;
+            Q<Button>("true").SetEnabled(false);
+            Q<Button>("false").SetEnabled(false);
+            if (board == null) return;
+            board.Clear();
+            board.style.display = DisplayStyle.Flex;
+            var questions = currentQuestions.questions;
+            if (type == "sequence")
+            {
+                Q<Label>("question-position").text = "Pasos ordenados: " + choiceAnswers.Count + " / " + questions.Length;
+                Q<Label>("question-text").text = "Tocá los pasos en el orden correcto. Si te equivocás, podés deshacer el último.";
+                var chosen = new VisualElement();
+                chosen.AddToClassList("game-selection-list");
+                for (int i = 0; i < questions.Length; i++)
+                {
+                    if (choiceAnswers.TryGetValue(questions[i].id, out var selected))
+                    {
+                        var item = Array.Find(questions[0].options, opt => opt.id == selected);
+                        chosen.Add(Text((i + 1) + ". " + (item?.text ?? "Paso"), "game-chosen-step"));
+                    }
+                }
+                if (choiceAnswers.Count > 0)
+                {
+                    var undo = new Button(UndoLastSequence) { text = "↶ Deshacer último paso" };
+                    undo.AddToClassList("secondary");
+                    chosen.Add(undo);
+                }
+                board.Add(chosen);
+                foreach (var option in questions[0].options ?? Array.Empty<RemoteChoiceDTO>())
+                {
+                    if (choiceAnswers.ContainsValue(option.id)) continue;
+                    string id = option.id;
+                    var tile = new Button(() => ChooseSequenceStep(id)) { text = option.text };
+                    tile.AddToClassList("game-option-tile");
+                    board.Add(tile);
+                }
+                Q<Button>("finish").SetEnabled(choiceAnswers.Count == questions.Length);
+                return;
+            }
+            bool completed = questionIndex >= questions.Length;
+            Q<Button>("finish").SetEnabled(completed);
+            Q<Label>("question-position").text = completed
+                ? "¡Completaste " + questions.Length + " desafíos!"
+                : "Desafío " + (questionIndex + 1) + " de " + questions.Length;
+            if (completed)
+            {
+                Q<Label>("question-text").text = "Enviá tus respuestas para conocer tu nota y los puntos recibidos.";
+                return;
+            }
+            var current = questions[questionIndex];
+            Q<Label>("question-text").text = type == "classification"
+                ? "Clasificá este concepto: " + current.text
+                : type == "fill_blank" ? "Completá el espacio: " + current.text
+                : "Encontrá el fragmento incorrecto: " + current.text;
+            if (type == "spot_error") board.Add(Text("Seleccioná el fragmento que contiene el error.", "muted"));
+            foreach (var option in current.options ?? Array.Empty<RemoteChoiceDTO>())
+            {
+                string id = option.id;
+                var tile = new Button(() => ChooseExtendedOption(id)) { text = option.text };
+                tile.AddToClassList("game-option-tile");
+                board.Add(tile);
+            }
+        }
+        private void ChooseSequenceStep(string optionId)
+        {
+            if (!IsExtendedGame() || currentQuestions.gameType != "sequence") return;
+            if (choiceAnswers.ContainsValue(optionId)) return;
+            int index = choiceAnswers.Count;
+            if (index >= currentQuestions.questions.Length) return;
+            choiceAnswers[currentQuestions.questions[index].id] = optionId;
+            DisplayQuestion();
+        }
+        private void UndoLastSequence()
+        {
+            if (choiceAnswers.Count == 0) return;
+            choiceAnswers.Remove(currentQuestions.questions[choiceAnswers.Count - 1].id);
+            DisplayQuestion();
+        }
+        private void ChooseExtendedOption(string optionId)
+        {
+            if (!IsExtendedGame() || currentQuestions.gameType == "sequence") return;
+            if (questionIndex >= currentQuestions.questions.Length) return;
+            choiceAnswers[currentQuestions.questions[questionIndex].id] = optionId;
+            questionIndex++;
+            DisplayQuestion();
         }
         private void Answer(bool value)
         {
@@ -178,7 +284,7 @@ namespace EduQuest.Student
         }
         private void Finish()
         {
-            if (currentQuestions?.questions == null || (currentQuestions.gameType == "matching" ? matchingAnswers.Count : currentQuestions.gameType == "multiple_choice" ? choiceAnswers.Count : answers.Count) != currentQuestions.questions.Length)
+            if (currentQuestions?.questions == null || (currentQuestions.gameType == "matching" ? matchingAnswers.Count : currentQuestions.gameType == "multiple_choice" || IsExtendedGame() ? choiceAnswers.Count : answers.Count) != currentQuestions.questions.Length)
             { Status("Respondé todas las preguntas antes de finalizar."); return; }
             Q<Button>("finish").SetEnabled(false);
             Run(async () =>
@@ -187,7 +293,7 @@ namespace EduQuest.Student
                 {
                 var data = currentQuestions.questions.Select(q =>
                     currentQuestions.gameType == "matching" ? new AnswerDTO { id = q.id, optionId = matchingAnswers[q.id] } :
-                    currentQuestions.gameType == "multiple_choice" ? new AnswerDTO { id = q.id, optionId = choiceAnswers[q.id] } :
+                    (currentQuestions.gameType == "multiple_choice" || IsExtendedGame()) ? new AnswerDTO { id = q.id, optionId = choiceAnswers[q.id] } :
                     new AnswerDTO { id = q.id, answer = answers[q.id] }).ToArray();
                 int duration = Mathf.Clamp(Mathf.RoundToInt(Time.realtimeSinceStartup - startedAt), 0, 86400);
                 var result = StudentNavigation.PracticeMode
@@ -250,6 +356,15 @@ namespace EduQuest.Student
                     " · Tu respuesta: " + AnswerDescription(answer.givenAnswer, answer.options), "list-subtitle"));
                 if (!answer.isCorrect)
                     card.Add(Text("Respuesta correcta: " + AnswerDescription(answer.correctAnswer, answer.options), "list-subtitle"));
+                if (!string.IsNullOrWhiteSpace(answer.explanation)) card.Add(Text("Explicación: " + answer.explanation, "list-subtitle"));
+                var feedback = new Button(() =>
+                {
+                    if (answer.isCorrect) EduQuestSound.Correct();
+                    else EduQuestSound.Incorrect();
+                }) { text = "Escuchar devolución" };
+                feedback.AddToClassList("secondary");
+                feedback.AddToClassList("eq-review-audio");
+                card.Add(feedback);
                 container.Add(card);
             }
         }

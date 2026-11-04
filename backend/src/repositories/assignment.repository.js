@@ -12,14 +12,14 @@ export const listAssignmentOptions = async (institutionId) => {
         }),
 
         prisma.subject.findMany({
-            where: { institutionId },
+            where: { institutionId, deletedAt: null },
             orderBy: { nombre: 'asc' },
         }),
 
         prisma.studentProfile.findMany({
             where: {
                 user: {
-                    institutionId,
+                    institutionId, isActive: true, deletedAt: null,
                 },
             },
             include: {
@@ -44,7 +44,7 @@ export const listAssignmentOptions = async (institutionId) => {
         prisma.teacherProfile.findMany({
             where: {
                 user: {
-                    institutionId,
+                    institutionId, isActive: true, deletedAt: null,
                 },
             },
             include: {
@@ -85,6 +85,8 @@ export const listStudentsForCourse = async (
         where: {
             user: {
                 institutionId,
+                isActive: true,
+                deletedAt: null,
             },
         },
         include: {
@@ -171,6 +173,8 @@ export const findStudent = (institutionId, studentId) => {
             id: studentId,
             user: {
                 institutionId,
+                isActive: true,
+                deletedAt: null,
             },
         },
         include: {
@@ -203,6 +207,8 @@ export const listTeachersForCourseSubject = async (
         where: {
             user: {
                 institutionId,
+                isActive: true,
+                deletedAt: null,
             },
         },
         include: {
@@ -271,6 +277,8 @@ export const findTeacher = (institutionId, teacherId) => {
             id: teacherId,
             user: {
                 institutionId,
+                isActive: true,
+                deletedAt: null,
             },
         },
         include: {

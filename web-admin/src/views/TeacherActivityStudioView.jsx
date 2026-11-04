@@ -9,8 +9,22 @@ import { unitService } from '../services/unit.service';
 const types = [
   { value: 'true_false', label: 'Verdadero o falso', help: 'Afirmaciones para un juego de respuestas rápidas' },
   { value: 'multiple_choice', label: 'Opciones múltiples', help: 'Corre y aprende y futuros cuestionarios con cuatro opciones' },
-  { value: 'matching', label: 'Unir conceptos', help: 'Juego evaluable: el alumno vincula cada concepto con una definición distinta' },
+  { value: 'matching', label: 'Unir conceptos', help: 'El alumno vincula conceptos con definiciones.' },
+  { value: 'sequence', label: 'Ordenar secuencias', help: 'Organizá pasos cronológicos o lógicos, por ejemplo un procedimiento.' },
+  { value: 'classification', label: 'Clasificar conceptos', help: 'Asigná cada concepto a una categoría educativa.' },
+  { value: 'fill_blank', label: 'Completar oraciones', help: 'Elegí la palabra que falta en cada oración.' },
+  { value: 'spot_error', label: 'Encontrar el error', help: 'Detectá el fragmento incorrecto y revisá su explicación.' },
 ];
+const CONTENT_KEYS = { true_false: 'statements', multiple_choice: 'questions', matching: 'pairs', sequence: 'steps', classification: 'items', fill_blank: 'sentences', spot_error: 'challenges' };
+const emptyRow = type => ({
+  true_false: { text: '', correctAnswer: true },
+  multiple_choice: { text: '', options: [1,2,3,4].map(i => ({ id: String(i), text: '' })), correctAnswer: '1' },
+  matching: { left: '', right: '' },
+  sequence: { text: '' },
+  classification: { text: '', category: '' },
+  fill_blank: { text: 'El ___ es ...', answer: '', wrongAnswers: ['', '', ''] },
+  spot_error: { text: '', segments: ['', '', ''], incorrectIndex: 0, explanation: '' },
+})[type];
 const fileLink = relative => {
   try {
     const base = new URL(api.defaults.baseURL || '/api', window.location.origin);
@@ -115,15 +129,31 @@ export default function TeacherActivityStudioView() {
     setDescription(instructions.trim().slice(0, 1500));
     setNotice('La IA generó las preguntas. Revisá las soluciones antes de guardar el borrador.');
   });
-  const rows = generated ? (generated.statements || generated.questions || generated.pairs || []) : [];
-  const updateRow = (index, patch) => setGenerated(prev => {
-    const name = gameType === 'true_false' ? 'statements' : gameType === 'multiple_choice' ? 'questions' : 'pairs';
-    return { ...prev, [name]: prev[name].map((row, i) => i === index ? { ...row, ...patch } : row) };
+  const contentKey = CONTENT_KEYS[gameType];
+  const rows = generated?.[contentKey] || [];
+  const updateRow = (index, patch) => setGenerated(prev => ({
+    ...prev, [contentKey]: (prev?.[contentKey] || []).map((row, i) => i === index ? { ...row, ...patch } : row),
+  }));
+  const removeRow = index => setGenerated(prev => ({
+    ...prev, [contentKey]: (prev?.[contentKey] || []).filter((_, i) => i !== index),
+  }));
+  const addRow = () => setGenerated(prev => ({ ...prev, [contentKey]: [...(prev?.[contentKey] || []), emptyRow(gameType)] }));
+  const moveSequence = (index, direction) => setGenerated(prev => {
+    if (gameType !== 'sequence') return prev;
+    const next = [...prev.steps];
+    const target = index + direction;
+    if (target < 0 || target >= next.length) return prev;
+    [next[index], next[target]] = [next[target], next[index]];
+    return { ...prev, steps: next };
   });
-  const removeRow = index => setGenerated(prev => {
-    const name = gameType === 'true_false' ? 'statements' : gameType === 'multiple_choice' ? 'questions' : 'pairs';
-    return { ...prev, [name]: prev[name].filter((_, i) => i !== index) };
-  });
+  // Crear manualmente no consume cuota Gemini. El mismo validador Express verifica el borrador.
+  const startManual = () => {
+    if (!topicExists) { setError('Seleccioná primero un tema válido.'); return; }
+    setGenerated({ [contentKey]: Array.from({ length: 3 }, () => emptyRow(gameType)) });
+    setTitle(`${detail?.subject?.nombre || 'Materia'} · ${types.find(t => t.value === gameType)?.label}`);
+    setDescription(''); setDraft(null); setError('');
+    setNotice('Completá los desafíos y las respuestas, guardá y publicá. Esta opción es gratuita y no usa IA.');
+  };
   const save = () => perform('save', async () => {
     if (!topicExists) throw new Error('Elegí un tema válido de esta materia para la actividad.');
     if (!generated || !rows.length) throw new Error('Generá y revisá al menos una pregunta.');
@@ -196,6 +226,7 @@ export default function TeacherActivityStudioView() {
             </div>
             <p className="text-xs text-slate-400">{types.find(x => x.value === gameType)?.help}. La IA puede consumir cuota de Gemini.</p>
             <button type="button" disabled={disabled || !topicExists || (sourceMode === 'pdf' && !documentId)} onClick={generate} className={`${btn} w-full bg-amber-400 text-slate-950 hover:bg-amber-300 disabled:cursor-not-allowed`}><Sparkles size={18}/>{busy === 'generate' ? 'Generando preguntas...' : 'Generar preguntas con Gemini'}</button>
+            <button type="button" onClick={startManual} disabled={disabled || !topicExists} className={`${btn} w-full border border-violet-400/60 text-violet-200 hover:bg-violet-500/10`}>Crear actividad manualmente (sin costo de IA)</button>
             {!topicExists && <p className="text-xs text-amber-300">Primero seleccioná un tema en el paso 1.</p>}
             {sourceMode === 'pdf' && !documentId && <p className="text-xs text-amber-300">Seleccioná o subí un PDF desde el panel de la derecha para habilitar la generación.</p>}
           </div>
@@ -227,15 +258,20 @@ export default function TeacherActivityStudioView() {
         <div className="grid gap-4 sm:grid-cols-2"><div><label className={label}>Título de actividad</label><input className={field} value={title} onChange={e => setTitle(e.target.value)} maxLength={120}/></div><div><label className={label}>Descripción</label><input className={field} value={description} onChange={e => setDescription(e.target.value)} maxLength={1500}/></div></div>
         <div className="grid gap-4 lg:grid-cols-2">{rows.map((item, i) => <article className="rounded-xl border border-slate-700 bg-slate-800/80 p-4" key={i}>
           <div className="mb-3 flex items-center justify-between"><h3 className="font-bold">Pregunta {i + 1}</h3><button className="text-sm text-rose-300 hover:underline" onClick={() => removeRow(i)} >Descartar</button></div>
-          {gameType !== 'matching' ? <><label className={label}>Enunciado</label><textarea className={field} value={item.text || ''} onChange={e => updateRow(i, { text: e.target.value })} /></> : <div className="grid gap-3"><label className={label}>Concepto</label><input className={field} value={item.left || ''} onChange={e => updateRow(i, { left: e.target.value })} /><label className={label}>Definición vinculada</label><input className={field} value={item.right || ''} onChange={e => updateRow(i, { right: e.target.value })} /></div>}
+          {['true_false', 'multiple_choice', 'sequence', 'classification', 'fill_blank'].includes(gameType) && <><label className={label}>{gameType === 'sequence' ? 'Paso (posición correcta)' : gameType === 'fill_blank' ? 'Oración (escribí ___ donde falta la palabra)' : 'Enunciado'}</label><textarea className={field} value={item.text || ''} onChange={e => updateRow(i, { text: e.target.value })}/></>}
+          {gameType === 'matching' && <div className="grid gap-3"><label className={label}>Concepto</label><input className={field} value={item.left || ''} onChange={e => updateRow(i, { left: e.target.value })}/><label className={label}>Definición vinculada</label><input className={field} value={item.right || ''} onChange={e => updateRow(i, { right: e.target.value })}/></div>}
+          {gameType === 'sequence' && <div className="mt-3 flex gap-2"><button type="button" disabled={i === 0} onClick={() => moveSequence(i, -1)} className="rounded-lg bg-slate-700 px-3 py-2 text-sm disabled:opacity-30">↑ Subir paso</button><button type="button" disabled={i === rows.length - 1} onClick={() => moveSequence(i, 1)} className="rounded-lg bg-slate-700 px-3 py-2 text-sm disabled:opacity-30">↓ Bajar paso</button></div>}
+          {gameType === 'classification' && <div className="mt-3"><label className={label}>Categoría correcta (utilizá entre 2 y 6 diferentes)</label><input className={field} value={item.category || ''} onChange={e => updateRow(i, { category: e.target.value })}/></div>}
+          {gameType === 'fill_blank' && <div className="mt-3 space-y-3"><label className={label}>Palabra correcta</label><input className={field} value={item.answer || ''} onChange={e => updateRow(i, { answer: e.target.value })}/><label className={label}>Tres palabras incorrectas</label>{[0,1,2].map(j => <input key={j} className={field} value={(item.wrongAnswers || [])[j] || ''} placeholder={`Distractor ${j+1}`} onChange={e => { const wrongAnswers = [...(item.wrongAnswers || ['', '', ''])]; wrongAnswers[j] = e.target.value; updateRow(i, {wrongAnswers}); }}/>)}</div>}
+          {gameType === 'spot_error' && <div className="mt-3 space-y-3"><label className={label}>Fragmentos entre los cuales buscar el error (3 a 6)</label>{(item.segments || []).map((seg,j) => <div key={j} className="flex items-center gap-2"><span className="text-slate-400">{j+1}.</span><input className={field} value={seg} onChange={e => updateRow(i, {segments:item.segments.map((v,k)=> k===j ? e.target.value:v)})}/></div>)}<label className={label}>Fragmento incorrecto</label><select className={field} value={item.incorrectIndex ?? 0} onChange={e => updateRow(i,{incorrectIndex:Number(e.target.value)})}>{(item.segments||[]).map((_,j)=><option key={j} value={j}>Fragmento {j+1}</option>)}</select><label className={label}>Explicación de la corrección</label><textarea className={field} value={item.explanation||''} onChange={e=>updateRow(i,{explanation:e.target.value})}/></div>}
           {gameType === 'true_false' && <div className="mt-3"><label className={label}>Respuesta correcta</label><select className={field} value={String(item.correctAnswer)} onChange={e => updateRow(i, { correctAnswer: e.target.value === 'true' })}><option value="true">Verdadero</option><option value="false">Falso</option></select></div>}
           {gameType === 'multiple_choice' && <div className="mt-3 space-y-3"><label className={label}>Opciones</label>{(item.options || []).map((o, j) => <div key={j} className="flex items-center gap-2"><span className="text-slate-400">{j+1}.</span><input className={field} value={o.text || ''} onChange={e => updateRow(i, { options: item.options.map((a,k) => k === j ? { ...a, text: e.target.value } : a) })}/></div>)}<label className={label}>Opción correcta</label><select className={field} value={String(item.correctAnswer || '1')} onChange={e => updateRow(i, { correctAnswer: e.target.value })}>{[1,2,3,4].map(n => <option value={String(n)} key={n}>Opción {n}</option>)}</select></div>}
         </article>)}</div>
-        <div className="flex flex-wrap items-center gap-3 border-t border-slate-700 pt-5"><button disabled={disabled || !topicExists} onClick={save} className={`${btn} bg-blue-600 text-white hover:bg-blue-500`}><Save size={17}/>{busy === 'save' ? 'Guardando...' : draft ? 'Guardar cambios del borrador' : 'Guardar como borrador'}</button><button disabled={disabled || !draft} onClick={publish} className={`${btn} bg-emerald-600 text-white hover:bg-emerald-500`}><CheckCircle2 size={17}/>{busy === 'publish' ? 'Publicando...' : 'Aprobar y publicar'}</button><button disabled={disabled} onClick={() => { setGenerated(null); setDraft(null); }} className={`${btn} border border-slate-600 text-slate-300`}>Cerrar borrador</button></div>
+        <div className="flex flex-wrap items-center gap-3 border-t border-slate-700 pt-5"><button disabled={disabled || rows.length >= 15} onClick={addRow} className={`${btn} border border-slate-500 text-slate-200`}>+ Agregar desafío</button><button disabled={disabled || !topicExists} onClick={save} className={`${btn} bg-blue-600 text-white hover:bg-blue-500`}><Save size={17}/>{busy === 'save' ? 'Guardando...' : draft ? 'Guardar cambios del borrador' : 'Guardar como borrador'}</button><button disabled={disabled || !draft} onClick={publish} className={`${btn} bg-emerald-600 text-white hover:bg-emerald-500`}><CheckCircle2 size={17}/>{busy === 'publish' ? 'Publicando...' : 'Aprobar y publicar'}</button><button disabled={disabled} onClick={() => { setGenerated(null); setDraft(null); }} className={`${btn} border border-slate-600 text-slate-300`}>Cerrar borrador</button></div>
       </section>}
       <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-7"><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-xl font-bold"><Gamepad2 size={22} className="text-violet-300"/> 5. Actividades de esta materia</h2><button className="flex items-center gap-1 text-sm text-blue-300" onClick={() => perform('refresh', refresh)}><RefreshCw size={15}/> Actualizar</button></div>
         {(detail.activities || []).length ? <div className="grid gap-3 sm:grid-cols-2">{detail.activities.map(a => <div key={a.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-800/60 p-4"><div><p className="font-semibold">{a.title}</p>{a.status === 'DRAFT' && <button className="text-sm text-blue-300 underline" onClick={() => { setGenerated(a.content); setDraft(a); setGameType(a.gameType); setTitle(a.title); setDescription(a.description || ''); setTopicId(a.topicId ? String(a.topicId) : ''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Revisar y editar</button>}<p className="text-sm text-slate-400">{types.find(t => t.value === a.gameType)?.label || a.gameType}</p></div><span className={`rounded-full px-3 py-1 text-xs font-semibold ${a.status === 'ACTIVE' ? 'bg-emerald-900 text-emerald-200' : 'bg-amber-900 text-amber-200'}`}>{a.status === 'ACTIVE' ? 'Publicada' : a.status === 'DRAFT' ? 'Borrador' : a.status}</span></div>)}</div> : <p className="text-sm text-slate-400">Todavía no hay actividades vinculadas.</p>}
-        <p className="mt-4 text-xs text-slate-400">Verdadero/falso, opciones múltiples y unir conceptos se corrigen en Express; la solución no se envía a Unity. Corre y aprende sigue en práctica, sin nota.</p>
+        <p className="mt-4 text-xs text-slate-400">Todos los juegos publicados se corrigen en Express: Unity no recibe las soluciones. Corre y Aprende conserva su modo de práctica.</p>
       </section>
     </div>
   );

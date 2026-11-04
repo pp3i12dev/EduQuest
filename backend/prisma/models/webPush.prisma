@@ -1,0 +1,31 @@
+// Un navegador por usuario puede tener su propia suscripción Web Push.
+// Endpoint y claves son secretos operativos; nunca se exponen al frontend de otros usuarios.
+model WebPushSubscription {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation("UserWebPushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  endpoint    String    @unique @db.Text
+  p256dh      String    @db.Text
+  auth        String    @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  disabledAt  DateTime?
+  deliveries  WebPushDelivery[]
+  @@index([userId, disabledAt])
+}
+
+model WebPushDelivery {
+  id             Int                @id @default(autoincrement())
+  notificationId Int
+  notification   Notification       @relation("NotificationWebPushDeliveries", fields: [notificationId], references: [id], onDelete: Cascade)
+  subscriptionId Int
+  subscription   WebPushSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  status         String             @default("PENDING")
+  attempts       Int                @default(0)
+  lastError      String?            @db.Text
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  sentAt         DateTime?
+  @@unique([notificationId, subscriptionId])
+  @@index([status, createdAt])
+}

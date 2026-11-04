@@ -1,0 +1,6 @@
+// Un alumno que se registra desde Unity o React queda pendiente de validación.
+enum StudentSignupStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}

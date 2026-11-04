@@ -6,7 +6,7 @@ import {
     assertInstitutionAccess,
     createAccessError,
     createValidationError,
-} from './accessControl.js';
+} from './accesControl.js';
 
 import {
     EARLY_NOTICE_STATUS,

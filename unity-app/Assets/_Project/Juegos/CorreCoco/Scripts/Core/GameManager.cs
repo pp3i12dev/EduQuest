@@ -20,6 +20,7 @@ public class GameManager : MonoBehaviour
     public int VidasActuales { get; private set; }
     public bool JuegoPausado { get; private set; }
     public float DistanciaRecorrida { get; private set; }
+    private bool terminalAudioPlayed;
 
     // Eventos para que la UI (HUD) se entere de los cambios sin acoplarse directamente
     public event Action<int> OnPuntajeCambiado;
@@ -56,6 +57,7 @@ public class GameManager : MonoBehaviour
         VidasActuales = vidasIniciales;
         PuntajeActual = 0;
         DistanciaRecorrida = 0f;
+        terminalAudioPlayed = false;
         OnVidasCambiadas?.Invoke(VidasActuales);
         OnPuntajeCambiado?.Invoke(PuntajeActual);
     }
@@ -82,6 +84,11 @@ public class GameManager : MonoBehaviour
 
         if (VidasActuales <= 0)
         {
+            if (!terminalAudioPlayed)
+            {
+                terminalAudioPlayed = true;
+                EduQuest.Student.EduQuestSound.Failure();
+            }
             OnJuegoTerminado?.Invoke();
         }
     }
@@ -95,6 +102,11 @@ public class GameManager : MonoBehaviour
 
         if (progreso >= 1f)
         {
+            if (!terminalAudioPlayed)
+            {
+                terminalAudioPlayed = true;
+                EduQuest.Student.EduQuestSound.Success();
+            }
             OnNivelCompletado?.Invoke();
         }
     }
@@ -121,12 +133,15 @@ public class GameManager : MonoBehaviour
         switch (resultado)
         {
             case ResultadoRespuesta.Correcta:
+                EduQuest.Student.EduQuestSound.Correct();
                 OnRespuestaCorrecta?.Invoke();
                 break;
             case ResultadoRespuesta.Parcial:
+                EduQuest.Student.EduQuestSound.Partial();
                 OnRespuestaParcial?.Invoke();
                 break;
             case ResultadoRespuesta.Incorrecta:
+                EduQuest.Student.EduQuestSound.Incorrect();
                 OnRespuestaIncorrecta?.Invoke();
                 break;
         }

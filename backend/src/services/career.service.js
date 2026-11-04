@@ -1,5 +1,6 @@
 import { canAnyRole } from '../config/permissions.js';
 import * as careerRepository from '../repositories/career.repository.js';
+import { getPrisma } from '../config/prisma.js';
 
 class ServiceError extends Error {
     constructor(message, status = 400) {
@@ -14,9 +15,13 @@ function assertPermission(roles) {
     }
 }
 
-export const listCareersService = (requester) => {
+const isSuperAdmin = requester => requester.isSuperAdmin === true || requester.roles?.includes('SUPER_ADMIN');
+const scope = requester => isSuperAdmin(requester) ? null : requester.institutionId;
+
+export const listCareersService = requester => {
     assertPermission(requester.roles);
-    return careerRepository.listCareers(requester.institutionId);
+    if (!isSuperAdmin(requester) && !requester.institutionId) throw new ServiceError('Sin institución asignada.', 403);
+    return careerRepository.listCareers(scope(requester));
 };
 
 export const createCareerService = async (body, requester) => {
@@ -24,7 +29,11 @@ export const createCareerService = async (body, requester) => {
     const { nombre, level } = body;
     if (!nombre || !level) throw new ServiceError('Faltan campos obligatorios', 400);
 
-    return careerRepository.createCareer({ nombre, level, institutionId: requester.institutionId });
+    const institutionId = isSuperAdmin(requester) ? Number(body.institutionId) : Number(requester.institutionId);
+    if (!Number.isSafeInteger(institutionId) || institutionId < 1) throw new ServiceError('Institución inválida.');
+    const exists = await getPrisma().institution.findFirst({ where: { id: institutionId, isActive: true }, select: { id: true } });
+    if (!exists) throw new ServiceError('La institución no existe o está inactiva.');
+    return careerRepository.createCareer({ nombre, level, institutionId });
 };
 
 export const updateCareerService = async (id, body, requester) => {
@@ -35,7 +44,7 @@ export const updateCareerService = async (id, body, requester) => {
     if (level) data.level = level;
 
     try {
-        return await careerRepository.updateCareer(Number(id), requester.institutionId, data);
+        return await careerRepository.updateCareer(Number(id), scope(requester), data);
     } catch (error) {
         if (error.code === 'P2025') throw new ServiceError('Carrera no encontrada', 404);
         throw error;
@@ -45,7 +54,7 @@ export const updateCareerService = async (id, body, requester) => {
 export const deleteCareerService = async (id, requester) => {
     assertPermission(requester.roles);
     try {
-        await careerRepository.deleteCareer(Number(id), requester.institutionId);
+        await careerRepository.deleteCareer(Number(id), scope(requester));
     } catch (error) {
         if (error.code === 'P2025') throw new ServiceError('Carrera no encontrada', 404);
         if (error.code === 'P2003') throw new ServiceError('No se puede eliminar: tiene cursos asociados', 409);

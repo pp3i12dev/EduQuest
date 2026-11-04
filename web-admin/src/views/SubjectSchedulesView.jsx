@@ -25,9 +25,16 @@ const SHIFTS = [
     ['NOCHE', 'Noche'],
 ];
 
+const MODALITIES = [
+    ['PRESENCIAL', 'Presencial'],
+    ['VIRTUAL_SINCRONA', 'Virtual sincrónica'],
+    ['VIRTUAL_ASINCRONA', 'Virtual asincrónica'],
+];
+
 const EMPTY_FORM = {
     day: 'LUNES',
     shift: 'MANANA',
+    modality: 'PRESENCIAL',
     startTime: '',
     endTime: '',
 };
@@ -102,6 +109,7 @@ export default function SubjectSchedulesView() {
         setForm({
             day: schedule.day,
             shift: schedule.shift,
+            modality: schedule.modality ?? 'PRESENCIAL',
             startTime: schedule.startTime,
             endTime: schedule.endTime,
         });
@@ -129,17 +137,6 @@ export default function SubjectSchedulesView() {
 
     return (
         <div>
-            <div className="mb-6">
-                <h2 className="text-2xl font-bold">
-                    Horarios y turnos
-                </h2>
-
-                <p className="text-sm text-slate-400 mt-2">
-                    Configurá los días, turnos y horarios de
-                    cada materia dentro de cada curso.
-                </p>
-            </div>
-
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
                     <div>
@@ -233,7 +230,7 @@ export default function SubjectSchedulesView() {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
                             <div>
                                 <label className="block text-xs text-slate-400 mb-2">
                                     Día
@@ -287,6 +284,18 @@ export default function SubjectSchedulesView() {
                             </div>
 
                             <div>
+                                <label className="block text-xs text-slate-400 mb-2">Modalidad</label>
+                                <select
+                                    name="modality"
+                                    value={form.modality}
+                                    onChange={handleChange}
+                                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm cursor-pointer"
+                                >
+                                    {MODALITIES.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+                                </select>
+                            </div>
+
+                            <div>
                                 <label className="block text-xs text-slate-400 mb-2">
                                     Desde
                                 </label>
@@ -324,6 +333,9 @@ export default function SubjectSchedulesView() {
                                 />
                             </div>
                         </div>
+                        {form.modality === 'VIRTUAL_ASINCRONA' && (
+                            <p className="mt-3 text-xs text-amber-200">Las horas delimitan una franja de referencia, no una conexión en vivo.</p>
+                        )}
 
                         <button
                             type="submit"
@@ -353,6 +365,7 @@ export default function SubjectSchedulesView() {
                                         <th>
                                             Turno
                                         </th>
+                                        <th>Modalidad</th>
                                         <th>
                                             Desde
                                         </th>
@@ -386,6 +399,9 @@ export default function SubjectSchedulesView() {
                                                     )}
                                                 </td>
 
+                                                <td>
+                                                    {MODALITIES.find(([key]) => key === (schedule.modality ?? 'PRESENCIAL'))?.[1] ?? 'Presencial'}
+                                                </td>
                                                 <td>
                                                     {
                                                         schedule.startTime
@@ -431,7 +447,7 @@ export default function SubjectSchedulesView() {
                                         0 && (
                                             <tr>
                                                 <td
-                                                    colSpan={5}
+                                                    colSpan={6}
                                                     className="py-8 text-center text-slate-500"
                                                 >
                                                     No hay horarios

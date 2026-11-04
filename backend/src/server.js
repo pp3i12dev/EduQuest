@@ -3,10 +3,12 @@ dotenv.config();
 
 import app from './app.js';
 import { startNotificationEmailProcessor } from './services/notificationEmail.service.js';
+import { startWebPushProcessor } from './services/webPush.service.js';
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor ejecutándose en http://localhost:${PORT}`);
   startNotificationEmailProcessor();
+  startWebPushProcessor();
 });

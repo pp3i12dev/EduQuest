@@ -13,12 +13,19 @@ export const findInvitationsByInviter = (invitedById) => {
 export const findInvitationsByInstitution = (institutionId) => {
     const prisma = getPrisma();
     return prisma.invitation.findMany({
-        where: { invitedBy: { institutionId } },
+        where: { institutionId },
         include: { course: true },
         omit: { token: true },
         orderBy: { createdAt: 'desc' },
     });
 };
+
+
+export const listAllInvitations = () => getPrisma().invitation.findMany({
+    include: { course: true }, omit: { token: true }, orderBy: { createdAt: 'desc' },
+});
+// El borrado masivo es atómico: todo el lote debe pasar las validaciones.
+export const cleanupInvitations = ids => getPrisma().invitation.deleteMany({ where: { id: { in: ids } } });
 
 export const createInvitation = (data) => {
     const prisma = getPrisma();

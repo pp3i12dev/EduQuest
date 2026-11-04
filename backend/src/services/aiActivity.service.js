@@ -1,9 +1,10 @@
+import { EXTRA_TYPES, gameRows, normalizeExtraGame } from '../utils/gameMechanics.js';
 import { getPrisma } from '../config/prisma.js';
 import { findTeacherProfileByUserId } from '../repositories/teacherSubject.repository.js';
 import { getOwnedTeacherSubject, readOwnedPdf, createReviewedDraft, getOwnedDraft, updateOwnedStatus, updateReviewedDraft } from '../repositories/aiActivity.repository.js';
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
-const TYPES = ['true_false', 'multiple_choice', 'matching'];
+const TYPES = ['true_false', 'multiple_choice', 'matching', ...EXTRA_TYPES];
 const LIMIT = { max: 5, window: 10 * 60 * 1000 };
 const recentRequests = new Map();
 
@@ -46,6 +47,7 @@ function booleanAnswer(value) {
   return value;
 }
 export function normalizeGenerated(type, rows) {
+  if (EXTRA_TYPES.includes(type)) return normalizeExtraGame(type, rows);
   if (!TYPES.includes(type)) throw fail(400, 'Formato de juego no permitido.');
   if (!Array.isArray(rows) || rows.length < 1 || rows.length > 20) throw fail(422, 'Debe haber entre 1 y 20 preguntas.');
   const normalized = rows.map((row, i) => normalizeQuestion(row, type, i));
@@ -69,6 +71,12 @@ function checkLimit(userId) {
 
 // Los fallos temporales del proveedor no son errores del docente.
 // Reintentamos con pausas progresivas, pero nunca de manera ilimitada.
+const geminiFields = type => ({
+  sequence: '{"text":"paso en orden cronológico o lógico correcto"}',
+  classification: '{"text":"concepto","category":"nombre de categoría"} (usar de 2 a 6 categorías repetibles)',
+  fill_blank: '{"text":"oración con un único ___","answer":"palabra correcta","wrongAnswers":["distractor1","distractor2","distractor3"]}',
+  spot_error: '{"text":"consigna","segments":["fragmento 1","fragmento 2","fragmento 3"],"incorrectIndex":1,"explanation":"por qué el fragmento índice 1 está mal"} (índice empieza en cero)',
+})[type] || (type === 'true_false' ? '{"text":"...","correctAnswer":true}' : type === 'multiple_choice' ? '{"text":"...","options":[{"text":"..."},{"text":"..."},{"text":"..."},{"text":"..."}],"correctAnswer":"1","explanation":"..."}' : '{"left":"concepto","right":"definición"}');
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const retryableGeminiStatus = (status) => status === 408 || status === 429 || (status >= 500 && status <= 599);
 
@@ -81,7 +89,7 @@ async function callGemini({ prompt, type, count, pdf }) {
 Fuente de instrucciones: ${prompt}.
 Tipo: ${type}.
 Si hay PDF, usá exclusivamente hechos apoyados en el PDF y en el tema acotado. Evitá inventar información o respuestas. No incluyas nombres de alumnos.
-Devolvé SOLO un objeto JSON de forma {"questions": [...]} con los campos: ${type === 'true_false' ? '{"text":"...","correctAnswer":true}' : type === 'multiple_choice' ? '{"text":"...","options":[{"text":"..."},{"text":"..."},{"text":"..."},{"text":"..."}],"correctAnswer":"1","explanation":"..."} (correctAnswer índice 1..4)' : '{"left":"concepto","right":"definición"}'}.
+Devolvé SOLO un objeto JSON de forma {"questions": [...]} con los campos: ${geminiFields(type)}.
 Antes de responder comprobá internamente las soluciones. No incluyas markdown.` }];
   if (pdf) parts.push({ inlineData: { mimeType: 'application/pdf', data: pdf.buffer.toString('base64') } });
 
@@ -161,7 +169,7 @@ export async function previewQuestions(user, body = {}) {
   const topicId = await validTopic(assignment.id, body.topicId);
   const topic = await getPrisma().topic.findUnique({ where: { id: topicId }, include: { unit: { select: { title: true } } } });
   const type = body.gameType;
-  if (!TYPES.includes(type)) throw fail(400, 'Elegí verdadero/falso, opciones múltiples o unir conceptos.');
+  if (!TYPES.includes(type)) throw fail(400, 'Tipo de juego inválido.');
   const count = Number(body.count);
   if (!Number.isInteger(count) || count < 3 || count > 15) throw fail(400, 'Elegí entre 3 y 15 preguntas.');
   const instructions = String(body.instructions || '').trim();
@@ -193,7 +201,7 @@ export async function saveReviewedDraft(user, body = {}) {
   const title = cleanString(body.title, 120, 'Título');
   const topicId = await validTopic(assignment.id, body.topicId);
   const type = body.gameType;
-  const rows = type === 'true_false' ? body.content?.statements : type === 'multiple_choice' ? body.content?.questions : body.content?.pairs;
+  const rows = gameRows(type, body.content);
   const content = normalizeGenerated(type, rows);
   return createReviewedDraft({ teacherId, teacherSubjectId: assignment.id, topicId, title, description: typeof body.description === 'string' ? body.description.slice(0, 1500) : '', gameType: type, content });
 }
@@ -205,7 +213,7 @@ export async function publishReviewedDraft(user, { teacherSubjectId, activityId 
   const activity = await getOwnedDraft({ teacherSubjectId: assignment.id, teacherId, activityId: id });
   if (!activity || activity.status !== 'DRAFT') throw fail(409, 'La actividad no existe o ya no es un borrador.');
   if (!activity.topicId) throw fail(409, 'Asigná la actividad a un tema antes de publicarla.');
-  const rows = activity.gameType === 'true_false' ? activity.content?.statements : activity.gameType === 'multiple_choice' ? activity.content?.questions : activity.content?.pairs;
+  const rows = gameRows(activity.gameType, activity.content);
   normalizeGenerated(activity.gameType, rows);
   return updateOwnedStatus(id, 'ACTIVE');
 }
@@ -218,7 +226,7 @@ export async function editReviewedDraft(user, activityId, body = {}) {
   const title = cleanString(body.title, 120, 'Título');
   const topicId = await validTopic(assignment.id, body.topicId);
   const type = body.gameType;
-  const rows = type === 'true_false' ? body.content?.statements : type === 'multiple_choice' ? body.content?.questions : body.content?.pairs;
+  const rows = gameRows(type, body.content);
   const content = normalizeGenerated(type, rows);
   return updateReviewedDraft(id, { title, topicId, gameType: type, description: typeof body.description === 'string' ? body.description.slice(0, 1500) : '', content });
 }

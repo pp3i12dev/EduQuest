@@ -19,13 +19,14 @@ namespace EduQuest.Student
     {
         public int id, score, durationSeconds;
         public float grade;
-        public bool canHide, reviewAvailable;
+        public bool canHide, canDelete, studentHidden, reviewAvailable;
+        public string deleteBlockedReason;
         public int? earnedPoints;
         public string studentName, activityTitle, subjectName, courseName, unitName, topicName, completedAt;
     }
     [Serializable] public class ReviewAnswerDTO
     {
-        public string id, text;
+        public string id, text, explanation;
         // Propiedades JSON: Unity no intenta serializar JToken como campo de escena.
         // Newtonsoft.Json sigue convirtiendo los valores booleanos o las opciones.
         [JsonProperty("givenAnswer")]
@@ -88,6 +89,12 @@ namespace EduQuest.Student
         public long sizeBytes;
     }
     [Serializable] public class MessageDTO { public string message; }
+    [Serializable] public class DeleteHistoryDTO
+    {
+        public bool deleted;
+        public int attemptId, pointsReversed, pointsRemaining;
+        public string message;
+    }
     [Serializable] public class AssessmentDTO { public AnswerDTO[] answers; public int timeInSec; }
     [Serializable] public class PracticeCheckDTO { public string gameType; public AnswerDTO[] answers; }
     // Para próximos juegos: no enviar las soluciones al cliente durante una evaluación.

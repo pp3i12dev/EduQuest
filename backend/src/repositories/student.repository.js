@@ -1,4 +1,5 @@
 import { getPrisma } from '../config/prisma.js';
+import { historyDeletionBlockReason, HISTORY_PROTECTED_LATEST } from '../utils/historyRetention.js';
 
 // Toda la consulta de Prisma queda concentrada en este repositorio.
 export const findStudent = userId => getPrisma().studentProfile.findUnique({
@@ -10,7 +11,7 @@ export const findStudent = userId => getPrisma().studentProfile.findUnique({
 });
 
 export const findAssignments = courseIds => getPrisma().teacherSubject.findMany({
-  where: { courseId: { in: courseIds }, isActive: true, subject: { isActive: true } },
+  where: { courseId: { in: courseIds }, isActive: true, subject: { isActive: true, deletedAt: null } },
   include: {
     subject: { select: { id: true, nombre: true } },
     course: { select: { id: true, nombre: true, academicYear: true } },
@@ -128,3 +129,54 @@ export const findStudentAttempt = (id, studentId) => getPrisma().gameAttempt.fin
       teacherSubject: { include: { subject: true, course: true } } } },
   },
 });
+
+// Borrado físico y ajuste de recompensa en una única transacción serializable.
+// Nunca confiar en el indicador canDelete que recibió Unity: revalidar en BD.
+export const deleteStudentAttemptPermanently = async (id, studentId) => {
+  const prisma = getPrisma();
+  const fail = (status, message) => Object.assign(new Error(message), { status });
+  for (let retry = 0; retry < 3; retry++) {
+    try {
+      return await prisma.$transaction(async tx => {
+        const record = await tx.gameAttempt.findFirst({
+          where: { id, studentId, isCompleted: true },
+          select: { id: true, studentId: true, isCompleted: true, createdAt: true, earnedPoints: true },
+        });
+        if (!record) throw fail(404, 'Resultado inexistente o no perteneciente a tu perfil.');
+        const recent = await tx.gameAttempt.findMany({
+          where: { studentId, isCompleted: true },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          take: HISTORY_PROTECTED_LATEST, select: { id: true },
+        });
+        const reason = historyDeletionBlockReason(record, new Set(recent.map(x => x.id)));
+        if (reason) throw fail(409, reason);
+
+        const profile = await tx.studentProfile.findUnique({
+          where: { id: studentId }, select: { puntosTotales: true },
+        });
+        if (!profile || profile.puntosTotales < record.earnedPoints)
+          throw fail(409, 'No se puede conciliar el saldo de puntos. Solicitá una revisión administrativa.');
+
+        await tx.gameAttempt.delete({ where: { id: record.id } });
+        const pointsRemaining = profile.puntosTotales - record.earnedPoints;
+        if (record.earnedPoints > 0) {
+          await tx.studentProfile.update({
+            where: { id: studentId },
+            data: { puntosTotales: pointsRemaining, nivelActual: Math.floor(pointsRemaining / 500) + 1 },
+          });
+        }
+        return {
+          deleted: true, attemptId: id, pointsReversed: record.earnedPoints,
+          pointsRemaining,
+          message: record.earnedPoints > 0
+            ? `Resultado eliminado definitivamente. Se descontaron ${record.earnedPoints} puntos.`
+            : 'Resultado eliminado definitivamente de la base de datos.',
+        };
+      }, { isolationLevel: 'Serializable' });
+    } catch (error) {
+      // PostgreSQL/Prisma pueden reportar conflictos cuando se registran partidas simultáneas.
+      if (error.code === 'P2034' && retry < 2) continue;
+      throw error;
+    }
+  }
+};

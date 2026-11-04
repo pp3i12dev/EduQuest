@@ -1,4 +1,3 @@
-
 import { useContext } from 'react';
 
 import {
@@ -11,12 +10,14 @@ import {
 import { AuthContext } from '../context/AuthContext';
 
 import LoginView from '../views/LoginView';
+import StudentRegisterView from '../views/StudentRegisterView';
 import ForgotPasswordView from '../views/ForgotPasswordView';
 import ResetPasswordView from '../views/ResetPasswordView';
 import DashboardView from '../views/DashBoardView';
 import DashboardLayout from '../layouts/DashboardLayout';
 
 import UsersListView from '../views/UsersListView';
+import StudentSignupRequestsView from '../views/StudentSignupRequestsView';
 import InvitationsListView from '../views/InvitationListView';
 import AcceptInvitationView from '../views/AcceptInvitationView';
 import ProfileView from '../views/ProfileView';
@@ -70,6 +71,7 @@ export default function AppRoutes() {
     return (
         <BrowserRouter>
             <Routes>
+                <Route path="/registro-alumno" element={<StudentRegisterView />} />
                 <Route path="/olvide-contrasena" element={<ForgotPasswordView />} />
                 <Route path="/restablecer-contrasena" element={<ResetPasswordView />} />
                 <Route
@@ -118,6 +120,11 @@ export default function AppRoutes() {
                                 />
                             </RoleRoute>
                         }
+                    />
+
+                    <Route
+                        path="students/requests"
+                        element={<RoleRoute action="selfSignup:approve"><StudentSignupRequestsView /></RoleRoute>}
                     />
 
                     <Route
@@ -203,7 +210,7 @@ export default function AppRoutes() {
                             </RoleRoute>
                         }
                     />
-                    
+
                     <Route
                         path="my-subjects/:teacherSubjectId/studio"
                         element={<RoleRoute action="subjectContent:manage"><TeacherActivityStudioView /></RoleRoute>}

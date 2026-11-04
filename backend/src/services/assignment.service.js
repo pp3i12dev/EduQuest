@@ -39,6 +39,8 @@ const VALID_SHIFTS = [
     'NOCHE',
 ];
 
+const VALID_MODALITIES = ['PRESENCIAL', 'VIRTUAL_SINCRONA', 'VIRTUAL_ASINCRONA'];
+
 function validateTime(value, fieldName) {
     if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
         throw new ServiceError(
@@ -57,9 +59,12 @@ function assertTimeRange(startTime, endTime) {
     }
 }
 
-function assertNoScheduleConflict(schedules, startTime, endTime) {
+function assertNoScheduleConflict(schedules, startTime, endTime, modality) {
+    // Una clase asincrónica no ocupa una franja de aula o videollamada.
+    if (modality === 'VIRTUAL_ASINCRONA') return;
     const conflict = schedules.some(
         (schedule) =>
+            schedule.modality !== 'VIRTUAL_ASINCRONA' &&
             startTime < schedule.endTime &&
             endTime > schedule.startTime
     );
@@ -372,6 +377,7 @@ async function validateScheduleData(body, requester, excludeId = null) {
     const subjectId = toPositiveInt(body.subjectId, 'subjectId');
 
     const { day, shift, startTime, endTime } = body;
+    const modality = body.modality ?? 'PRESENCIAL';
 
     if (!VALID_DAYS.includes(day)) {
         throw new ServiceError('Día de la semana inválido', 400);
@@ -379,6 +385,9 @@ async function validateScheduleData(body, requester, excludeId = null) {
 
     if (!VALID_SHIFTS.includes(shift)) {
         throw new ServiceError('Turno inválido', 400);
+    }
+    if (!VALID_MODALITIES.includes(modality)) {
+        throw new ServiceError('Modalidad de cursada inválida', 400);
     }
 
     validateTime(startTime, 'startTime');
@@ -415,7 +424,8 @@ async function validateScheduleData(body, requester, excludeId = null) {
     assertNoScheduleConflict(
         schedules,
         startTime,
-        endTime
+        endTime,
+        modality
     );
 
     return {
@@ -423,6 +433,7 @@ async function validateScheduleData(body, requester, excludeId = null) {
         subjectId,
         day,
         shift,
+        modality,
         startTime,
         endTime,
     };

@@ -27,6 +27,7 @@
     "multer": "^2.4.0",
     "nodemailer": "^10.0.14",
     "prisma": "7.9.1",
+    "web-push": "^3.6.7",
     "ws": "^8.21.3"
   },
   "devDependencies": {
