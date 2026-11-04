@@ -16,7 +16,7 @@
           <ui:VisualElement class="field-shell">
             <ui:VisualElement class="field-icon art-icon-lock" />
             <ui:TextField name="password" label="" class="field auth-field field-inline password-inline" />
-            <ui:VisualElement class="field-eye art-icon-eye" />
+            <ui:Button name="toggle-password" class="field-eye password-eye-button art-icon-eye" tooltip="Mostrar contraseña" />
           </ui:VisualElement>
           <ui:Button name="forgot" text="¿Olvidaste tu contraseña?" class="link-button forgot-link" />
           <ui:Button name="submit" text="Iniciar sesión" class="primary auth-submit" />

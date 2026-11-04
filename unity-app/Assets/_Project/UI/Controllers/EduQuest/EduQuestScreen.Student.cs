@@ -30,6 +30,7 @@ namespace EduQuest.Student
             Click("go-history", () => { StudentNavigation.RankingRequested = false; StudentNavigation.Go("History"); });
             Click("go-ranking", () => { StudentNavigation.RankingRequested = true; StudentNavigation.Go("History"); });
             Click("go-profile", () => StudentNavigation.Go("Profile"));
+            Click("home-settings", () => StudentNavigation.Go("Settings"));
             ApplyIcon("level-icon", "LevelIcon");
             ApplyIcon("points-icon", "StarIcon");
             ApplyIcon("coins-icon", "CoinIcon");
@@ -509,7 +510,6 @@ namespace EduQuest.Student
         private void SetupProfile()
         {
             SetupAvatarPicker();
-            SetupAudioPreferences();
             foreach (var f in new[]{"current-password", "new-password", "confirm-password"}) Password(f);
             Click("save", () => Run(async () =>
             {

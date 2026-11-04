@@ -12,6 +12,7 @@
   <ui:Button name="nav-subjects" class="nav"><ui:VisualElement class="drawer-nav-icon art-navsubjects" /><ui:Label text="Materias" class="drawer-nav-label" /></ui:Button>
   <ui:Button name="nav-history" class="nav"><ui:VisualElement class="drawer-nav-icon art-navhistory" /><ui:Label text="Historial" class="drawer-nav-label" /></ui:Button>
   <ui:Button name="nav-profile" class="nav"><ui:VisualElement class="drawer-nav-icon art-navprofile" /><ui:Label text="Perfil" class="drawer-nav-label" /></ui:Button>
+  <ui:Button name="nav-settings" class="nav"><ui:VisualElement class="drawer-nav-icon art-navsettings" /><ui:Label text="Configuración" class="drawer-nav-label" /></ui:Button>
   <ui:VisualElement class="drawer-divider" />
   <ui:VisualElement class="drawer-spacer" />
   <ui:Button name="nav-logout" class="danger logout"><ui:VisualElement class="drawer-nav-icon art-navlogout" /><ui:Label text="Cerrar sesión" class="drawer-nav-label" /></ui:Button>

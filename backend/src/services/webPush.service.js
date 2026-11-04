@@ -27,6 +27,7 @@ const validSubscription = sub => sub && typeof sub === 'object'
   && validKey(sub.keys?.p256dh) && validKey(sub.keys?.auth);
 
 export async function saveSubscription(reqUser, sub) {
+  if (!webPushConfigured()) fail(503, 'Web Push no está activado o faltan claves VAPID válidas.');
   if (!validSubscription(sub)) fail(400, 'La suscripción Push no es válida o el proveedor es desconocido.');
   const db = getPrisma();
   const userId = getId(reqUser);
@@ -34,8 +35,14 @@ export async function saveSubscription(reqUser, sub) {
   if (!previous && (await db.webPushSubscription.count({ where: { userId, disabledAt: null } })) >= 30) {
     fail(429, 'Se alcanzó el límite de dispositivos asociados a esta cuenta.');
   }
-  // No transferir silenciosamente un dispositivo a otra cuenta.
-  if (previous && previous.userId !== userId) fail(409, 'Este navegador pertenece a otra sesión. Desactivá las notificaciones en la otra cuenta y volvé a activarlas.');
+  // Un navegador activo jamás puede transferirse a otra identidad.
+  // Si la cuenta anterior ya lo desvinculó, borramos el registro anterior
+  // (y sus entregas históricas) antes de asociarlo a una nueva cuenta,
+  // para impedir entregar notificaciones del usuario anterior.
+  if (previous && previous.userId !== userId) {
+    if (!previous.disabledAt) fail(409, 'Este navegador todavía pertenece a otra cuenta. Cerrá esa sesión y desactivá sus notificaciones.');
+    await db.webPushSubscription.delete({ where: { id: previous.id } });
+  }
   try {
     return await db.webPushSubscription.upsert({
       where: { endpoint: sub.endpoint },
@@ -88,12 +95,52 @@ export async function enqueueWebPushForNotification(tx, userId, notificationId) 
 let configured = false;
 const configure = () => {
   if (configured) return true;
+  if (process.env.WEB_PUSH_ENABLED !== 'true') return false;
   const { WEB_PUSH_PUBLIC_KEY: publicKey, WEB_PUSH_PRIVATE_KEY: privateKey, WEB_PUSH_SUBJECT: subject } = process.env;
   if (!publicKey || !privateKey || !subject) return false;
-  webpush.setVapidDetails(subject, publicKey, privateKey);
-  configured = true;
+  try {
+    webpush.setVapidDetails(subject, publicKey, privateKey);
+    configured = true;
+  } catch (error) {
+    console.error('[EduQuest][PUSH] Configuración VAPID inválida:', error.message);
+    return false;
+  }
   return true;
 };
+export const webPushConfigured = () => configure();
+
+// Prueba autenticada al dispositivo propio, sin generar un aviso académico ficticio.
+// "accepted" indica aceptación por el servicio Push; no certifica entrega visual.
+const testCooldown = new Map();
+export async function sendTestWebPush(reqUser, endpoint) {
+  if (!webPushConfigured()) fail(503, 'Web Push no está configurado en el servidor.');
+  if (typeof endpoint !== 'string' || !isTrustedPushEndpoint(endpoint)) fail(400, 'Dispositivo inválido.');
+  const userId = getId(reqUser);
+  const db = getPrisma();
+  const device = await db.webPushSubscription.findFirst({
+    where: { endpoint, userId, disabledAt: null },
+    select: { id: true, endpoint: true, p256dh: true, auth: true },
+  });
+  if (!device) fail(404, 'Este dispositivo no está registrado para tu usuario.');
+  const now = Date.now();
+  if ((testCooldown.get(userId) || 0) > now) fail(429, 'Esperá un minuto antes de repetir la prueba.');
+  testCooldown.set(userId, now + 60_000);
+  try {
+    await webpush.sendNotification({
+      endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth },
+    }, JSON.stringify({
+      title: 'EduQuest · Notificación de prueba',
+      body: '¡Listo! Tu navegador recibió una prueba. Los avisos escolares usarán este mismo canal.',
+      url: '/dashboard', tag: `eduquest-test-${now}`,
+    }), { TTL: 300 });
+    return { accepted: true, message: 'El servicio Push aceptó el mensaje. Comprobá las notificaciones del dispositivo.' };
+  } catch (error) {
+    if ([404, 410].includes(error?.statusCode)) {
+      await db.webPushSubscription.update({ where: { id: device.id }, data: { disabledAt: new Date() } });
+    }
+    fail(502, 'El servicio Push rechazó el envío: ' + String(error?.message || 'error').slice(0, 160));
+  }
+}
 
 // Jamás incluir DNI, motivo médico u otros datos sensibles en pantalla bloqueada.
 export function pushPreview(notification) {
@@ -149,7 +196,7 @@ async function isObsolete(db, n) {
 let running = false;
 let interval = null;
 export async function processWebPushQueue() {
-  if (running || !configure()) return;
+  if (running || !webPushConfigured()) return;
   running = true;
   const db = getPrisma();
   try {
@@ -202,10 +249,10 @@ export function startWebPushProcessor() {
   if (process.env.WEB_PUSH_ENABLED !== 'true') {
     console.info('[EduQuest][PUSH] Desactivado hasta configurar VAPID y WEB_PUSH_ENABLED=true'); return;
   }
-  if (!configure()) { console.warn('[EduQuest][PUSH] Faltan credenciales VAPID'); return; }
+  if (!webPushConfigured()) { console.warn('[EduQuest][PUSH] Faltan credenciales VAPID válidas'); return; }
   if (interval) return;
   void processWebPushQueue();
   interval = setInterval(() => void processWebPushQueue(), 15000);
   interval.unref?.();
 }
-export const publicVapidKey = () => process.env.WEB_PUSH_PUBLIC_KEY || null;
+export const publicVapidKey = () => webPushConfigured() ? process.env.WEB_PUSH_PUBLIC_KEY : null;

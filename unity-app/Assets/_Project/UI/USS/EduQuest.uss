@@ -770,3 +770,32 @@
     padding: 10px; margin-bottom: 10px;
 }
 .eq-theme .eq-table-toggle { margin-bottom: 4px; }
+
+/* Entrega 21: Configuración discreta, accesible y sin desbordamiento. */
+.eq-theme .home-student-card { position: relative; }
+.eq-theme .home-settings-corner {
+  position: absolute; top: 9px; right: 9px; width: 39px; height: 39px;
+  min-width: 39px; min-height: 39px; flex-shrink: 0;
+  padding: 6px; border-radius: 14px;
+  border-width: 1px; border-color: rgb(174,135,249);
+  background-color: rgb(248,239,255);
+  -unity-background-scale-mode: scale-to-fit;
+  -unity-background-image-tint-color: rgb(84,47,172);
+}
+.eq-theme .home-settings-corner:hover { background-color: rgb(255,226,166); }
+.eq-theme .home-menu-layer .sidebar .art-navsettings {
+  display: flex; width: 30px; min-width: 30px; height: 30px;
+  -unity-background-scale-mode: scale-to-fit;
+  -unity-background-image-tint-color: rgb(255,210,74);
+  opacity: 1;
+}
+.eq-theme .home-menu-layer .sidebar .nav-active .art-navsettings {
+  -unity-background-image-tint-color: rgb(50,28,121);
+}
+.eq-theme .settings-panel { margin-top: 4px; }
+.eq-theme .settings-heading-row { flex-direction: row; align-items: center; margin-bottom: 6px; }
+.eq-theme .settings-heading-icon { width: 34px; min-width: 34px; height: 34px; margin-right: 12px; -unity-background-scale-mode: scale-to-fit; -unity-background-image-tint-color: rgb(81,42,164); }
+.eq-theme .settings-back-top { height: 45px; min-height: 45px; border-radius: 14px; background-color: rgb(255,196,44); color: rgb(50,31,112); -unity-font-style: bold; border-width: 0; }
+.eq-theme .password-eye-button { position: absolute; top: 6px; right: 9px; width: 43px; height: 43px; min-width: 43px; min-height: 43px; border-width: 0; border-radius: 12px; padding: 8px; background-color: rgba(232,223,252,0.7); -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .password-eye-button:hover { background-color: rgb(255,231,166); }
+.eq-theme .password-eye-button.is-visible { background-color: rgb(255,220,133); }

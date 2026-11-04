@@ -18,7 +18,7 @@ public static class EduQuestAndroidSetup
         PlayerSettings.allowedAutorotateToLandscapeRight = true;
 
         var eqNames = new [] { "Welcome", "Login", "ForgotPassword", "Register", "Home", "Subjects", "Activities",
-            "Profile", "History", "Practice", "Game", "Result" };
+            "Profile", "Settings", "History", "Practice", "Game", "Result" };
         var paths = eqNames.Select(n => "Assets/_Project/Scenes/EduQuest/EQ_" + n + ".unity")
             .Concat(new [] { "Assets/_Project/Juegos/CorreCoco/Scenes/Nivel01.unity" }).ToArray();
         foreach (string path in paths)
@@ -30,7 +30,7 @@ public static class EduQuestAndroidSetup
         var keep = EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path)).ToArray();
         EditorBuildSettings.scenes = paths.Select(p => new EditorBuildSettingsScene(p, true)).Concat(keep).ToArray();
         AssetDatabase.SaveAssets();
-        Debug.Log("EduQuest Android: orientación automática permitida y 13 escenas incluidas en Shared Scene List. " +
+        Debug.Log("EduQuest Android: orientación automática permitida y 14 escenas incluidas en Shared Scene List. " +
             "EQ_* usan vertical, Nivel01 horizontal. Revisá la Scene List del Build Profile Android activo.");
         EditorUtility.DisplayDialog("EduQuest - Android", "Orientaciones y Scene List compartida configuradas. " +
             "Ahora abrí File > Build Profiles y activá Android. Revisá la Scene List del perfil activo.", "Aceptar");

@@ -1,58 +1,99 @@
 import { useContext, useEffect, useState } from 'react';
-import { BellRing, BellOff, LoaderCircle } from 'lucide-react';
+import { BellRing, BellOff, LoaderCircle, Send } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-import { activatePush, deactivatePush, currentPushStatus, pushSupport } from '../services/webPush';
-import api from '../api/axios';
+import {
+  prepareWebPush, activatePush, deactivatePush,
+  currentPushStatus, pushSupport, testWebPush,
+} from '../services/webPush';
 
 export default function WebPushSettings({ compact = false }) {
   const { token } = useContext(AuthContext);
+  const [prepared, setPrepared] = useState(null);
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState('');
-  const [configured, setConfigured] = useState(false);
   const [open, setOpen] = useState(false);
   const capability = pushSupport();
+
   useEffect(() => {
-    if (!token) return;
+    if (!token) return undefined;
     let alive = true;
-    api.get('/push/config').then(({ data }) => { if (alive) setConfigured(Boolean(data.enabled)); })
-      .catch(() => { if (alive) setConfigured(false); });
-    if (capability.ok) currentPushStatus().then(active => { if (alive) setEnabled(active); }).catch(() => {});
+    setLoading(true);
+    prepareWebPush()
+      .then(async ready => {
+        const active = await currentPushStatus(ready);
+        if (alive) { setPrepared(ready); setEnabled(active); setFeedback(''); }
+      })
+      .catch(error => { if (alive) { setPrepared(null); setEnabled(false); setFeedback(error.message); } })
+      .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [token, capability.ok]);
+  }, [token]);
+
   async function handleActivate() {
     setBusy(true); setFeedback('');
-    try { await activatePush(); setEnabled(true); setFeedback('Listo. Este dispositivo quedó registrado para recibir avisos.'); }
-    catch (e) { setFeedback(e.message || 'No se pudieron activar las notificaciones'); }
+    try {
+      const sub = await activatePush(prepared);
+      setPrepared(old => ({ ...old, existingSubscription: sub }));
+      setEnabled(true);
+      setFeedback('Notificaciones habilitadas en este navegador. Podés enviarte una prueba.');
+    } catch (error) { setFeedback(error.message || 'No se pudieron activar las notificaciones.'); }
     finally { setBusy(false); }
   }
+
   async function handleDeactivate() {
     setBusy(true); setFeedback('');
-    try { await deactivatePush(); setEnabled(false); setFeedback('Desactivaste las notificaciones en este dispositivo. Los avisos seguirán guardados en EduQuest.'); }
-    catch (e) { setFeedback(e.response?.data?.message || e.message || 'No se pudieron desactivar'); }
+    try {
+      await deactivatePush(prepared);
+      setEnabled(false);
+      setPrepared(old => old ? { ...old, existingSubscription: null } : null);
+      setFeedback('Avisos desactivados en este dispositivo. Permanecen disponibles dentro de EduQuest.');
+    } catch (error) { setFeedback(error.response?.data?.message || error.message); }
     finally { setBusy(false); }
   }
+
+  async function handleTest() {
+    setBusy(true); setFeedback('');
+    try {
+      const answer = await testWebPush(prepared);
+      setFeedback(answer.message || 'El proveedor recibió la notificación de prueba.');
+    } catch (error) { setFeedback(error.response?.data?.message || error.message); }
+    finally { setBusy(false); }
+  }
+
   const settingsPanel = (
-    <section className="rounded-2xl border border-blue-400/25 bg-slate-900/95 p-4 text-white shadow-lg sm:p-5">
+    <section className="rounded-2xl border border-sky-400/30 bg-slate-900/95 p-4 text-white shadow-lg sm:p-5">
       <div className="flex items-center gap-3">
         <BellRing className="shrink-0 text-sky-400" size={24} />
         <div>
-          <h2 className="font-bold text-lg">Notificaciones en este dispositivo</h2>
-          <p className="text-sm text-slate-300">Avisos tempranos y comunicaciones institucionales, aun cuando EduQuest esté cerrado.</p>
+          <h2 className="text-lg font-bold">Notificaciones en este dispositivo</h2>
+          <p className="text-sm text-slate-300">Avisos institucionales y ausencias, incluso con EduQuest cerrado.</p>
         </div>
       </div>
-      <p className="mt-3 text-xs text-slate-400">La autorización es voluntaria. Podés cambiarla desde Mi perfil o la configuración del navegador. No mostramos información sensible en la pantalla bloqueada.</p>
-      {!configured && <p role="status" className="mt-3 text-sm text-amber-300">El servidor aún no tiene activada la configuración Web Push.</p>}
-      {!capability.ok && <p role="status" className="mt-3 text-sm text-amber-300">{capability.reason}</p>}
+      <p className="mt-3 text-xs text-slate-400">
+        Solo se pueden habilitar si aceptás el permiso del navegador. Podés desactivarlas cuando quieras.
+        En computadoras compartidas, cerrá sesión al terminar.
+      </p>
+      {loading && <p className="mt-3 text-sm text-sky-200">Preparando servicio de notificaciones…</p>}
+      {!loading && !capability.ok && <p role="status" className="mt-3 text-sm text-amber-300">{capability.reason}</p>}
+      {!loading && feedback && <p role="status" className="mt-3 text-sm text-amber-300">{feedback}</p>}
       <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" onClick={handleActivate} disabled={busy || enabled || !capability.ok || !configured}
+        <button type="button" onClick={handleActivate}
+          disabled={loading || busy || enabled || !capability.ok || !prepared}
           className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50">
           {busy ? <LoaderCircle size={17} className="animate-spin" /> : <BellRing size={17}/>} {enabled ? 'Notificaciones activadas' : 'Activar notificaciones'}
         </button>
-        {enabled && <button type="button" onClick={handleDeactivate} disabled={busy}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-600 px-4 py-2.5 text-sm hover:bg-slate-800 disabled:opacity-50"><BellOff size={17}/> Desactivar aquí</button>}
+        {enabled && <>
+          <button type="button" onClick={handleTest} disabled={busy}
+            className="inline-flex items-center gap-2 rounded-xl border border-sky-500/50 px-4 py-2.5 text-sm font-semibold hover:bg-sky-500/20 disabled:opacity-50">
+            <Send size={16}/> Enviar prueba
+          </button>
+          <button type="button" onClick={handleDeactivate} disabled={busy}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-500 px-4 py-2.5 text-sm hover:bg-slate-700 disabled:opacity-50">
+            <BellOff size={17}/> Desactivar aquí
+          </button>
+        </>}
       </div>
-      {feedback && <p role="status" className="mt-3 text-sm text-sky-200">{feedback}</p>}
     </section>
   );
   if (!compact) return settingsPanel;
@@ -63,12 +104,11 @@ export default function WebPushSettings({ compact = false }) {
         {enabled ? <BellRing size={18} /> : <BellOff size={18} />}
         <span className="sr-only">Administrar notificaciones</span>
       </button>
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[min(90vw,390px)]">
-          {settingsPanel}
-          <button type="button" onClick={() => setOpen(false)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800">Cerrar</button>
-        </div>
-      )}
+      {open && <div className="absolute right-0 top-full z-50 mt-2 w-[min(90vw,390px)]">
+        {settingsPanel}
+        <button type="button" onClick={() => setOpen(false)}
+          className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800">Cerrar</button>
+      </div>}
     </div>
   );
 }

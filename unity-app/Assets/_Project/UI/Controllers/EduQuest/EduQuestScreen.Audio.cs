@@ -34,6 +34,13 @@ namespace EduQuest.Student
             }
         }
 
+        private void SetupSettings()
+        {
+            SetupAudioPreferences();
+            Click("settings-back", () => StudentNavigation.Go("Home"));
+            Click("settings-back-top", () => StudentNavigation.Go("Home"));
+        }
+
         private void SetupAudioPreferences()
         {
             var container = Q<VisualElement>("audio-settings");

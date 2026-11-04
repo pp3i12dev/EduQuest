@@ -264,6 +264,60 @@ namespace EduQuest.Student
                     LaunchActivity(chosen.id, chosen.title, chosen.gameType));
             }
         }
+        // Tablas móviles: ancho visible al 100 % y deslizamiento horizontal para todas las columnas.
+        // La corrección completa sigue obteniéndose desde el backend tras tocar «Ver».
+        private static ScrollView NewTable(VisualElement destination, string[] headers, float[] widths)
+        {
+            var scroll = new ScrollView(ScrollViewMode.Horizontal);
+            scroll.AddToClassList("eq-data-scroll");
+            scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroll.style.width = Length.Percent(100);
+            var grid = new VisualElement();
+            grid.AddToClassList("eq-data-table");
+            float totalWidth = widths.Sum();
+            grid.style.width = totalWidth;
+            var header = new VisualElement();
+            header.AddToClassList("eq-data-row");
+            header.AddToClassList("eq-data-head");
+            for (int i = 0; i < headers.Length; i++)
+                header.Add(DataCell(headers[i], widths[i], "eq-data-heading"));
+            grid.Add(header);
+            scroll.Add(grid);
+            destination.Add(scroll);
+            return scroll;
+        }
+
+        private static VisualElement DataCell(string value, float width, string kind = "")
+        {
+            var cell = new VisualElement();
+            cell.AddToClassList("eq-data-cell");
+            cell.style.width = width;
+            cell.style.minWidth = width;
+            cell.style.flexShrink = 0;
+            var content = Text(value ?? "—", "eq-data-text");
+            if (!string.IsNullOrEmpty(kind)) content.AddToClassList(kind);
+            cell.Add(content);
+            return cell;
+        }
+
+        private static VisualElement DataRow(VisualElement grid, int rowIndex, bool highlight = false)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("eq-data-row");
+            row.AddToClassList(rowIndex % 2 == 0 ? "eq-data-row-even" : "eq-data-row-odd");
+            if (highlight) row.AddToClassList("eq-data-row-me");
+            grid.Add(row);
+            return row;
+        }
+
+        private static string AttemptDate(string raw, string format)
+        {
+            if (DateTimeOffset.TryParse(raw, out var value))
+                return value.ToLocalTime().ToString(format);
+            return "—";
+        }
+
         private void SetupHistory()
         {
             var list = Items();
@@ -286,69 +340,88 @@ namespace EduQuest.Student
                 SetupLeaderboard(list);
                 return;
             }
-            bool includeHidden = historyShowHidden;
+            var includeHidden = historyShowHidden;
             var toggle = new Button(() =>
             {
                 historyShowHidden = !historyShowHidden;
                 SetupHistory();
-            }) { text = includeHidden ? "OCULTAR RESULTADOS ARCHIVADOS" : "VER TAMBIÉN RESULTADOS OCULTOS" };
+            }) { text = includeHidden ? "OCULTAR RESULTADOS ARCHIVADOS" : "VER RESULTADOS OCULTOS" };
             toggle.AddToClassList("secondary");
+            toggle.AddToClassList("eq-table-toggle");
             list.Add(toggle);
+            list.Add(Text("Deslizá la tabla hacia los costados para ver todas las columnas.", "eq-table-hint"));
             Run(async () =>
             {
                 var data = await EduQuestRuntime.Student.History(includeHidden);
                 if (this == null || historyShowHidden != includeHidden || StudentNavigation.RankingRequested) return;
                 var points = Q<Label>("total-points");
-                if (points != null) points.text = "★  " + data.totalPoints.ToString("N0") + " puntos totales";
+                if (points != null) points.text = "★ " + data.totalPoints.ToString("N0") + " puntos totales";
                 var note = Q<Label>("history-note");
                 if (note != null) note.text = data.retentionPolicy ?? "Se conservan los resultados recientes.";
                 if (data.items == null || data.items.Length == 0)
                 {
-                    Empty(list, includeHidden ? "No hay resultados registrados." : "No hay resultados visibles.");
+                    Empty(list, "Todavía no hay resultados para mostrar.");
                     return;
                 }
-                foreach (var item in data.items)
+
+                string[] headers = { "Alumno", "Contenido", "Unidad", "Tema", "Puntaje", "Nota", "Fecha", "Hora", "Acciones" };
+                float[] widths = { 116, 170, 124, 124, 83, 74, 97, 68, 128 };
+                var scroll = NewTable(list, headers, widths);
+                var grid = scroll.contentContainer.Q<VisualElement>(className: "eq-data-table");
+                var detail = new VisualElement();
+                detail.AddToClassList("eq-table-detail");
+                list.Add(detail);
+
+                for (int index = 0; index < data.items.Length; index++)
                 {
-                    var selected = item;
-                    var card = new VisualElement();
-                    card.AddToClassList("history-card");
-                    if (item.studentHidden) card.Add(Text("OCULTO EN VERSIONES ANTERIORES", "eyebrow"));
-                    card.Add(Text("ALUMNO · " + (item.studentName ?? "Alumno"), "eyebrow"));
-                    card.Add(Text(item.activityTitle, "list-title"));
-                    card.Add(Text("CURSO " + item.courseName + " · " + item.subjectName, "list-subtitle"));
-                    card.Add(Text("UNIDAD " + item.unitName + " · TEMA " + item.topicName, "list-subtitle"));
-                    card.Add(Text("Puntaje: " + item.score + "%  ·  Nota: " + item.grade.ToString("0.0") + "/10", "list-subtitle"));
-                    card.Add(Text(item.earnedPoints.HasValue ? item.earnedPoints.Value + " puntos obtenidos" : "Puntos históricos sin detalle", "list-subtitle"));
-                    card.Add(Text("Fecha y hora: " + Date(item.completedAt), "list-subtitle"));
+                    var item = data.items[index];
+                    var chosen = item;
+                    var row = DataRow(grid, index, item.studentHidden);
+                    row.Add(DataCell(item.studentName ?? "Alumno", widths[0]));
+                    row.Add(DataCell(item.activityTitle, widths[1], "eq-data-prominent"));
+                    row.Add(DataCell(item.unitName, widths[2]));
+                    row.Add(DataCell(item.topicName, widths[3]));
+                    row.Add(DataCell(item.score + "%", widths[4], "eq-data-score"));
+                    row.Add(DataCell(item.grade.ToString("0.0") + "/10", widths[5], "eq-data-grade"));
+                    row.Add(DataCell(AttemptDate(item.completedAt, "dd/MM/yy"), widths[6]));
+                    row.Add(DataCell(AttemptDate(item.completedAt, "HH:mm"), widths[7]));
                     var actions = new VisualElement();
-                    actions.AddToClassList("history-actions");
-                    var details = new VisualElement();
+                    actions.AddToClassList("eq-data-cell");
+                    actions.AddToClassList("eq-data-actions");
+                    actions.style.width = widths[8];
+                    actions.style.minWidth = widths[8];
+                    actions.style.flexShrink = 0;
                     var view = new Button(() => Run(async () =>
                     {
-                        details.Clear();
-                        var result = await EduQuestRuntime.Student.HistoryDetail(selected.id);
-                        if (this == null) return;
-                        RenderAttemptReview(details, result.review);
-                    })) { text = "VER RESPUESTAS" };
-                    view.AddToClassList("secondary"); actions.Add(view);
+                        detail.Clear();
+                        detail.Add(Text("Cargando respuestas…", "muted"));
+                        var result = await EduQuestRuntime.Student.HistoryDetail(chosen.id);
+                        if (this == null || StudentNavigation.RankingRequested) return;
+                        detail.Clear();
+                        detail.Add(Text("Revisión · " + chosen.activityTitle, "list-title"));
+                        RenderAttemptReview(detail, result.review);
+                    })) { text = "Ver" };
+                    view.AddToClassList("eq-data-button");
+                    actions.Add(view);
                     if (item.canDelete)
                     {
                         bool confirmed = false;
-                        var delete = new Button() { text = "ELIMINAR" };
-                        delete.AddToClassList("danger");
+                        var delete = new Button() { text = "Borrar" };
+                        delete.AddToClassList("eq-data-button");
+                        delete.AddToClassList("eq-data-delete");
                         delete.clicked += () =>
                         {
                             if (!confirmed)
                             {
                                 confirmed = true;
-                                delete.text = "CONFIRMAR BORRADO";
-                                Status("Se borrará para siempre, también del docente. Se descontarán los puntos obtenidos. Tocá de nuevo para confirmar.");
+                                delete.text = "Confirmar";
+                                Status("El resultado se eliminará también del historial docente y se descontarán los puntos. Tocá Confirmar para continuar.");
                                 return;
                             }
                             delete.SetEnabled(false);
                             Run(async () =>
                             {
-                                var done = await EduQuestRuntime.Student.DeleteHistoryPermanently(selected.id);
+                                var done = await EduQuestRuntime.Student.DeleteHistoryPermanently(chosen.id);
                                 if (this == null) return;
                                 SetupHistory();
                                 Status(done.message, true);
@@ -356,20 +429,17 @@ namespace EduQuest.Student
                         };
                         actions.Add(delete);
                     }
-                    else
-                    {
-                        card.Add(Text(item.deleteBlockedReason ?? "Resultado protegido.", "muted"));
-                    }
-                    card.Add(actions); card.Add(details); list.Add(card);
+                    row.Add(actions);
                 }
             });
         }
+
         private void SetupLeaderboard(VisualElement list)
         {
             var points = Q<Label>("total-points");
-            if (points != null) points.text = "🏆 CLASIFICACIONES DEL CURSO";
+            if (points != null) points.text = "CLASIFICACIONES DEL CURSO";
             var note = Q<Label>("history-note");
-            if (note != null) note.text = "Solo compañeros de tu curso. Se muestra el nombre de pila y la inicial del apellido.";
+            if (note != null) note.text = "Compiten solamente los alumnos de tu curso. Se muestra el nombre y la inicial del apellido.";
             Run(async () =>
             {
                 var data = await EduQuestRuntime.Student.Leaderboard();
@@ -385,11 +455,11 @@ namespace EduQuest.Student
             list.Add(Text(data.courseName + " · " + data.academicYear, "list-title"));
             var myRank = Text("", "eyebrow");
             list.Add(myRank);
-            list.Add(Text("Los intentos repetidos no suman: se toma la mejor puntuación.", "muted"));
+            list.Add(Text("Mejor nota por actividad. Las actividades pendientes cuentan como 0 en el promedio general.", "eq-table-hint"));
             var options = new List<string> { "General · Todas las actividades" };
             foreach (var activity in data.activities ?? Array.Empty<LeaderboardActivityDTO>())
                 options.Add(activity.title + " (#" + activity.id + ")");
-            var select = new DropdownField("Ver clasificación", options, 0);
+            var select = new DropdownField("Clasificación", options, 0);
             select.AddToClassList("eq-ranking-activity-select");
             list.Add(select);
             var rankingBoard = new VisualElement();
@@ -399,26 +469,28 @@ namespace EduQuest.Student
                 rankingBoard.Clear();
                 var ownRow = result?.rows?.FirstOrDefault(x => x.isMe);
                 myRank.text = ownRow?.position != null
-                    ? "Mi puesto " + (result.mode == "GENERAL" ? "general" : "en esta actividad") + ": #" + ownRow.position.Value
-                    : "Jugá una actividad para aparecer en la clasificación.";
+                    ? "Mi puesto: #" + ownRow.position.Value
+                    : "Todavía no tenés una posición registrada.";
                 if (result?.rows == null || result.rows.Length == 0)
                 {
                     rankingBoard.Add(Text("Todavía no hay resultados disponibles.", "muted"));
                     return;
                 }
-                rankingBoard.Add(Text(result.mode == "GENERAL" ? "Promedio de todas las actividades" : (result.activityName ?? "Actividad"), "list-title"));
-                foreach (var row in result.rows)
+                rankingBoard.Add(Text(result.mode == "GENERAL" ? "Promedio general del curso" : (result.activityName ?? "Actividad"), "list-title"));
+                rankingBoard.Add(Text("Deslizá horizontalmente para ver todas las columnas.", "eq-table-hint"));
+                var widths = new float[] { 72, 180, 110, 95, 142 };
+                var tableScroll = NewTable(rankingBoard,
+                    new[] { "Puesto", "Alumno", "Puntaje", "Nota", "Completadas" }, widths);
+                var grid = tableScroll.contentContainer.Q<VisualElement>(className: "eq-data-table");
+                for (int i = 0; i < result.rows.Length; i++)
                 {
-                    var card = new VisualElement();
-                    card.AddToClassList("eq-ranking-entry");
-                    if (row.isMe) card.AddToClassList("eq-ranking-mine");
-                    card.Add(Text(row.position.HasValue ? "#" + row.position.Value : "—", "eq-ranking-place"));
-                    var details = new VisualElement();
-                    details.AddToClassList("eq-ranking-person");
-                    details.Add(Text((row.isMe ? "★ " : "") + row.name, "eq-ranking-name"));
-                    details.Add(Text(row.score.ToString("0.0") + "%  ·  " + row.completedCount + "/" + row.totalActivities + " actividades", "eq-ranking-points"));
-                    card.Add(details);
-                    rankingBoard.Add(card);
+                    var entry = result.rows[i];
+                    var row = DataRow(grid, i, entry.isMe);
+                    row.Add(DataCell(entry.position.HasValue ? "#" + entry.position.Value : "—", widths[0], "eq-data-rank"));
+                    row.Add(DataCell(entry.name + (entry.isMe ? " (yo)" : ""), widths[1], "eq-data-prominent"));
+                    row.Add(DataCell(entry.score.ToString("0.0") + "%", widths[2], "eq-data-score"));
+                    row.Add(DataCell(entry.grade.ToString("0.0") + "/10", widths[3], "eq-data-grade"));
+                    row.Add(DataCell(entry.completedCount + " / " + entry.totalActivities, widths[4]));
                 }
             }
             Paint(data);

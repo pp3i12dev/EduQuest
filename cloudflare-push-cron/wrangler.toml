@@ -1,0 +1,11 @@
+name = "eduquest-push-recovery"
+main = "src/index.js"
+compatibility_date = "2026-11-04"
+
+[triggers]
+crons = ["*/20 * * * *"]
+
+# Cambiar por la URL real de Render, SIN /api.
+[vars]
+EDUQUEST_API_URL = "https://REEMPLAZAR.onrender.com"
+# EDUQUEST_QUEUE_SECRET se configura con: npx wrangler secret put EDUQUEST_QUEUE_SECRET

@@ -57,6 +57,24 @@ namespace EduQuest.Student
             slider.AddToClassList("eq-audio-volume");
             slider.RegisterValueChangedCallback(e => EduQuestSound.SetVolume(e.newValue));
             container.Add(slider);
+
+            var musicTitle = new Label("Música de fondo");
+            musicTitle.AddToClassList("eq-audio-music-title");
+            container.Add(musicTitle);
+            var musicToggle = new Button();
+            musicToggle.AddToClassList("secondary");
+            void RefreshMusic() { musicToggle.text = EduQuestSound.MusicEnabled ? "Música: ACTIVADA" : "Música: DESACTIVADA"; }
+            RefreshMusic();
+            musicToggle.clicked += () =>
+            {
+                EduQuestSound.SetMusicEnabled(!EduQuestSound.MusicEnabled);
+                RefreshMusic();
+            };
+            container.Add(musicToggle);
+            var musicVolume = new Slider("Volumen de música", 0f, 1f) { value = EduQuestSound.MusicVolume };
+            musicVolume.AddToClassList("eq-audio-volume");
+            musicVolume.RegisterValueChangedCallback(e => EduQuestSound.SetMusicVolume(e.newValue));
+            container.Add(musicVolume);
         }
     }
 }

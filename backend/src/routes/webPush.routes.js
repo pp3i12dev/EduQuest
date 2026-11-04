@@ -7,5 +7,6 @@ router.use(authenticate);
 router.get('/devices', c.devices);
 router.post('/subscriptions', c.subscribe);
 router.post('/status', c.status);
+router.post('/test', c.test);
 router.delete('/subscriptions', c.unsubscribe);
 export default router;
