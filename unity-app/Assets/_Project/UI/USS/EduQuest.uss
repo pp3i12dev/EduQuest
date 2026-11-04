@@ -693,3 +693,80 @@
 .eq-theme .eq-ranking-mine { background-color: rgb(255,237,164); }
 .eq-theme .eq-ranking-home { width: 100%; min-height: 90px; }
 .eq-theme .eq-ranking-activity-select { width: 100%; min-width: 0; margin-bottom: 11px; }
+
+/* Entrega 17 · Iconos reales, música, tablas académicas a ancho completo */
+.eq-theme .eq-ranking-home-icon {
+    width: 61px; height: 59px; min-width: 61px;
+    margin-bottom: 3px; -unity-background-scale-mode: scale-to-fit;
+}
+.eq-theme .eq-ranking-home {
+    flex-direction: column; justify-content: center; align-items: center;
+    min-height: 105px;
+}
+.eq-theme .eq-ranking-tab {
+    flex-direction: row; align-items: center; justify-content: center;
+}
+.eq-theme .eq-ranking-tab-icon {
+    width: 24px; height: 24px; min-width: 24px;
+    margin-right: 6px; -unity-background-scale-mode: scale-to-fit;
+}
+.eq-theme .eq-ranking-tab-text { font-size: 13px; -unity-font-style: bold; }
+.eq-theme .eq-audio-music-title {
+    font-size: 16px; color: rgb(72,47,134); -unity-font-style: bold;
+    margin-top: 18px; margin-bottom: 5px;
+}
+.eq-theme .eq-data-scroll {
+    width: 100%; min-width: 0;
+    margin-top: 7px; margin-bottom: 12px;
+    border-radius: 16px; border-width: 1px;
+    border-color: rgb(191,174,240);
+    background-color: rgb(250,248,255);
+}
+.eq-theme .eq-data-scroll .unity-scroll-view__content-container { padding: 0; }
+.eq-theme .eq-data-table { flex-direction: column; }
+.eq-theme .eq-data-row {
+    flex-direction: row; align-items: stretch;
+    min-height: 61px; border-bottom-width: 1px;
+    border-bottom-color: rgb(226,216,250);
+}
+.eq-theme .eq-data-head {
+    min-height: 46px; background-color: rgb(99,63,187);
+    border-bottom-width: 2px; border-bottom-color: rgb(250,197,68);
+}
+.eq-theme .eq-data-row-even { background-color: rgb(251,248,255); }
+.eq-theme .eq-data-row-odd { background-color: rgb(237,230,254); }
+.eq-theme .eq-data-row-me { background-color: rgb(255,233,154); }
+.eq-theme .eq-data-cell {
+    flex-direction: column; justify-content: center;
+    padding-left: 7px; padding-right: 7px;
+    padding-top: 5px; padding-bottom: 5px;
+    border-right-width: 1px; border-right-color: rgba(158,136,212,0.28);
+}
+.eq-theme .eq-data-text {
+    font-size: 12px; color: rgb(59,43,115);
+    white-space: normal; -unity-text-align: middle-left;
+}
+.eq-theme .eq-data-heading {
+    color: rgb(255,251,235); font-size: 12px; -unity-font-style: bold;
+}
+.eq-theme .eq-data-prominent { -unity-font-style: bold; color: rgb(63,35,143); }
+.eq-theme .eq-data-score { color: rgb(3,123,133); -unity-font-style: bold; font-size: 15px; }
+.eq-theme .eq-data-grade { color: rgb(117,57,167); -unity-font-style: bold; font-size: 14px; }
+.eq-theme .eq-data-rank { color: rgb(172,92,5); -unity-font-style: bold; font-size: 19px; }
+.eq-theme .eq-data-actions { align-items: stretch; padding-left: 6px; padding-right: 6px; }
+.eq-theme .eq-data-button {
+    width: 100%; min-height: 28px;
+    border-width: 1px; border-color: rgb(118,77,195);
+    background-color: rgb(118,77,195); color: white;
+    border-radius: 8px; font-size: 11px;
+    margin-bottom: 3px; padding-left: 4px; padding-right: 4px;
+}
+.eq-theme .eq-data-delete { background-color: rgb(255,231,235); border-color: rgb(207,86,108); color: rgb(144,47,68); }
+.eq-theme .eq-table-hint { color: rgb(103,78,148); font-size: 11px; white-space: normal; margin-top: 6px; margin-bottom: 7px; }
+.eq-theme .eq-table-detail {
+    width: 100%; min-width: 0;
+    border-radius: 14px; border-width: 1px; border-color: rgb(211,195,245);
+    background-color: rgb(248,244,255);
+    padding: 10px; margin-bottom: 10px;
+}
+.eq-theme .eq-table-toggle { margin-bottom: 4px; }

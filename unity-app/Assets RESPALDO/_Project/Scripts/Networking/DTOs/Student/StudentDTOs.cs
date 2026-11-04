@@ -40,6 +40,23 @@ namespace EduQuest.Student
     {
         public ReviewAnswerDTO[] review;
     }
+    [Serializable] public class LeaderboardDTO
+    {
+        public int courseId, academicYear, totalActivities;
+        public string courseName, mode, activityName, policy;
+        public int? activityId, myPosition;
+        public LeaderboardActivityDTO[] activities;
+        public LeaderboardRowDTO[] rows;
+    }
+    [Serializable] public class LeaderboardActivityDTO { public int id; public string title; }
+    [Serializable] public class LeaderboardRowDTO
+    {
+        public int? studentId, position;
+        public string name;
+        public float score, grade;
+        public int completedCount, totalActivities, coverage;
+        public bool isMe;
+    }
     [Serializable] public class AvatarDTO { public string avatarId; }
     [Serializable] public class ProfileDTO { public int id; public string dni, firstName, lastName, email, telefono; public bool isActive; public string[] roles; }
     [Serializable] public class GameTypeDTO { public string gameType, name; public int activities; }

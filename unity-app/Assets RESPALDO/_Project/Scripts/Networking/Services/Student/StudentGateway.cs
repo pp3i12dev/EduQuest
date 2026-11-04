@@ -16,6 +16,9 @@ namespace EduQuest.Student
         // Nunca abrir downloadPath en navegador sin JWT: se descarga por la API autorizada.
         public Task<byte[]> DownloadStudyMaterial(int materialId) =>
             api.GetBytesAsync("/student/materials/" + materialId + "/file");
+        public Task<LeaderboardDTO> Leaderboard(int? activityId = null) =>
+            api.GetAsync<LeaderboardDTO>("/student/leaderboard" +
+                (activityId.HasValue ? "?activityId=" + activityId.Value : ""));
         public Task<HistoryDTO> History(bool includeHidden = false) =>
             api.GetAsync<HistoryDTO>("/student/history" + (includeHidden ? "?includeHidden=true" : ""));
         public Task<AttemptDetailDTO> HistoryDetail(int attemptId) => api.GetAsync<AttemptDetailDTO>("/student/history/" + attemptId);

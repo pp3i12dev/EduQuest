@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Archive, ArchiveRestore, BookOpen, CalendarClock, CheckCircle2,
   ChevronLeft, ClipboardCheck, Eye, GraduationCap, RefreshCw,
-  Search, Sparkles, Trash2, TrendingUp, Users, X, XCircle,
+  Search, Sparkles, Trash2, TrendingUp, Users, X, XCircle, Trophy, ListChecks, UserRound,
 } from 'lucide-react';
 import { assessmentService } from '../services/assessment.service';
 
@@ -49,6 +49,12 @@ export default function TeacherAssessmentsView() {
   const [notice, setNotice] = useState('');
   const [deleting, setDeleting] = useState(null);
   const [confirmText, setConfirmText] = useState('');
+  const [leaderboard, setLeaderboard] = useState(null);
+  const [rankingActivity, setRankingActivity] = useState(activityId);
+  const [rankingLoading, setRankingLoading] = useState(false);
+  const [viewMode, setViewMode] = useState(params.get('view') === 'ranking' ? 'ranking' : params.get('view') === 'student' ? 'student' : 'activity');
+  const [focusActivity, setFocusActivity] = useState(activityId);
+
 
   useEffect(() => {
     let active = true;
@@ -66,12 +72,23 @@ export default function TeacherAssessmentsView() {
     return () => { active = false; };
   }, [routeAssignmentId]);
 
+  useEffect(() => {
+    if (!assignmentId) { setLeaderboard(null); return; }
+    let alive = true;
+    setRankingLoading(true);
+    assessmentService.leaderboard(assignmentId, rankingActivity)
+      .then(data => { if (alive) setLeaderboard(data); })
+      .catch(e => { if (alive) { setLeaderboard(null); setError(e.response?.data?.message || 'No se pudo consultar la clasificación.'); } })
+      .finally(() => { if (alive) setRankingLoading(false); });
+    return () => { alive = false; };
+  }, [assignmentId, rankingActivity]);
+
   const loadAttempts = async () => {
     if (!assignmentId) { setRows([]); return; }
     setBusy(true);
     setError('');
     try {
-      const data = await assessmentService.list(assignmentId, { includeArchived, activityId });
+      const data = await assessmentService.list(assignmentId, { includeArchived });
       setRows(data.records || []);
     } catch (e) {
       setError(e.response?.data?.message || 'No se pudo consultar el historial.');
@@ -91,18 +108,46 @@ export default function TeacherAssessmentsView() {
   }, [assignmentId, includeArchived, activityId]);
 
   const assignment = assignments.find(item => String(item.id) === String(assignmentId));
-  const students = useMemo(() => Array.from(new Map(rows.map(r => [String(r.studentId), r.studentName])).entries())
-    .sort((a, b) => a[1].localeCompare(b[1], 'es')), [rows]);
+  const students = useMemo(() => {
+    const map = new Map();
+    // Clasificación docente: también incluye alumnos que aún no realizaron intentos.
+    for (const entry of leaderboard?.rows || []) {
+      if (entry.studentId != null) map.set(String(entry.studentId), entry.name);
+    }
+    for (const record of rows) map.set(String(record.studentId), record.studentName);
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], 'es'));
+  }, [rows, leaderboard]);
+
+  const activityGroups = useMemo(() => {
+    const groups = new Map();
+    // También ofrecer actividades publicadas con 0 intentos.
+    for (const activity of leaderboard?.activities || []) {
+      groups.set(String(activity.id), { key: String(activity.id), label: activity.title, results: 0, students: new Set() });
+    }
+    for (const row of rows) {
+      const key = row.activityId == null ? `historical:${row.content}` : String(row.activityId);
+      if (!groups.has(key)) groups.set(key, { key, label: row.content, results: 0, students: new Set() });
+      const group = groups.get(key);
+      group.results += 1;
+      group.students.add(row.studentId);
+    }
+    return [...groups.values()].map(group => ({ ...group, studentCount: group.students.size }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+  }, [rows, leaderboard]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('es');
     return rows.filter(row => {
-      if (studentId && String(row.studentId) !== studentId) return false;
+      if (viewMode === 'activity') {
+        const key = row.activityId == null ? `historical:${row.content}` : String(row.activityId);
+        if (!focusActivity || key !== focusActivity) return false;
+      }
+      if (viewMode === 'student' && (!studentId || String(row.studentId) !== studentId)) return false;
       if (!query) return true;
       return [row.studentName, row.content, row.unitName, row.topicName, row.subjectName]
         .some(value => String(value || '').toLocaleLowerCase('es').includes(query));
     });
-  }, [rows, studentId, search]);
+  }, [rows, studentId, search, viewMode, focusActivity]);
 
   const statistics = useMemo(() => {
     const count = filtered.length;
@@ -156,9 +201,9 @@ export default function TeacherAssessmentsView() {
         <span>Resultados filtrados por actividad #{activityId}</span>
         <Link to={`/dashboard/my-subjects/${routeAssignmentId}/results`} className="rounded-lg bg-violet-500 px-3 py-2 font-semibold">Ver todas</Link>
       </div>}
-      <header className="relative overflow-hidden rounded-3xl border border-indigo-400/25 bg-gradient-to-r from-[#152449] via-[#162443] to-[#102b33] p-6 shadow-lg shadow-slate-950/20 sm:p-7">
+      <header className="relative overflow-hidden rounded-3xl border border-indigo-400/25 bg-gradient-to-r from-[#152449] via-[#162443] to-[#102b33] p-4 shadow-lg shadow-slate-950/20 sm:p-5">
         <div className="pointer-events-none absolute -right-12 -top-16 h-52 w-52 rounded-full bg-indigo-500/15 blur-3xl" />
-        <Link to="/dashboard/my-subjects" className="relative mb-4 inline-flex items-center gap-2 text-sm font-medium text-indigo-200 transition hover:text-white">
+        <Link to="/dashboard/my-subjects" className="relative mb-2 inline-flex items-center gap-2 text-sm font-medium text-indigo-200 transition hover:text-white">
           <ChevronLeft size={16} /> Volver a mis cursos
         </Link>
         <div className="relative flex items-start gap-4">
@@ -167,12 +212,50 @@ export default function TeacherAssessmentsView() {
             <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-300">
               <Sparkles size={12} /> Seguimiento académico
             </div>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Resultados y notas</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">Consultá calificaciones, revisá cada respuesta y administrá el historial de las actividades de tus alumnos.</p>
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Resultados y notas</h1>
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-300">Consultá calificaciones, revisá cada respuesta y administrá el historial de las actividades de tus alumnos.</p>
           </div>
         </div>
       </header>
 
+      <nav aria-label="Explorar evaluaciones" className="grid gap-2 rounded-2xl border border-indigo-400/25 bg-slate-900/80 p-3 sm:grid-cols-3">
+        {[
+          { key: 'activity', label: 'Por actividad', Icon: ListChecks, hint: 'Actividad → alumnos' },
+          { key: 'student', label: 'Por alumno', Icon: UserRound, hint: 'Alumno → historial' },
+          { key: 'ranking', label: 'Clasificaciones', Icon: Trophy, hint: 'Por actividad y general' },
+        ].map(tab => <button key={tab.key} type="button" onClick={() => setViewMode(tab.key)}
+          aria-current={viewMode === tab.key ? 'page' : undefined}
+          className={`flex min-w-0 items-center gap-3 rounded-xl border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 ${viewMode === tab.key ? 'border-amber-300 bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10' : 'border-slate-700 bg-slate-800/70 text-slate-200 hover:border-indigo-400 hover:bg-indigo-500/15'}`}>
+          <tab.Icon size={23} className="shrink-0" />
+          <span className="min-w-0"><strong className="block text-sm">{tab.label}</strong><small className="block text-[11px] opacity-80">{tab.hint}</small></span>
+        </button>)}
+      </nav>
+
+      {viewMode !== 'ranking' && <>
+        <section className="rounded-2xl border border-violet-400/25 bg-[#101b2f]/90 p-4 sm:p-5" aria-label={viewMode === 'activity' ? 'Elegir actividad' : 'Elegir alumno'}>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 font-bold text-violet-100">
+              {viewMode === 'activity' ? <ListChecks size={19} /> : <Users size={19} />}
+              {viewMode === 'activity' ? '1. Elegí la actividad' : '1. Elegí al alumno'}
+            </h2>
+            <span className="text-xs text-slate-400">{viewMode === 'activity' ? `${activityGroups.length} actividades` : `${students.length} alumnos`}</span>
+          </div>
+          <div className="grid max-h-[360px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
+            {viewMode === 'activity' ? activityGroups.map(group =>
+              <button type="button" key={group.key} onClick={() => { setFocusActivity(group.key); setSelected(null); }}
+                aria-pressed={focusActivity === group.key}
+                className={`flex flex-col gap-2 rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 ${focusActivity === group.key ? 'border-amber-300 bg-amber-500/15 text-amber-100' : 'border-violet-500/25 bg-slate-800/50 text-slate-200 hover:bg-violet-500/15'}`}>
+                <strong className="text-sm">{group.label}</strong>
+                <span className="text-xs opacity-80">{group.studentCount} alumnos · {group.results} intentos</span>
+              </button>) : students.map(([id, name]) =>
+              <button type="button" key={id} onClick={() => { setStudentId(id); setSelected(null); }}
+                aria-pressed={studentId === id}
+                className={`rounded-xl border p-3 text-left text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 ${studentId === id ? 'border-amber-300 bg-amber-500/15 text-amber-100' : 'border-violet-500/25 bg-slate-800/50 text-slate-200 hover:bg-violet-500/15'}`}>
+                <UserRound className="mr-2 inline" size={16}/>{name}
+              </button>)}
+          </div>
+          {(viewMode === 'activity' && !focusActivity || viewMode === 'student' && !studentId) && <p className="mt-3 text-sm text-slate-400">Seleccioná una tarjeta para ver su historial, respuestas y calificaciones.</p>}
+        </section>
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumen de resultados">
         {[
           { label: 'Actividades realizadas', value: statistics.count, icon: ClipboardCheck, tone: 'border-sky-500/30 bg-sky-500/10 text-sky-300' },
@@ -187,21 +270,51 @@ export default function TeacherAssessmentsView() {
         ))}
       </section>
 
+      </>}
+      {viewMode === 'ranking' && (
+      <section className="rounded-2xl border border-amber-500/30 bg-[#101b2f]/95 p-5" aria-label="Tabla de posiciones">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-amber-200"><TrendingUp size={20}/> Clasificación del curso</h2>
+          <label className="flex flex-col gap-1 text-xs text-slate-300">Ámbito
+            <select className={inputStyle} value={rankingActivity} onChange={e => setRankingActivity(e.target.value)}>
+              <option value="">Promedio general de todo el curso</option>
+              {(leaderboard?.activities || []).map(a => <option key={a.id} value={a.id}>{a.title}</option>)}
+            </select>
+          </label>
+        </div>
+        <p className="mb-3 text-xs leading-relaxed text-slate-400">Elegí «Promedio general» o una actividad. Se considera la mejor nota por actividad. En el promedio general, las actividades pendientes cuentan como 0 hasta que se completen. Solo alumnos matriculados en el curso.</p>
+        {rankingLoading ? <p className="py-5 text-sm text-amber-200">Calculando posiciones…</p> :
+          leaderboard?.rows?.length ? <div className="max-h-[420px] overflow-auto rounded-xl border border-slate-700">
+            <table className="w-full min-w-[480px] text-left text-sm">
+              <thead className="sticky top-0 bg-[#26334c] text-amber-200"><tr><th className="p-3">Posición</th><th className="p-3">Alumno</th><th className="p-3">Puntaje</th><th className="p-3">Realizadas</th><th className="p-3">Nota</th></tr></thead>
+              <tbody>{leaderboard.rows.map(row => <tr key={row.studentId} className="border-t border-slate-700/70">
+                <td className="p-3 font-bold text-amber-300">{row.position ? `#${row.position}` : '—'}</td>
+                <td className="p-3 text-white">{row.name}</td>
+                <td className="p-3 tabular-nums">{row.score}%</td>
+                <td className="p-3 tabular-nums">{row.completedCount}/{row.totalActivities}</td>
+                <td className="p-3 tabular-nums">{gradeText(row.grade)}/10</td>
+              </tr>)}</tbody>
+            </table>
+          </div> : <p className="py-5 text-sm text-slate-400">Todavía no hay alumnos o actividades disponibles para clasificar.</p>}
+      </section>
+      )}
+
+      {viewMode !== 'ranking' && <>
       <section className="rounded-2xl border border-slate-700/80 bg-[#101b2f]/90 p-5">
         <div className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-200"><BookOpen size={17} className="text-indigo-300" /> Filtros del historial</div>
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
           <div className="flex min-w-0 flex-col gap-2">
             <span className="text-xs font-semibold text-slate-400">Curso y materia</span>
             <div className={`${inputStyle} min-h-[46px] truncate border-indigo-500/30 bg-indigo-500/10 text-indigo-100`} title={assignment ? `${assignment.courseName} · ${assignment.subjectName}` : ''}>
               {assignment ? `${assignment.courseName} · ${assignment.subjectName} (${assignment.academicYear})` : 'Sin asignación autorizada'}
             </div>
           </div>
-          <label className="flex flex-col gap-2 text-xs font-semibold text-slate-400">Alumno
+          {viewMode === 'student' && <label className="flex flex-col gap-2 text-xs font-semibold text-slate-400">Alumno
             <select className={`${inputStyle} cursor-pointer`} value={studentId} onChange={e => setStudentId(e.target.value)}>
               <option value="">Todos los alumnos</option>
               {students.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
             </select>
-          </label>
+          </label>}
           <label className="flex flex-col gap-2 text-xs font-semibold text-slate-400">Buscar contenido
             <div className="relative"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input className={`${inputStyle} pl-10`} value={search} onChange={e => setSearch(e.target.value)} placeholder="Alumno, unidad, tema..." />
@@ -221,7 +334,7 @@ export default function TeacherAssessmentsView() {
 
       <section className="overflow-hidden rounded-2xl border border-slate-700/80 bg-[#101a2e]/95 shadow-xl shadow-black/10">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/70 px-5 py-4">
-          <div className="flex items-center gap-2 font-bold"><CalendarClock size={18} className="text-sky-300" /> Historial de actividades</div>
+          <div className="flex items-center gap-2 font-bold"><CalendarClock size={18} className="text-sky-300" /> {viewMode === 'activity' ? '2. Resultados de la actividad' : '2. Historial del alumno'}</div>
           <span className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1 text-xs font-medium text-sky-200">{filtered.length} {filtered.length === 1 ? 'registro' : 'registros'}</span>
         </div>
         <div className="overflow-x-auto">
@@ -255,6 +368,8 @@ export default function TeacherAssessmentsView() {
         {!busy && filtered.length === 0 && !error && <div className="px-6 py-12 text-center"><BookOpen size={32} className="mx-auto mb-3 text-indigo-300" /><p className="font-semibold text-slate-200">Sin resultados para estos filtros</p><p className="mt-1 text-xs text-slate-400">Probá con otro alumno o verificá que haya actividades completadas.</p></div>}
         {busy && <div className="p-8 text-center text-sm text-sky-300">Consultando resultados...</div>}
       </section>
+
+      </>}
 
       {selected && <div role="dialog" aria-modal="true" aria-label="Corrección del intento" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
         <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-indigo-400/30 bg-[#101a2e] p-5 shadow-2xl sm:p-6">

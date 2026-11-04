@@ -5,62 +5,67 @@ using UnityEngine.SceneManagement;
 namespace EduQuest.Student
 {
     /// <summary>
-    /// Efectos de audio comunes para UI Toolkit y juegos. Los clips se cargan desde
-    /// Resources/EduQuest/Audio. Un solo AudioSource persiste al cambiar escenas.
-    /// Se pueden reemplazar los WAV sin modificar código ni escenas.
+    /// Sonidos y música original en bucle, sin dependencias de Unity Audio Mixer.
+    /// Se conserva una sola instancia entre escenas; la música tiene volumen propio.
     /// </summary>
     public sealed class EduQuestSound : MonoBehaviour
     {
         private const string EnabledKey = "EduQuest.Audio.Enabled";
         private const string VolumeKey = "EduQuest.Audio.Volume";
+        private const string MusicEnabledKey = "EduQuest.Music.Enabled";
+        private const string MusicVolumeKey = "EduQuest.Music.Volume";
         private static EduQuestSound instance;
         private static bool quitting;
         private AudioSource source;
+        private AudioSource musicSource;
         private AudioListener fallbackListener;
         private int nextListenerCheck;
         private readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
         private readonly HashSet<string> missing = new HashSet<string>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetDomain()
-        {
-            quitting = false;
-            instance = null;
-        }
+        private static void ResetDomain() { quitting = false; instance = null; }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap() { Prepare(); }
 
         public static bool Enabled => PlayerPrefs.GetInt(EnabledKey, 1) == 1;
         public static float Volume => Mathf.Clamp01(PlayerPrefs.GetFloat(VolumeKey, 0.7f));
+        public static bool MusicEnabled => PlayerPrefs.GetInt(MusicEnabledKey, 1) == 1;
+        public static float MusicVolume => Mathf.Clamp01(PlayerPrefs.GetFloat(MusicVolumeKey, 0.22f));
 
         public static void Prepare()
         {
             if (instance != null || quitting) return;
-            var audioObject = new GameObject("EduQuest - Audio UI");
-            instance = audioObject.AddComponent<EduQuestSound>();
-            DontDestroyOnLoad(audioObject);
+            var host = new GameObject("EduQuest - Música y efectos");
+            instance = host.AddComponent<EduQuestSound>();
+            DontDestroyOnLoad(host);
         }
 
         private void Awake()
         {
-            if (instance != null && instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
+            if (instance != null && instance != this) { Destroy(gameObject); return; }
             instance = this;
-            source = gameObject.GetComponent<AudioSource>();
-            if (source == null) source = gameObject.AddComponent<AudioSource>();
+            source = gameObject.AddComponent<AudioSource>();
             source.playOnAwake = false;
             source.loop = false;
             source.spatialBlend = 0f;
             source.ignoreListenerPause = true;
+
+            musicSource = gameObject.AddComponent<AudioSource>();
+            musicSource.playOnAwake = false;
+            musicSource.loop = true;
+            musicSource.spatialBlend = 0f;
+            musicSource.volume = MusicVolume;
+            musicSource.clip = Resources.Load<AudioClip>("EduQuest/Audio/BackgroundLoop");
+            if (musicSource.clip == null)
+                Debug.LogWarning("EduQuest: falta el audio Resources/EduQuest/Audio/BackgroundLoop.wav");
             fallbackListener = gameObject.AddComponent<AudioListener>();
             SyncListener();
+            SyncMusic();
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode) { SyncListener(); }
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode) { SyncListener(); SyncMusic(); }
         private void LateUpdate()
         {
             if (Time.frameCount < nextListenerCheck) return;
@@ -71,25 +76,28 @@ namespace EduQuest.Student
         {
             if (fallbackListener == null) return;
             bool anotherEnabled = false;
-            var listeners = FindObjectsByType<AudioListener>(FindObjectsSortMode.None);
-            foreach (var item in listeners)
+            foreach (var other in FindObjectsByType<AudioListener>(FindObjectsSortMode.None))
             {
-                if (item != fallbackListener && item.isActiveAndEnabled)
-                {
-                    anotherEnabled = true;
-                    break;
-                }
+                if (other != fallbackListener && other.isActiveAndEnabled)
+                { anotherEnabled = true; break; }
             }
-            // Exactamente un listener activo. Una cámara de juego tiene prioridad.
             fallbackListener.enabled = !anotherEnabled;
         }
-
+        private void SyncMusic()
+        {
+            if (musicSource == null) return;
+            musicSource.volume = MusicVolume;
+            if (MusicEnabled && MusicVolume > 0f && musicSource.clip != null)
+            {
+                if (!musicSource.isPlaying) musicSource.Play();
+            }
+            else if (musicSource.isPlaying) musicSource.Pause();
+        }
         private void OnDestroy()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
             if (instance == this) instance = null;
         }
-
         private void OnApplicationQuit() { quitting = true; }
 
         public static void SetEnabled(bool enabled)
@@ -97,11 +105,24 @@ namespace EduQuest.Student
             PlayerPrefs.SetInt(EnabledKey, enabled ? 1 : 0);
             PlayerPrefs.Save();
         }
-
         public static void SetVolume(float volume)
         {
             PlayerPrefs.SetFloat(VolumeKey, Mathf.Clamp01(volume));
             PlayerPrefs.Save();
+        }
+        public static void SetMusicEnabled(bool enabled)
+        {
+            PlayerPrefs.SetInt(MusicEnabledKey, enabled ? 1 : 0);
+            PlayerPrefs.Save();
+            Prepare();
+            if (instance != null) instance.SyncMusic();
+        }
+        public static void SetMusicVolume(float volume)
+        {
+            PlayerPrefs.SetFloat(MusicVolumeKey, Mathf.Clamp01(volume));
+            PlayerPrefs.Save();
+            Prepare();
+            if (instance != null) instance.SyncMusic();
         }
 
         private static void Play(string cue, float multiplier = 1f)

@@ -1,7 +1,7 @@
 import { useContext, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeft, ArrowRight, BookOpen, ClipboardCheck, GraduationCap,
+  ArrowLeft, ArrowRight, BookOpen, ClipboardCheck, Trophy, GraduationCap,
   Layers3, LoaderCircle, Sparkles, School, AlertCircle,
 } from 'lucide-react';
 import { useMyTeacherSubjects } from '../hooks/useTeacherSubject';
@@ -84,6 +84,7 @@ export default function TeacherSubjectsView() {
             <Link to={`/dashboard/my-subjects/${row.id}/units`} className={`${action} border-indigo-400/60 bg-indigo-600/85 text-white hover:border-indigo-300 hover:bg-indigo-500 focus-visible:ring-indigo-400`}><Layers3 size={16}/> Planificación y materiales</Link>
             {isTeacher && <Link to={`/dashboard/my-subjects/${row.id}/studio`} className={`${action} border-amber-300 bg-amber-400 text-slate-950 shadow-sm shadow-amber-500/20 hover:bg-amber-300 focus-visible:ring-amber-300`}><Sparkles size={16}/> Crear actividades</Link>}
             {isTeacher && <Link to={`/dashboard/my-subjects/${row.id}/results`} className={`${action} border-emerald-400/70 bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:ring-emerald-400`}><ClipboardCheck size={16}/> Resultados y notas</Link>}
+            {isTeacher && <Link to={`/dashboard/my-subjects/${row.id}/results?view=ranking`} className={`${action} border-amber-300/70 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 focus-visible:ring-amber-300`}><Trophy size={16}/> Clasificaciones</Link>}
           </div>
         </article>)}</div>
       </section>}

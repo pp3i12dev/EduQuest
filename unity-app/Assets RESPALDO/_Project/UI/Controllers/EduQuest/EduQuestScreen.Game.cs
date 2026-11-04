@@ -469,11 +469,13 @@ namespace EduQuest.Student
             var last = StudentNavigation.LastResult;
             if (last == null) { StudentNavigation.Go("Home"); return; }
             Q<Label>("result-score").text = last.score + "%" +
-                (StudentNavigation.PracticeMode ? "" : "  ·  Nota " + last.grade.ToString("0.0") + "/10");
+                (StudentNavigation.PracticeMode ? "" : "\nNota: " + last.grade.ToString("0.0") + "/10");
             Q<Label>("result-details").text = last.correct + " de " + last.total + " respuestas correctas" +
-                (StudentNavigation.PracticeMode ? " · Modo práctica (sin nota ni recompensa)." : " · Puntos recibidos: " + last.earnedPoints) +
+                (StudentNavigation.PracticeMode ? "\nModo práctica (sin nota ni recompensa)." : "\nPuntos recibidos: " + last.earnedPoints) +
                 "\n" + (last.score >= 60 ? "¡Actividad aprobada!" : "Podés seguir practicando para mejorar.") +
                 "\n" + (last.message ?? "");
+            if (last.score >= 60) EduQuestSound.Success();
+            else EduQuestSound.Failure();
             RenderAttemptReview(Q<VisualElement>("review-items"), last.review);
             Click("home", () => StudentNavigation.Go("Home"));
             Click("history", () => StudentNavigation.Go("History"));

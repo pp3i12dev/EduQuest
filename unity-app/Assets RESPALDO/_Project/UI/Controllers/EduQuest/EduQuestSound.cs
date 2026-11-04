@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace EduQuest.Student
 {
@@ -15,8 +16,19 @@ namespace EduQuest.Student
         private static EduQuestSound instance;
         private static bool quitting;
         private AudioSource source;
+        private AudioListener fallbackListener;
+        private int nextListenerCheck;
         private readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
         private readonly HashSet<string> missing = new HashSet<string>();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetDomain()
+        {
+            quitting = false;
+            instance = null;
+        }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Bootstrap() { Prepare(); }
 
         public static bool Enabled => PlayerPrefs.GetInt(EnabledKey, 1) == 1;
         public static float Volume => Mathf.Clamp01(PlayerPrefs.GetFloat(VolumeKey, 0.7f));
@@ -43,10 +55,38 @@ namespace EduQuest.Student
             source.loop = false;
             source.spatialBlend = 0f;
             source.ignoreListenerPause = true;
+            fallbackListener = gameObject.AddComponent<AudioListener>();
+            SyncListener();
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode) { SyncListener(); }
+        private void LateUpdate()
+        {
+            if (Time.frameCount < nextListenerCheck) return;
+            nextListenerCheck = Time.frameCount + 60;
+            SyncListener();
+        }
+        private void SyncListener()
+        {
+            if (fallbackListener == null) return;
+            bool anotherEnabled = false;
+            var listeners = FindObjectsByType<AudioListener>(FindObjectsSortMode.None);
+            foreach (var item in listeners)
+            {
+                if (item != fallbackListener && item.isActiveAndEnabled)
+                {
+                    anotherEnabled = true;
+                    break;
+                }
+            }
+            // Exactamente un listener activo. Una cámara de juego tiene prioridad.
+            fallbackListener.enabled = !anotherEnabled;
         }
 
         private void OnDestroy()
         {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
             if (instance == this) instance = null;
         }
 

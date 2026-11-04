@@ -31,7 +31,7 @@ function shape(a, showReview = false) {
   const course = a.activity?.teacherSubject?.course;
   const subject = a.activity?.teacherSubject?.subject;
   return {
-    id: a.id, studentId: a.studentId,
+    id: a.id, studentId: a.studentId, activityId: a.activityId,
     studentName: [a.student?.user?.firstName, a.student?.user?.lastName].filter(Boolean).join(' '),
     content: a.activityNameSnapshot || a.activity?.title || 'Actividad anterior',
     courseName: a.courseNameSnapshot || course?.nombre || 'Curso anterior',
