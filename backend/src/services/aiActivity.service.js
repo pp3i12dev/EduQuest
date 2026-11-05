@@ -5,6 +5,11 @@ import { getOwnedTeacherSubject, readOwnedPdf, createReviewedDraft, getOwnedDraf
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const TYPES = ['true_false', 'multiple_choice', 'matching', ...EXTRA_TYPES];
+export const difficultyLabel = value => {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 10) throw fail(400, 'La dificultad debe ser un número entero entre 1 y 10.');
+  return n;
+};
 const LIMIT = { max: 5, window: 10 * 60 * 1000 };
 const recentRequests = new Map();
 
@@ -81,7 +86,7 @@ const geminiFields = type => ({
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const retryableGeminiStatus = (status) => status === 408 || status === 429 || (status >= 500 && status <= 599);
 
-async function callGemini({ prompt, type, count, pdf }) {
+async function callGemini({ prompt, type, count, pdf, difficulty }) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw fail(503, 'Falta configurar GEMINI_API_KEY en el backend; no se generaron preguntas.');
   const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
@@ -89,6 +94,7 @@ async function callGemini({ prompt, type, count, pdf }) {
   const parts = [{ text: `Actuá como asistente docente. Produci exactamente ${count} elementos educativos en español argentino, precisos y adecuados a la edad del curso.
 Fuente de instrucciones: ${prompt}.
 Tipo: ${type}.
+Dificultad pedagógica seleccionada: ${difficulty}/10. En niveles 1-2, lenguaje muy simple, hechos directos; 3-4, comprensión básica; 5-6, aplicación; 7-8, razonamiento y casos; 9-10, análisis complejo y distractores plausibles. Ajustá la complejidad SIN inventar contenidos, sin disminuir exactitud y sin preguntas engañosas.
 Si hay PDF, usá exclusivamente hechos apoyados en el PDF y en el tema acotado. Evitá inventar información o respuestas. No incluyas nombres de alumnos.
 Devolvé SOLO un objeto JSON de forma {"questions": [...]} con los campos: ${geminiFields(type)}.
 Antes de responder comprobá internamente las soluciones. No incluyas markdown.` }];
@@ -170,7 +176,6 @@ export async function previewQuestions(user, body = {}) {
   const topicId = await validTopic(assignment.id, body.topicId);
   const topic = await getPrisma().topic.findUnique({ where: { id: topicId }, include: { unit: { select: { title: true } } } });
   const type = body.gameType;
-  if (type === 'image_label') throw fail(400, 'Etiquetar imágenes requiere que el docente suba una imagen y coloque los puntos manualmente.');
   if (!TYPES.includes(type)) throw fail(400, 'Tipo de juego inválido.');
   const count = Number(body.count);
   if (!Number.isInteger(count) || count < 3 || count > 15) throw fail(400, 'Elegí entre 3 y 15 preguntas.');
@@ -181,8 +186,9 @@ export async function previewQuestions(user, body = {}) {
   const pdf = docId ? await readOwnedPdf(assignment, docId) : null;
   checkLimit(user.id);
   const prompt = `Materia: ${assignment.subject.nombre}; Curso: ${assignment.course.nombre}; Año: ${assignment.course.academicYear}. Unidad: ${topic.unit.title}. Tema: ${topic.title}. ${instructions || 'Generar preguntas de los contenidos principales del material suministrado.'}`;
-  const rows = await callGemini({ prompt, type, count, pdf });
-  const content = normalizeGenerated(type, rows);
+  const difficulty = difficultyLabel(body.difficulty ?? 5);
+  const rows = await callGemini({ prompt, type, count, pdf, difficulty });
+  const content = { ...normalizeGenerated(type, rows), difficulty };
   return { gameType: type, content, questionCount: Object.values(content)[0].length, sourceDocument: pdf?.name || null,
     message: 'Borrador generado por IA. Revisá cada pregunta y su solución antes de guardar. Ninguna actividad se publicó.' };
 }
@@ -204,7 +210,7 @@ export async function saveReviewedDraft(user, body = {}) {
   const topicId = await validTopic(assignment.id, body.topicId);
   const type = body.gameType;
   const rows = gameRows(type, body.content);
-  const content = normalizeGenerated(type, rows, body.content);
+  const content = { ...normalizeGenerated(type, rows, body.content), difficulty: difficultyLabel(body.content?.difficulty ?? body.difficulty ?? 5) };
   return createReviewedDraft({ teacherId, teacherSubjectId: assignment.id, topicId, title, description: typeof body.description === 'string' ? body.description.slice(0, 1500) : '', gameType: type, content });
 }
 
@@ -217,6 +223,7 @@ export async function publishReviewedDraft(user, { teacherSubjectId, activityId 
   if (!activity.topicId) throw fail(409, 'Asigná la actividad a un tema antes de publicarla.');
   const rows = gameRows(activity.gameType, activity.content);
   normalizeGenerated(activity.gameType, rows, activity.content);
+  difficultyLabel(activity.content?.difficulty ?? 5);
   return updateOwnedStatus(id, 'ACTIVE');
 }
 
@@ -229,7 +236,7 @@ export async function editReviewedDraft(user, activityId, body = {}) {
   const topicId = await validTopic(assignment.id, body.topicId);
   const type = body.gameType;
   const rows = gameRows(type, body.content);
-  const content = normalizeGenerated(type, rows, body.content);
+  const content = { ...normalizeGenerated(type, rows, body.content), difficulty: difficultyLabel(body.content?.difficulty ?? body.difficulty ?? 5) };
   return updateReviewedDraft(id, { title, topicId, gameType: type, description: typeof body.description === 'string' ? body.description.slice(0, 1500) : '', content });
 }
 

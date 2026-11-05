@@ -21,7 +21,7 @@ namespace EduQuest.Student
         public float grade;
         public bool canHide, canDelete, studentHidden, reviewAvailable;
         public string deleteBlockedReason;
-        public int? earnedPoints;
+        [JsonProperty("earnedPoints")] public int? earnedPoints { get; set; }
         public string studentName, activityTitle, subjectName, courseName, unitName, topicName, completedAt;
     }
     [Serializable] public class ReviewAnswerDTO
@@ -44,16 +44,18 @@ namespace EduQuest.Student
     {
         public int courseId, academicYear, totalActivities;
         public string courseName, mode, activityName, policy;
-        public int? activityId, myPosition;
+        [JsonProperty("activityId")] public int? activityId { get; set; }
+        [JsonProperty("myPosition")] public int? myPosition { get; set; }
         public LeaderboardActivityDTO[] activities;
         public LeaderboardRowDTO[] rows;
     }
     [Serializable] public class LeaderboardActivityDTO { public int id; public string title; }
     [Serializable] public class LeaderboardRowDTO
     {
-        public int? studentId, position;
+        [JsonProperty("studentId")] public int? studentId { get; set; }
+        [JsonProperty("position")] public int? position { get; set; }
         public string name;
-        public float score, grade;
+        public float score, grade, points;
         public int completedCount, totalActivities, coverage;
         public bool isMe;
     }
@@ -64,7 +66,7 @@ namespace EduQuest.Student
     // contiene las mismas definiciones desordenadas, identificadas por tokens opacos.
     // correctAnswer JAMÁS aparece en esta respuesta.
     [Serializable] public class QuestionDTO { public string id, text; public float x, y; public RemoteChoiceDTO[] options; }
-    [Serializable] public class QuestionSetDTO { public int id; public string title, description, gameType, imageUrl; public QuestionDTO[] questions; }
+    [Serializable] public class QuestionSetDTO { public int id; public string title, description, gameType; public QuestionDTO[] questions; }
     [Serializable] public class AnswerDTO { public string id; public bool answer; public string optionId; }
     [Serializable] public class ResultDTO
     {
@@ -120,4 +122,3 @@ namespace EduQuest.Student
     [Serializable] public class RemoteMatchingQuestionDTO { public string id, prompt; public RemoteChoiceDTO[] left, right; }
 }
 
-namespace EduQuest.Student { [System.Serializable] public class RunnerPracticeBankDTO { public string mode; public bool rewarded; public RunnerQuestionDTO[] questions; } [System.Serializable] public class RunnerQuestionDTO { public string id, text, correctAnswer; public RemoteChoiceDTO[] options; } }

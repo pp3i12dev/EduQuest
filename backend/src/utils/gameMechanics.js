@@ -2,7 +2,7 @@
 // qué se puede publicar. Las soluciones NO se entregan al cliente en /play.
 import { createHmac, randomInt } from 'node:crypto';
 
-export const EXTRA_TYPES = ['sequence', 'classification', 'fill_blank', 'spot_error', 'memory', 'image_label'];
+export const EXTRA_TYPES = ['sequence', 'classification', 'fill_blank', 'spot_error', 'memory'];
 export const CONTENT_KEYS = {
   true_false: 'statements', multiple_choice: 'questions', matching: 'pairs',
   sequence: 'steps', classification: 'items', fill_blank: 'sentences', spot_error: 'challenges', memory: 'pairs', image_label: 'labels',

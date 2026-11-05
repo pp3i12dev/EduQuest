@@ -8,7 +8,7 @@ namespace QuestLearn.Perfil
     /// <summary>
     /// Implementación real: consulta GET /api/usuarios/me contra tu backend.
     /// Necesita un MonoBehaviour activo para correr la coroutine (usá esta misma clase
-    /// como componente en un GameObject, o inyectá un runner desde afuera).
+    /// como componente en un GameObject, o inyectá un juego desde afuera).
     /// </summary>
     public class ApiUserProfileService : MonoBehaviour, IUserProfileService
     {

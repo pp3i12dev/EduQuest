@@ -6,7 +6,7 @@ namespace EduQuest.Student
     /// <summary>
     /// UI Toolkit en móviles: referencia 430x932 para vertical, adaptación a muescas,
     /// botones de tacto y barra inferior en lugar de sidebar de escritorio.
-    /// No cambia UIDocument, prefabs ni escenas del runner.
+    /// No cambia UIDocument, prefabs ni escenas del juego.
     /// </summary>
     public static class EduQuestMobileLayout
     {

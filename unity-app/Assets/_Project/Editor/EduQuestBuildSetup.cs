@@ -20,8 +20,8 @@ public static class EduQuestBuildSetup
                 return;
             }
         }
-        // EQ_Welcome primero, conservar escenas antiguas y CorreCoco, sin alterar archivos de juegos.
-        var extras = EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path)).ToArray();
+        // EQ_Welcome primero; excluir del Build escenas de videojuegos retirados.
+        var extras = EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path) && !s.path.Contains("/_Project/Juegos/")).ToArray();
         EditorBuildSettings.scenes = paths.Select(x => new EditorBuildSettingsScene(x, true)).Concat(extras).ToArray();
         Debug.Log("EduQuest: las 13 escenas EQ_ quedaron en la Shared Scene List. " +
                   "Si tu Build Profile tiene una Scene List propia, agregalas también allí.");

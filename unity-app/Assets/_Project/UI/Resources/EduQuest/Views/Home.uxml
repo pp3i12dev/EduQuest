@@ -4,19 +4,19 @@
 <ui:ScrollView name="home-scroll" class="main-scroll eq-scroll"><ui:VisualElement class="content home-content">
 <ui:VisualElement class="home-topbar"><ui:Button name="home-menu" class="home-menu art-menu" tooltip="Abrir menú" /><ui:VisualElement class="logo-group small"><ui:VisualElement class="logo-star art-star" /><ui:VisualElement class="logo-text art-logo" /></ui:VisualElement>
 <ui:VisualElement class="home-top-stats"><ui:VisualElement class="top-stat"><ui:VisualElement class="stat-symbol art-star" /><ui:Label name="points" text="1200" class="top-stat-value" /></ui:VisualElement><ui:VisualElement class="top-stat"><ui:VisualElement class="stat-symbol art-coin" /><ui:Label name="coins" text="340" class="top-stat-value" /></ui:VisualElement></ui:VisualElement></ui:VisualElement>
-<ui:VisualElement class="student-card home-student-card"><ui:VisualElement name="avatar" class="avatar hero-avatar art-avatar" /><ui:VisualElement class="hero-info"><ui:Label name="student-name" text="¡Hola, Estudiante!" class="hero-name" /><ui:Label text="Estudiante" class="hero-role" /><ui:Label name="level" text="Nivel 5" class="level-text" /><ui:VisualElement class="level-track"><ui:VisualElement name="progress-fill" class="level-fill" /></ui:VisualElement></ui:VisualElement><ui:Button name="home-settings" class="home-settings-corner art-settings-gear" tooltip="Configuración de audio" /></ui:VisualElement>
+<ui:VisualElement class="student-card home-student-card"><ui:VisualElement name="avatar" class="avatar hero-avatar art-avatar" /><ui:VisualElement class="hero-info"><ui:Label name="student-name" text="¡Hola, Estudiante!" class="hero-name" /><ui:Label text="Estudiante" class="hero-role" /><ui:Label name="level" text="Nivel 5" class="level-text" /><ui:VisualElement class="level-track"><ui:VisualElement name="progress-fill" class="level-fill" /></ui:VisualElement></ui:VisualElement></ui:VisualElement>
 <ui:VisualElement class="game-tiles"><ui:VisualElement class="tile-row">
 <ui:Button name="go-practice" class="home-tile"><ui:VisualElement class="tile-icon art-gamepad" /><ui:Label text="Jugar" class="tile-title" /><ui:Label text="Practica y aprende" class="tile-subtitle" /></ui:Button>
 <ui:Button name="go-subjects" class="home-tile"><ui:VisualElement class="tile-icon art-book" /><ui:Label text="Materias" class="tile-title" /><ui:Label text="Explora tus cursos" class="tile-subtitle" /></ui:Button>
 </ui:VisualElement><ui:VisualElement class="tile-row">
-<ui:Button name="go-history" class="home-tile"><ui:VisualElement class="tile-icon art-trophy" /><ui:Label text="Historial" class="tile-title" /><ui:Label text="Revisa tus progreso" class="tile-subtitle" /></ui:Button>
-<ui:Button name="go-profile" class="home-tile"><ui:VisualElement class="tile-icon art-bars" /><ui:Label text="Perfil" class="tile-title" /><ui:Label text="Tu información" class="tile-subtitle" /></ui:Button></ui:VisualElement>
+<ui:Button name="go-history" class="home-tile"><ui:VisualElement class="tile-icon art-history" /><ui:Label text="Historial" class="tile-title" /><ui:Label text="Revisá tus partidas" class="tile-subtitle" /></ui:Button>
+<ui:Button name="go-profile" class="home-tile"><ui:VisualElement class="tile-icon art-profile" /><ui:Label text="Perfil" class="tile-title" /><ui:Label text="Tu información" class="tile-subtitle" /></ui:Button></ui:VisualElement>
 <ui:VisualElement class="tile-row"><ui:Button name="go-ranking" class="home-tile eq-ranking-home"><ui:VisualElement class="tile-icon art-trophy eq-ranking-home-icon" /><ui:Label text="Clasificaciones" class="tile-title" /><ui:Label text="Por actividad y general del curso" class="tile-subtitle" /></ui:Button>
 </ui:VisualElement></ui:VisualElement>
 <ui:Label name="progress" text="Cargando actividades..." class="home-progress" /><ui:Button name="edit-profile" text="Editar mis datos" class="profile-link" /><ui:Label name="status" class="status" />
-</ui:VisualElement></ui:ScrollView><ui:VisualElement name="home-menu-layer" class="home-menu-layer"><ui:VisualElement name="menu-backdrop" class="home-menu-backdrop" />
+</ui:VisualElement></ui:ScrollView><ui:Button name="home-settings" class="home-settings-floating art-settings-gear" tooltip="Configuración de audio" /><ui:VisualElement name="home-menu-layer" class="home-menu-layer"><ui:VisualElement name="menu-backdrop" class="home-menu-backdrop" />
  <ui:VisualElement class="sidebar">
-  <ui:VisualElement class="drawer-head"><ui:Button name="close-menu" class="drawer-close" text="✕" />
+  <ui:VisualElement class="drawer-head"><ui:Button name="close-menu" class="drawer-close" text="X" />
     <ui:VisualElement name="drawer-avatar" class="drawer-avatar art-avatar" />
     <ui:Label name="drawer-name" text="Estudiante" class="drawer-name" />
     <ui:Label name="drawer-level" text="Nivel 5" class="drawer-level" />

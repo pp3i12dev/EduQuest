@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Archive, ArchiveRestore, BookOpen, CalendarClock, CheckCircle2,
   ChevronLeft, ClipboardCheck, Eye, GraduationCap, RefreshCw,
-  Search, Sparkles, Trash2, TrendingUp, Users, X, XCircle, Trophy, ListChecks, UserRound,
+  Search, Sparkles, Trash2, TrendingUp, Users, X, XCircle, Trophy, ListChecks, UserRound, ChevronRight,
 } from 'lucide-react';
 import { assessmentService } from '../services/assessment.service';
 
@@ -51,6 +51,7 @@ export default function TeacherAssessmentsView() {
   const [confirmText, setConfirmText] = useState('');
   const [leaderboard, setLeaderboard] = useState(null);
   const [rankingActivity, setRankingActivity] = useState(activityId);
+  const [rankingStage, setRankingStage] = useState(activityId ? 'detail' : 'general');
   const [rankingLoading, setRankingLoading] = useState(false);
   const [viewMode, setViewMode] = useState(params.get('view') === 'ranking' ? 'ranking' : params.get('view') === 'student' ? 'student' : 'activity');
   const [focusActivity, setFocusActivity] = useState(activityId);
@@ -272,30 +273,67 @@ export default function TeacherAssessmentsView() {
 
       </>}
       {viewMode === 'ranking' && (
-      <section className="rounded-2xl border border-amber-500/30 bg-[#101b2f]/95 p-5" aria-label="Tabla de posiciones">
+      <section className="rounded-2xl border border-amber-500/30 bg-[#101b2f]/95 p-4 sm:p-5" aria-label="Clasificaciones por materia">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-amber-200"><TrendingUp size={20}/> Clasificación del curso</h2>
-          <label className="flex flex-col gap-1 text-xs text-slate-300">Ámbito
-            <select className={inputStyle} value={rankingActivity} onChange={e => setRankingActivity(e.target.value)}>
-              <option value="">Promedio general de todo el curso</option>
-              {(leaderboard?.activities || []).map(a => <option key={a.id} value={a.id}>{a.title}</option>)}
-            </select>
-          </label>
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-bold text-amber-200"><Trophy size={21}/> Clasificaciones de la materia</h2>
+            <p className="mt-1 text-xs text-slate-400">{assignment ? `${assignment.subjectName} · ${assignment.courseName} · ${assignment.academicYear}` : 'Elegí una materia de tus asignaciones.'}</p>
+          </div>
+          <div className="rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1.5 text-xs text-violet-100">Solo alumnos de tu curso</div>
         </div>
-        <p className="mb-3 text-xs leading-relaxed text-slate-400">Elegí «Promedio general» o una actividad. Se considera la mejor nota por actividad. En el promedio general, las actividades pendientes cuentan como 0 hasta que se completen. Solo alumnos matriculados en el curso.</p>
-        {rankingLoading ? <p className="py-5 text-sm text-amber-200">Calculando posiciones…</p> :
-          leaderboard?.rows?.length ? <div className="max-h-[420px] overflow-auto rounded-xl border border-slate-700">
-            <table className="w-full min-w-[480px] text-left text-sm">
-              <thead className="sticky top-0 bg-[#26334c] text-amber-200"><tr><th className="p-3">Posición</th><th className="p-3">Alumno</th><th className="p-3">Puntaje</th><th className="p-3">Realizadas</th><th className="p-3">Nota</th></tr></thead>
-              <tbody>{leaderboard.rows.map(row => <tr key={row.studentId} className="border-t border-slate-700/70">
-                <td className="p-3 font-bold text-amber-300">{row.position ? `#${row.position}` : '—'}</td>
-                <td className="p-3 text-white">{row.name}</td>
-                <td className="p-3 tabular-nums">{row.score}%</td>
-                <td className="p-3 tabular-nums">{row.completedCount}/{row.totalActivities}</td>
-                <td className="p-3 tabular-nums">{gradeText(row.grade)}/10</td>
-              </tr>)}</tbody>
-            </table>
-          </div> : <p className="py-5 text-sm text-slate-400">Todavía no hay alumnos o actividades disponibles para clasificar.</p>}
+        <div className="mb-4 grid gap-2 sm:grid-cols-2">
+          <button type="button" onClick={() => { setRankingActivity(''); setRankingStage('general'); }}
+            aria-pressed={rankingStage === 'general'}
+            className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold transition ${rankingStage === 'general' ? 'border-amber-300 bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/10' : 'border-slate-700 bg-slate-800/70 text-slate-200 hover:border-violet-400'}`}>
+            <TrendingUp size={18}/> General de la materia
+          </button>
+          <button type="button" onClick={() => { setRankingActivity(''); setRankingStage('list'); }}
+            aria-pressed={rankingStage !== 'general'}
+            className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold transition ${rankingStage !== 'general' ? 'border-amber-300 bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/10' : 'border-slate-700 bg-slate-800/70 text-slate-200 hover:border-violet-400'}`}>
+            <ListChecks size={18}/> Por actividad
+          </button>
+        </div>
+        {rankingStage === 'list' ? (
+          <div className="space-y-3">
+            <div><h3 className="text-base font-bold text-violet-100">Actividades de {assignment?.subjectName || 'la materia'}</h3>
+              <p className="mt-1 text-xs text-slate-400">Seleccioná una actividad para consultar la tabla de posiciones de quienes la completaron.</p></div>
+            <div className="grid gap-2">
+              {(leaderboard?.activities || []).map(activity => <button type="button" key={activity.id}
+                onClick={() => { setRankingActivity(String(activity.id)); setRankingStage('detail'); }}
+                className="flex w-full items-center gap-3 rounded-2xl border border-violet-400/20 bg-gradient-to-r from-[#202044] to-[#17233d] p-4 text-left transition hover:border-amber-400/70 hover:from-[#2a2455] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-violet-400/30 bg-violet-500/15 text-violet-200"><ClipboardCheck size={22}/></span>
+                <span className="min-w-0 flex-1"><strong className="block break-words text-sm text-white">{activity.title}</strong><small className="mt-1 block text-xs text-slate-400">Ver puestos, puntos y calificaciones</small></span>
+                <span className="rounded-xl bg-amber-400 p-2 text-slate-950"><ChevronRight size={20}/></span>
+              </button>)}
+              {!rankingLoading && !leaderboard?.activities?.length && <p className="rounded-xl border border-slate-700 bg-slate-800/50 p-5 text-sm text-slate-300">Esta materia todavía no tiene actividades publicadas.</p>}
+            </div>
+          </div>
+        ) : (
+          <div>
+            {rankingStage === 'detail' && <button type="button" onClick={() => { setRankingActivity(''); setRankingStage('list'); }}
+              className="mb-3 inline-flex items-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 py-2 text-xs font-bold text-violet-100 transition hover:bg-violet-500/20">
+              <ChevronLeft size={16}/> Volver a actividades
+            </button>}
+            <h3 className="mb-2 text-base font-bold text-violet-100">{rankingStage === 'detail' ? leaderboard?.activityName || 'Clasificación de actividad' : `Promedio general de ${assignment?.subjectName || 'la materia'}`}</h3>
+            <p className="mb-4 text-xs leading-relaxed text-slate-400">{rankingStage === 'detail'
+              ? 'Se incluye solamente a quienes completaron esta actividad. Cuenta la primera partida competitiva; las repeticiones son prácticas sin puntos ni cambios en el ranking.'
+              : 'Promedio de los primeros resultados competitivos de esta materia. Las pendientes cuentan como cero; las prácticas posteriores no modifican posiciones.'}</p>
+            {rankingLoading ? <p className="py-5 text-sm text-amber-200">Calculando posiciones…</p> :
+              (leaderboard?.rows || []).filter(row => rankingStage !== 'detail' || row.completedCount > 0).length ?
+              <div className="max-h-[440px] overflow-auto rounded-xl border border-slate-700">
+                <table className="w-full min-w-[420px] text-left text-sm">
+                  <thead className="sticky top-0 bg-[#26334c] text-amber-200"><tr><th className="p-3">#</th><th className="p-3">Alumno</th><th className="p-3">Puntos</th><th className="p-3">Realizadas</th><th className="p-3">Nota</th></tr></thead>
+                  <tbody>{(leaderboard?.rows || []).filter(row => rankingStage !== 'detail' || row.completedCount > 0).map(row => <tr key={row.studentId} className="border-t border-slate-700/70 odd:bg-violet-500/5 hover:bg-violet-500/15">
+                    <td className="p-3 font-extrabold text-amber-300">{row.position ? `#${row.position}` : '—'}</td>
+                    <td className="p-3 font-semibold text-white">{row.name}</td>
+                    <td className="p-3 tabular-nums">{row.points ?? 0}</td>
+                    <td className="p-3 tabular-nums">{row.completedCount}/{row.totalActivities}</td>
+                    <td className="p-3 tabular-nums text-violet-200">{gradeText(row.grade)}/10</td>
+                  </tr>)}</tbody>
+                </table>
+              </div> : <p className="rounded-xl border border-slate-700 bg-slate-800/50 p-5 text-sm text-slate-300">{rankingStage === 'detail' ? 'Ningún alumno completó todavía esta actividad.' : 'Todavía no hay resultados para clasificar.'}</p>}
+          </div>
+        )}
       </section>
       )}
 

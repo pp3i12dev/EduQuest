@@ -38,6 +38,15 @@ namespace EduQuest.Student
             // Recuperación controlada si se pierde una referencia al importar Assets.
             if (document.panelSettings == null)
                 document.panelSettings = Resources.Load<PanelSettings>("EduQuest/EduQuestPanel");
+            // Reparación del error de importación de la entrega 20:
+            // EQ_Settings tenía una referencia serializada a Profile.uxml.
+            // Reasignar siempre el UXML correcto al entrar en Configuración.
+            if (currentScene == "Settings")
+            {
+                var settingsTree = Resources.Load<VisualTreeAsset>("EduQuest/Views/Settings");
+                if (settingsTree != null && document.visualTreeAsset != settingsTree)
+                    document.visualTreeAsset = settingsTree;
+            }
             if (document.visualTreeAsset == null)
                 document.visualTreeAsset = Resources.Load<VisualTreeAsset>("EduQuest/Views/" + currentScene);
             if (document.panelSettings == null || document.visualTreeAsset == null)
@@ -83,6 +92,7 @@ namespace EduQuest.Student
                 case "Subjects": SetupSubjects(); break;
                 case "Activities": SetupActivities(); break;
                 case "Profile": SetupProfile(); break;
+                case "Settings": SetupSettings(); break;
                 case "History": SetupHistory(); break;
                 case "Practice": SetupPractice(); break;
                 case "Game": SetupGame(); break;
@@ -122,9 +132,11 @@ namespace EduQuest.Student
             PaintClass("art-navplay", "NavPlay");
             PaintClass("art-navsubjects", "NavSubjects");
             PaintClass("art-navhistory", "NavHistory");
+            PaintClass("art-history", "NavHistory");
             PaintClass("art-navprofile", "NavProfile");
             PaintClass("art-navlogout", "NavLogout");
-            PaintClass("art-navsettings", "IconSettings");
+            PaintClass("art-navsettings", "IconSettingsWhite");
+            PaintClass("art-settings-gear", "IconSettings");
             PaintClass("art-navhelp", "IconHelp");
             PaintClass("art-icon-mail", "IconMail");
             PaintClass("art-icon-lock", "IconLock");
@@ -208,7 +220,7 @@ namespace EduQuest.Student
             Click("nav-practice", () => StudentNavigation.Go("Practice"));
             Click("nav-history", () => StudentNavigation.Go("History"));
             Click("nav-profile", () => StudentNavigation.Go("Profile"));
-            Click("nav-settings", () => Status("Configuración estará disponible próximamente.", true));
+            Click("nav-settings", () => StudentNavigation.Go("Settings"));
             Click("nav-help", () => Status("Ayuda estará disponible próximamente.", true));
             Click("nav-logout", () =>
             {
@@ -222,6 +234,7 @@ namespace EduQuest.Student
                 "Activities" => "nav-subjects",
                 "History" => "nav-history",
                 "Profile" => "nav-profile",
+                "Settings" => "nav-settings",
                 _ => "nav-home"
             };
             foreach (var name in new[] { "nav-home", "nav-practice", "nav-subjects", "nav-history", "nav-profile", "nav-settings", "nav-help" })

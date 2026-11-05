@@ -63,7 +63,17 @@ export const saveGradedAttempt = async ({ studentId, activityId, score, duration
           where: { studentId, activityId, isCompleted: true },
           select: { id: true },
         });
-        const earnedPoints = previous ? 0 : Math.max(0, Math.round(pointsAwarded * score / 100));
+        // Después de la primera partida competitiva, los reintentos NO
+        // se registran ni sustituyen la nota. Se devuelven como práctica.
+        if (previous) {
+          const profile = await tx.studentProfile.findUnique({
+            where: { id: studentId },
+            select: { puntosTotales: true, nivelActual: true, monedas: true },
+          });
+          return { attemptId: null, earnedPoints: 0, points: profile.puntosTotales,
+            level: profile.nivelActual, coins: profile.monedas, practiceOnly: true };
+        }
+        const earnedPoints = Math.max(0, Math.round(pointsAwarded * score / 100));
         const record = await tx.gameAttempt.create({
           data: { studentId, activityId, score, isCompleted: true, timeInSec: duration,
             answerReview: review, earnedPoints,
@@ -92,7 +102,7 @@ export const saveGradedAttempt = async ({ studentId, activityId, score, duration
             where: { id: studentId }, select: { puntosTotales: true, nivelActual: true, monedas: true },
           });
         }
-        return { attemptId: record.id, earnedPoints, points: profile.puntosTotales, level: profile.nivelActual, coins: profile.monedas };
+        return { attemptId: record.id, earnedPoints, points: profile.puntosTotales, level: profile.nivelActual, coins: profile.monedas, practiceOnly: false };
       }, { isolationLevel: 'Serializable' });
     } catch (err) {
       if (err.code === 'P2034' && attempt < 2) continue;
@@ -140,9 +150,16 @@ export const deleteStudentAttemptPermanently = async (id, studentId) => {
       return await prisma.$transaction(async tx => {
         const record = await tx.gameAttempt.findFirst({
           where: { id, studentId, isCompleted: true },
-          select: { id: true, studentId: true, isCompleted: true, createdAt: true, earnedPoints: true },
+          select: { id: true, studentId: true, activityId: true, isCompleted: true, createdAt: true, earnedPoints: true },
         });
         if (!record) throw fail(404, 'Resultado inexistente o no perteneciente a tu perfil.');
+        const original = await tx.gameAttempt.findFirst({
+          where: { studentId, activityId: record.activityId, isCompleted: true },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          select: { id: true },
+        });
+        if (original?.id === record.id)
+          throw fail(409, 'El primer intento competitivo debe conservarse para proteger la clasificación. Podés ocultarlo del historial cuando corresponda.');
         const recent = await tx.gameAttempt.findMany({
           where: { studentId, isCompleted: true },
           orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -180,3 +197,13 @@ export const deleteStudentAttemptPermanently = async (id, studentId) => {
     }
   }
 };
+
+// Consulta protegida por la identidad del alumno; nunca confía en el cliente.
+export const hasCompletedActivity = (studentId, activityId) => getPrisma().gameAttempt.findFirst({
+  where: { studentId, activityId, isCompleted: true },
+  select: { id: true },
+});
+export const getStudentProgress = studentId => getPrisma().studentProfile.findUnique({
+  where: { id: studentId },
+  select: { puntosTotales: true, nivelActual: true, monedas: true },
+});

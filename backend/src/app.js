@@ -1,11 +1,12 @@
 
 import dotenv from 'dotenv';
-dotenv.config();
+import { fileURLToPath } from 'node:url';
+// Usar siempre backend/.env independientemente de la carpeta desde donde se inicia Node.
+dotenv.config({ path: fileURLToPath(new URL('../.env', import.meta.url)) });
 
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { timingSafeEqual } from 'node:crypto';
 import { processWebPushQueue } from './services/webPush.service.js';
 
@@ -19,7 +20,19 @@ import institutionCommunicationRoutes from './routes/institutionCommunication.ro
 
 const app = express();
 
-app.use(cors());
+// CORS no reemplaza JWT; limita qué sitios pueden invocar la API desde navegadores.
+// Unity/Android y herramientas servidor-a-servidor no suelen enviar Origin.
+const allowedBrowserOrigins = new Set([
+    process.env.FRONTEND_URL,
+    ...(process.env.CORS_ALLOWED_ORIGINS || '').split(','),
+].filter(Boolean).map(v => v.trim().replace(/\/$/, '')));
+if (process.env.NODE_ENV !== 'production') {
+    ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:4173'].forEach(origin => allowedBrowserOrigins.add(origin));
+}
+app.use(cors({ origin: (origin, done) => {
+    if (!origin || allowedBrowserOrigins.has(origin)) return done(null, true);
+    return done(new Error('Origen CORS no autorizado para EduQuest.'));
+} }));
 app.use(express.json());
 
 // El envio no depende exclusivamente del temporizador del servidor.

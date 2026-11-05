@@ -23,7 +23,6 @@ router.get('/materials/:id/file', downloadStudent);
 router.get('/activities/:activityId/play', controller.play);
 router.post('/activities/:activityId/complete', controller.complete);
 router.get('/practice/games', controller.practiceGames);
-router.get('/practice/runner-bank', controller.runnerPracticeBank);
 router.get('/practice/questions', controller.practiceQuestions);
 router.post('/practice/check', controller.practiceCheck);
 export default router;

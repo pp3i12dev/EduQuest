@@ -29,7 +29,7 @@ async function context(requester) {
 async function assignedActivity(requester, activityId) {
   const ctx = await context(requester);
   const activity = await repo.findPublishedActivity(numericId(activityId));
-  if (!activity || activity.status !== 'ACTIVE' || !ctx.byId.has(activity.teacherSubjectId))
+  if (!activity || activity.status !== 'ACTIVE' || activity.gameType === 'image_label' || !ctx.byId.has(activity.teacherSubjectId))
     throw fail(404, 'La actividad no está publicada para tu curso');
   return { ...ctx, activity };
 }
@@ -50,7 +50,6 @@ function statements(activity) { return questionsFor(activity); }
 function publicQuestions(activity) {
   return {
     id: activity.id, title: activity.title, description: activity.description || '', gameType: activity.gameType,
-    ...(activity.gameType === 'image_label' ? { imageUrl: activity.content.imageUrl } : {}),
     questions: activity.gameType === 'matching'
       ? shuffledMatchingQuestions(questionsFor(activity))
       : EXTRA_TYPES.includes(activity.gameType) ? toPublicExtraQuestions(questionsFor(activity))
@@ -73,7 +72,7 @@ export async function dashboard(requester) {
   return {
     points: student.puntosTotales, level: student.nivelActual, coins: student.monedas,
     finishedGames: attempts.filter(a => a.isCompleted).length,
-    pendingActivities: activities.filter(a => !done.has(a.id)).length,
+    pendingActivities: activities.filter(a => a.gameType !== 'image_label' && !done.has(a.id)).length,
     courses: currentCourses.map(c => ({ id: c.course.id, name: c.course.nombre, year: c.course.academicYear })),
     progressRule: 'Primera finalización: porcentaje correcto × pointsAwarded; 500 puntos por nivel; repetir no da puntos',
   };
@@ -91,12 +90,12 @@ export async function activities(requester, assignmentId) {
   if (!byId.has(id)) throw fail(404, 'Materia no asignada a tu curso actual');
   const [list, attempts] = await Promise.all([repo.findPublishedActivities([id]), repo.findAttempts(student.id)]);
   const first = firstCompleted(attempts);
-  return list.map(a => {
-    const matches = attempts.filter(t => t.activityId === a.id && t.isCompleted);
+  return list.filter(a => a.gameType !== 'image_label').map(a => {
+    const competitive = first.get(a.id);
     return {
       id: a.id, title: a.title, description: a.description || '', gameType: a.gameType,
       subjectName: byId.get(id).subject.nombre, teacherName: teacherName(byId.get(id).teacher),
-      completed: first.has(a.id), bestScore: matches.length ? Math.max(...matches.map(x => x.score)) : null,
+      completed: first.has(a.id), bestScore: competitive ? competitive.score : null,
       createdAt: a.createdAt, pointsAwarded: a.pointsAwarded,
     };
   });
@@ -123,10 +122,19 @@ export async function history(requester, query = {}) {
   const records = (await repo.findAttempts(student.id)).filter(a => a.isCompleted);
   // Los 5 últimos se calculan sobre TODOS los intentos, incluso los ocultos.
   const latestProtected = new Set(records.slice(-HISTORY_PROTECTED_LATEST).map(a => a.id));
+  // La partida competitiva original no debe poder borrarse para obtener
+  // una segunda oportunidad en el ranking. Las prácticas antiguas sí.
+  const firstCompetitiveByActivity = new Map();
+  for (const attempt of records)
+    if (!firstCompetitiveByActivity.has(attempt.activityId))
+      firstCompetitiveByActivity.set(attempt.activityId, attempt.id);
   const includeHidden = query.includeHidden === 'true';
   const studentName = [student.user.firstName, student.user.lastName].filter(Boolean).join(' ');
   const items = records.filter(a => includeHidden || !a.studentHiddenAt).reverse().map(a => {
-    const reason = historyDeletionBlockReason(a, latestProtected);
+    const protectedCompetitive = firstCompetitiveByActivity.get(a.activityId) === a.id;
+    const reason = protectedCompetitive
+      ? 'La primera partida competitiva debe conservarse para evitar alterar la clasificación. Podés ocultarla de tu historial cuando corresponda.'
+      : historyDeletionBlockReason(a, latestProtected);
     return {
       ...toAttemptRow(a, studentName),
       canHide: !a.studentHiddenAt && !latestProtected.has(a.id) &&
@@ -176,6 +184,17 @@ export async function complete(requester, activityId, body = {}) {
   const result = gradeQuestions(statements(activity), body.answers, activity.gameType);
   const duration = Number(body.timeInSec);
   if (!Number.isFinite(duration) || duration < 0 || duration > 86400) throw fail(400, 'Duración inválida');
+  if (body.practice === true) {
+    // La práctica SOLO está disponible después de una finalización real;
+    // no permite consultar respuestas y luego competir con ventaja.
+    const previous = await repo.hasCompletedActivity(student.id, activity.id);
+    if (!previous) throw fail(409, 'La primera partida debe ser evaluativa. La práctica se habilita al completarla.');
+    const profile = await repo.getStudentProgress(student.id);
+    return { ...result, grade: gradeLabel(result.score), earnedPoints: 0, attemptId: null,
+      points: profile.puntosTotales, level: profile.nivelActual, coins: profile.monedas,
+      practiceOnly: true,
+      message: 'Práctica finalizada: no modifica los puntos, la nota ni las clasificaciones.' };
+  }
   const saved = await repo.saveGradedAttempt({
     studentId: student.id, activityId: activity.id, score: result.score,
     duration: Math.round(duration), pointsAwarded: activity.pointsAwarded, review: result.review,
@@ -186,7 +205,10 @@ export async function complete(requester, activityId, body = {}) {
       activityName: activity.title,
     },
   });
-  return { ...result, grade: gradeLabel(result.score), ...saved, message: saved.earnedPoints ? '¡Ganaste puntos!' : 'Partida registrada. Esta actividad ya otorgó su recompensa.' };
+  return { ...result, grade: gradeLabel(result.score), ...saved,
+    message: saved.practiceOnly
+      ? 'Esta actividad ya tenía una partida competitiva. El reintento se evaluó como práctica y no cambió el ranking.'
+      : (saved.earnedPoints ? '¡Ganaste puntos!' : 'Partida competitiva registrada (sin puntos por respuestas incorrectas).') };
 }
 async function publishedTrueFalse(requester) {
   const { byId } = await context(requester);
@@ -222,22 +244,6 @@ export async function practiceCheck(requester, body = {}) {
 }
 
 
-// Exclusivo de práctica no evaluada en Corre y aprende: la solución viaja al juego
-// local porque PreguntaData valida la opción dentro de Unity. NUNCA usar para
-// actividades que otorguen puntos o notas; esas se corrigen por POST /complete.
-export async function runnerPracticeBank(requester) {
-  const { byId } = await context(requester);
-  const all = await repo.findPublishedActivities([...byId.keys()]);
-  const questions = all.filter(a => a.gameType === 'multiple_choice' && Array.isArray(a.content?.questions))
-    .flatMap(a => a.content.questions.map(q => ({
-      id: `${a.id}:${q.id}`, text: q.text,
-      options: q.options.map(o => ({ id: String(o.id), text: o.text })),
-      correctAnswer: String(q.correctAnswer),
-    }))).slice(0, 40);
-  return { mode: 'PRACTICE_ONLY', rewarded: false, questions };
-}
-
-
 // Jerarquía académica: curso actual -> materia -> unidad -> tema -> contenidos publicados.
 // No se devuelven claves de almacenamiento ni respuestas correctas.
 export async function contentTree(requester, assignmentId) {
@@ -258,7 +264,7 @@ export async function contentTree(requester, assignmentId) {
           mimeType: material.mimeType, sizeBytes: material.sizeBytes,
           downloadPath: `/api/student/materials/${material.id}/file`,
         })),
-        activities: topic.activities.map(a => ({ id: a.id, title: a.title, gameType: a.gameType, pointsAwarded: a.pointsAwarded })),
+        activities: topic.activities.filter(a => a.gameType !== 'image_label').map(a => ({ id: a.id, title: a.title, gameType: a.gameType, pointsAwarded: a.pointsAwarded, difficulty: a.content?.difficulty ?? 5 })),
       })),
     })),
   };

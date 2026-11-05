@@ -14,7 +14,7 @@
   <ui:Button name="save-avatar" text="Guardar avatar" class="primary eq-avatar-save" />
 </ui:VisualElement><ui:VisualElement xmlns:ui="UnityEngine.UIElements" class="glass"><ui:Label name="identity-info" text="Cargando..." class="muted"/><ui:TextField name="first-name" label="Nombre" class="field"/><ui:TextField name="last-name" label="Apellido" class="field"/><ui:TextField name="email" label="Correo electrónico" class="field"/><ui:TextField name="phone" label="Teléfono" class="field"/><ui:Button name="save" text="Guardar cambios" class="primary"/></ui:VisualElement><ui:VisualElement xmlns:ui="UnityEngine.UIElements" class="glass"><ui:Label text="Cambiar contraseña" class="question"/><ui:TextField name="current-password" label="Contraseña actual" class="field"/><ui:TextField name="new-password" label="Nueva contraseña" class="field"/><ui:TextField name="confirm-password" label="Confirmar nueva contraseña" class="field"/><ui:Button name="password-save" text="Cambiar contraseña" class="secondary"/></ui:VisualElement><ui:Label xmlns:ui="UnityEngine.UIElements" name="status" class="status"/></ui:VisualElement></ui:VisualElement></ui:ScrollView><ui:VisualElement name="home-menu-layer" class="home-menu-layer"><ui:VisualElement name="menu-backdrop" class="home-menu-backdrop" />
  <ui:VisualElement class="sidebar">
-  <ui:VisualElement class="drawer-head"><ui:Button name="close-menu" class="drawer-close" text="✕" />
+  <ui:VisualElement class="drawer-head"><ui:Button name="close-menu" class="drawer-close" text="X" />
     <ui:VisualElement name="drawer-avatar" class="drawer-avatar art-avatar" />
     <ui:Label name="drawer-name" text="Estudiante" class="drawer-name" />
     <ui:Label name="drawer-level" text="Alumno de EduQuest" class="drawer-level" />

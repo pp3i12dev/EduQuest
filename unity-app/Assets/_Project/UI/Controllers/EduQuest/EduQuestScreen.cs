@@ -124,17 +124,18 @@ namespace EduQuest.Student
             PaintClass("art-trophy", "TrophyIllustration");
             PaintClass("art-book", "BookIllustration");
             PaintClass("art-gamepad", "GamepadIllustration");
-            PaintClass("art-bars", "ProgressIllustration");
+            PaintClass("art-profile", "NavProfile");
             PaintClass("art-avatar", "Avatar");
             PaintClass("art-mail", "MailIllustration");
             PaintClass("art-menu", "MenuIllustration");
             PaintClass("art-navhome", "NavHome");
             PaintClass("art-navplay", "NavPlay");
             PaintClass("art-navsubjects", "NavSubjects");
-            PaintClass("art-navhistory", "NavHistory");
-            PaintClass("art-navprofile", "NavProfile");
+            PaintClass("art-navhistory", "NavHistoryWhite");
+            PaintClass("art-history", "NavHistory");
+            PaintClass("art-navprofile", "NavProfileWhite");
             PaintClass("art-navlogout", "NavLogout");
-            PaintClass("art-navsettings", "IconSettings");
+            PaintClass("art-navsettings", "IconSettingsWhite");
             PaintClass("art-settings-gear", "IconSettings");
             PaintClass("art-navhelp", "IconHelp");
             PaintClass("art-icon-mail", "IconMail");
@@ -144,14 +145,10 @@ namespace EduQuest.Student
             PaintClass("art-icon-userplus", "IconUserPlus");
             PaintClass("art-icon-info", "IconInfo");
             PaintClass("home-tile", "GoldTile", true);
-            PaintClass("primary", "GoldButton", true);
-            var drawerTexture = Resources.Load<Texture2D>("EduQuest/DrawerPurple");
-            var drawer = root.Q<VisualElement>(className: "sidebar");
-            if (drawer != null && drawerTexture != null)
-            {
-                drawer.style.backgroundImage = new StyleBackground(drawerTexture);
-                drawer.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
-            }
+            // Los botones usan el color y border-radius de USS.
+            // NO volver a estirar GoldButton.png: genera puntas deformadas.
+            // El menú lateral ahora usa un tratamiento translúcido definido en USS.
+            // No se aplica una textura opaca desde código.
         }
 
         // Carga tanto texturas por defecto como imagenes importadas como Sprite.

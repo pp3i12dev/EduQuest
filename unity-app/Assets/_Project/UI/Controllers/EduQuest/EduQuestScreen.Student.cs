@@ -164,9 +164,9 @@ namespace EduQuest.Student
                         foreach (var material in topic.materials)
                         {
                             var selected = material;
-                            ListRow(topicBox, "📘 " + material.title,
-                                FriendlyFileSize(material.sizeBytes) + " · " + material.filename,
-                                "DESCARGAR / ABRIR", () => Run(async () =>
+                            ListRow(topicBox, material.title,
+                                "Lectura · " + FriendlyFileSize(material.sizeBytes) + " · " + material.filename,
+                                "ABRIR", () => Run(async () =>
                                 {
                                     var bytes = await EduQuestRuntime.Student.DownloadStudyMaterial(selected.id);
                                     if (this == null) return;
@@ -182,9 +182,12 @@ namespace EduQuest.Student
                         {
                             referencedActivityIds.Add(game.id);
                             var selected = game;
-                            ListRow(topicBox, "🎮 " + game.title,
-                                GameTypeLabel(game.gameType) + " · Hasta " + game.pointsAwarded + " puntos",
-                                "JUGAR", () => LaunchActivity(selected.id, selected.title, selected.gameType));
+                            bool completed = activities.Any(a => a.id == selected.id && a.completed);
+                            ListRow(topicBox, game.title,
+                                "Actividad · " + GameTypeLabel(game.gameType) +
+                                (completed ? " · Completada · Sin nuevos puntos" : " · Hasta " + game.pointsAwarded + " puntos"),
+                                completed ? "PRACTICAR" : "JUGAR",
+                                () => LaunchActivity(selected.id, selected.title, selected.gameType, completed));
                         }
                         any = true;
                     }
@@ -203,9 +206,9 @@ namespace EduQuest.Student
                 foreach (var game in legacy)
                 {
                     var selected = game;
-                    ListRow(list, game.title, GameTypeLabel(game.gameType) + " · " +
-                        (game.completed ? "Completada" : "Pendiente"), "JUGAR",
-                        () => LaunchActivity(selected.id, selected.title, selected.gameType));
+                    ListRow(list, game.title, "Actividad · " + GameTypeLabel(game.gameType) + " · " +
+                        (game.completed ? "Completada · Sin nuevos puntos" : "Pendiente"), game.completed ? "PRACTICAR" : "JUGAR",
+                        () => LaunchActivity(selected.id, selected.title, selected.gameType, selected.completed));
                 }
                 any = true;
             }
@@ -232,14 +235,13 @@ namespace EduQuest.Student
                 case "fill_blank": return "Completar oraciones";
                 case "spot_error": return "Encontrar el error";
                 case "memory": return "Memotest educativo";
-                case "image_label": return "Etiquetar imagen";
                 default: return gameType ?? "Juego";
             }
         }
 
-        private void LaunchActivity(int id, string title, string type)
+        private void LaunchActivity(int id, string title, string type, bool practiceReplay = false)
         {
-            if (type != "true_false" && type != "multiple_choice" && type != "matching" && type != "sequence" && type != "classification" && type != "fill_blank" && type != "spot_error" && type != "memory" && type != "image_label")
+            if (type != "true_false" && type != "multiple_choice" && type != "matching" && type != "sequence" && type != "classification" && type != "fill_blank" && type != "spot_error" && type != "memory")
             {
                 Status("Este tipo de juego todavía no está disponible en Unity.");
                 return;
@@ -247,6 +249,7 @@ namespace EduQuest.Student
             StudentNavigation.ActivityId = id;
             StudentNavigation.ActivityName = title;
             StudentNavigation.PracticeMode = false;
+            StudentNavigation.ActivityReplayMode = practiceReplay;
             StudentNavigation.GameType = type;
             StudentNavigation.Go("Game");
         }
@@ -259,10 +262,10 @@ namespace EduQuest.Student
             foreach (var item in selected)
             {
                 var chosen = item;
-                var details = (item.completed ? "Mejor nota: " + item.bestScore + "%" : "Hasta " + item.pointsAwarded + " puntos") +
+                var details = (item.completed ? "Nota competitiva: " + item.bestScore + "%" : "Hasta " + item.pointsAwarded + " puntos") +
                     " · " + item.teacherName + " · " + GameTypeLabel(item.gameType);
-                ListRow(list, item.title, details, item.completed ? "VOLVER A JUGAR" : "JUGAR", () =>
-                    LaunchActivity(chosen.id, chosen.title, chosen.gameType));
+                ListRow(list, item.title, details, item.completed ? "PRACTICAR" : "JUGAR", () =>
+                    LaunchActivity(chosen.id, chosen.title, chosen.gameType, chosen.completed));
             }
         }
         // Tablas móviles: ancho visible al 100 % y deslizamiento horizontal para todas las columnas.
@@ -440,7 +443,7 @@ namespace EduQuest.Student
             var points = Q<Label>("total-points");
             if (points != null) points.text = "CLASIFICACIONES DEL CURSO";
             var note = Q<Label>("history-note");
-            if (note != null) note.text = "Compiten solamente los alumnos de tu curso. Se muestra el nombre y la inicial del apellido.";
+            if (note != null) note.text = "Elegí una materia para ver el ranking general o el ranking por actividad de tu curso.";
             Run(async () =>
             {
                 var data = await EduQuestRuntime.Student.Leaderboard();
@@ -449,62 +452,222 @@ namespace EduQuest.Student
             });
         }
 
-        private void RenderLeaderboard(VisualElement list, LeaderboardDTO data)
+        // Rankings de materias: General -> tabla; Por actividad -> listado -> tabla.
+        // No se mezcla la nota de materias diferentes.
+        private void RenderLeaderboard(VisualElement list, LeaderboardDTO firstData)
         {
             list.Clear();
-            if (data == null) { Empty(list, "No se pudo cargar la clasificación."); return; }
-            list.Add(Text(data.courseName + " · " + data.academicYear, "list-title"));
-            var myRank = Text("", "eyebrow");
-            list.Add(myRank);
-            list.Add(Text("Mejor nota por actividad. Las actividades pendientes cuentan como 0 en el promedio general.", "eq-table-hint"));
-            var options = new List<string> { "General · Todas las actividades" };
-            foreach (var activity in data.activities ?? Array.Empty<LeaderboardActivityDTO>())
-                options.Add(activity.title + " (#" + activity.id + ")");
-            var select = new DropdownField("Clasificación", options, 0);
-            select.AddToClassList("eq-ranking-activity-select");
-            list.Add(select);
-            var rankingBoard = new VisualElement();
-            list.Add(rankingBoard);
-            void Paint(LeaderboardDTO result)
+            if (firstData == null) { Empty(list, "No se pudo cargar la clasificación."); return; }
+
+            var subjects = firstData.subjects ?? Array.Empty<LeaderboardSubjectDTO>();
+            if (subjects.Length == 0)
             {
-                rankingBoard.Clear();
-                var ownRow = result?.rows?.FirstOrDefault(x => x.isMe);
-                myRank.text = ownRow?.position != null
-                    ? "Mi puesto: #" + ownRow.position.Value
-                    : "Todavía no tenés una posición registrada.";
-                if (result?.rows == null || result.rows.Length == 0)
+                Empty(list, "Todavía no hay materias activas en tu curso.");
+                return;
+            }
+            var subjectNames = subjects.Select(s => s.name ?? "Materia").ToList();
+            var subjectId = firstData.assignmentId ?? subjects[0].assignmentId;
+            var subjectIndex = Array.FindIndex(subjects, s => s.assignmentId == subjectId);
+            if (subjectIndex < 0) { subjectIndex = 0; subjectId = subjects[0].assignmentId; }
+
+            var filterPanel = new VisualElement();
+            filterPanel.AddToClassList("eq-rank-filter-panel");
+            filterPanel.Add(Text("Elegí una materia", "eq-rank-board-title"));
+            filterPanel.Add(Text("Las clasificaciones se calculan dentro de tu curso y de la materia elegida.", "eq-rank-filter-caption"));
+            var subjectSelect = new DropdownField("Materia", subjectNames, subjectIndex);
+            subjectSelect.AddToClassList("eq-ranking-activity-select");
+            filterPanel.Add(subjectSelect);
+
+            var modeBar = new VisualElement();
+            modeBar.AddToClassList("eq-rank-mode-bar");
+            var generalButton = new Button { text = "GENERAL" };
+            var activityButton = new Button { text = "POR ACTIVIDAD" };
+            generalButton.AddToClassList("eq-rank-mode-button");
+            activityButton.AddToClassList("eq-rank-mode-button");
+            modeBar.Add(generalButton);
+            modeBar.Add(activityButton);
+            filterPanel.Add(modeBar);
+            list.Add(filterPanel);
+
+            var summary = new VisualElement();
+            summary.AddToClassList("eq-rank-summary-panel");
+            var summaryTitle = Text("Clasificación del curso", "eq-rank-board-title");
+            summary.Add(summaryTitle);
+            var badges = new VisualElement();
+            badges.AddToClassList("eq-rank-chip-wrap");
+            var courseBadge = Text(firstData.courseName + " · " + firstData.academicYear, "eq-rank-chip");
+            var subjectBadge = Text("", "eq-rank-chip");
+            var modeBadge = Text("", "eq-rank-chip");
+            badges.Add(courseBadge);
+            badges.Add(subjectBadge);
+            badges.Add(modeBadge);
+            summary.Add(badges);
+            var ownPosition = Text("", "eq-rank-my-position");
+            summary.Add(ownPosition);
+            list.Add(summary);
+
+            var board = new VisualElement();
+            board.AddToClassList("eq-rank-board-card");
+            list.Add(board);
+
+            bool activityMode = false;
+            int? chosenActivityId = null;
+            LeaderboardDTO current = firstData;
+            int requestSerial = 0;
+
+            void FillHeader()
+            {
+                subjectBadge.text = "Materia: " + (current.subjectName ?? "Sin materia");
+                modeBadge.text = activityMode ? "Por actividad" : "General";
+                generalButton.EnableInClassList("eq-rank-mode-active", !activityMode);
+                activityButton.EnableInClassList("eq-rank-mode-active", activityMode);
+            }
+
+            void RenderStandings(LeaderboardDTO result)
+            {
+                board.Clear();
+                if (activityMode)
                 {
-                    rankingBoard.Add(Text("Todavía no hay resultados disponibles.", "muted"));
+                    var back = new Button { text = "Volver a actividades" };
+                    back.AddToClassList("eq-rank-back-activities");
+                    back.clicked += () => { chosenActivityId = null; RenderCurrent(); };
+                    board.Add(back);
+                    board.Add(Text(result.activityName ?? "Actividad", "eq-rank-board-title"));
+                }
+                else
+                {
+                    board.Add(Text("Promedio general · " + (result.subjectName ?? "Materia"), "eq-rank-board-title"));
+                }
+
+                // En ranking por actividad solamente aparecen quienes la completaron.
+                var rows = (result.rows ?? Array.Empty<LeaderboardRowDTO>())
+                    .Where(r => !activityMode || r.completedCount > 0).ToArray();
+                var mine = rows.FirstOrDefault(r => r.isMe);
+                ownPosition.text = mine?.position != null ? "Tu puesto: #" + mine.position.Value :
+                    (activityMode ? "Todavía no participaste en esta actividad." : "Todavía no tenés una posición registrada.");
+                if (rows.Length == 0)
+                {
+                    Empty(board, activityMode ? "Esta actividad todavía no tiene alumnos que la hayan completado." : "Todavía no hay resultados en esta materia.");
                     return;
                 }
-                rankingBoard.Add(Text(result.mode == "GENERAL" ? "Promedio general del curso" : (result.activityName ?? "Actividad"), "list-title"));
-                rankingBoard.Add(Text("Deslizá horizontalmente para ver todas las columnas.", "eq-table-hint"));
-                var widths = new float[] { 72, 180, 110, 95, 142 };
-                var tableScroll = NewTable(rankingBoard,
-                    new[] { "Puesto", "Alumno", "Puntaje", "Nota", "Completadas" }, widths);
-                var grid = tableScroll.contentContainer.Q<VisualElement>(className: "eq-data-table");
-                for (int i = 0; i < result.rows.Length; i++)
+
+                var header = new VisualElement();
+                header.AddToClassList("eq-rank-line");
+                header.AddToClassList("eq-rank-line-head");
+                var posHead = Text("#", "eq-rank-head-label"); posHead.style.width = 42;
+                var nameHead = Text("ALUMNO", "eq-rank-head-label"); nameHead.AddToClassList("eq-rank-name-column");
+                var pointsHead = Text("PTS", "eq-rank-head-label"); pointsHead.style.width = 54;
+                var gradeHead = Text("NOTA", "eq-rank-head-label"); gradeHead.style.width = 48;
+                header.Add(posHead); header.Add(nameHead); header.Add(pointsHead); header.Add(gradeHead);
+                board.Add(header);
+
+                for (int i = 0; i < rows.Length; i++)
                 {
-                    var entry = result.rows[i];
-                    var row = DataRow(grid, i, entry.isMe);
-                    row.Add(DataCell(entry.position.HasValue ? "#" + entry.position.Value : "—", widths[0], "eq-data-rank"));
-                    row.Add(DataCell(entry.name + (entry.isMe ? " (yo)" : ""), widths[1], "eq-data-prominent"));
-                    row.Add(DataCell(entry.score.ToString("0.0") + "%", widths[2], "eq-data-score"));
-                    row.Add(DataCell(entry.grade.ToString("0.0") + "/10", widths[3], "eq-data-grade"));
-                    row.Add(DataCell(entry.completedCount + " / " + entry.totalActivities, widths[4]));
+                    var entry = rows[i];
+                    var row = new VisualElement();
+                    row.AddToClassList("eq-rank-line");
+                    row.AddToClassList(i % 2 == 0 ? "eq-rank-line-even" : "eq-rank-line-odd");
+                    if (entry.isMe) row.AddToClassList("eq-rank-line-self");
+                    if (entry.position == 1) row.AddToClassList("eq-rank-line-first");
+                    else if (entry.position == 2) row.AddToClassList("eq-rank-line-second");
+                    else if (entry.position == 3) row.AddToClassList("eq-rank-line-third");
+                    var medal = new VisualElement(); medal.AddToClassList("eq-rank-star");
+                    var star = Resources.Load<Texture2D>("EduQuest/AchievementStar");
+                    if (star != null) medal.style.backgroundImage = new StyleBackground(star);
+                    var num = Text(entry.position?.ToString() ?? "—", "eq-rank-star-number");
+                    medal.Add(num); row.Add(medal);
+                    var person = new VisualElement(); person.AddToClassList("eq-rank-name-column");
+                    person.Add(Text((entry.name ?? "Alumno") + (entry.isMe ? " (yo)" : ""), "eq-rank-name"));
+                    if (!activityMode) person.Add(Text(entry.completedCount + "/" + entry.totalActivities + " actividades", "eq-rank-caption"));
+                    row.Add(person);
+                    row.Add(Text(entry.points.ToString("0"), "eq-rank-points"));
+                    row.Add(Text(entry.grade.ToString("0.0"), "eq-rank-grade"));
+                    board.Add(row);
                 }
+                var footnote = Text(activityMode
+                    ? "Se muestra el mejor resultado de los alumnos que completaron esta actividad. Los empates comparten puesto."
+                    : "General de la materia: mejor resultado por actividad; las pendientes cuentan como 0 para el promedio.", "eq-rank-footnote");
+                board.Add(footnote);
             }
-            Paint(data);
-            select.RegisterValueChangedCallback(evt =>
+
+            void RenderCurrent()
             {
-                int index = options.IndexOf(evt.newValue);
-                int? activityId = index <= 0 ? (int?)null : data.activities[index - 1].id;
+                FillHeader();
+                if (activityMode && !chosenActivityId.HasValue)
+                {
+                    board.Clear();
+                    ownPosition.text = "Seleccioná una actividad para ver sus posiciones.";
+                    board.Add(Text("Actividades de " + (current.subjectName ?? "la materia"), "eq-rank-board-title"));
+                    var choices = current.activities ?? Array.Empty<LeaderboardActivityDTO>();
+                    if (choices.Length == 0)
+                    {
+                        Empty(board, "Esta materia todavía no tiene actividades publicadas.");
+                        return;
+                    }
+                    foreach (var item in choices)
+                    {
+                        var chosen = item;
+                        var card = new Button(() =>
+                        {
+                            chosenActivityId = chosen.id;
+                            Load(subjectId, chosenActivityId);
+                        });
+                        card.AddToClassList("eq-rank-activity-card");
+                        var icon = new VisualElement(); icon.AddToClassList("eq-rank-activity-check");
+                        var art = Resources.Load<Texture2D>("EduQuest/GamepadIllustration");
+                        if (art != null) icon.style.backgroundImage = new StyleBackground(art);
+                        var info = new VisualElement(); info.AddToClassList("eq-rank-activity-info");
+                        info.Add(Text(chosen.title ?? "Actividad", "eq-rank-activity-title"));
+                        info.Add(Text("Ver posiciones de quienes completaron el juego", "eq-rank-activity-subtitle"));
+                        var action = Text("VER", "eq-rank-activity-open");
+                        card.Add(icon); card.Add(info); card.Add(action);
+                        board.Add(card);
+                    }
+                    return;
+                }
+                RenderStandings(current);
+            }
+
+            void Load(int assignmentId, int? activityId)
+            {
+                int ownSerial = ++requestSerial;
+                board.Clear();
+                board.Add(Text("Cargando clasificación...", "muted"));
                 Run(async () =>
                 {
-                    var result = await EduQuestRuntime.Student.Leaderboard(activityId);
-                    if (this != null && StudentNavigation.RankingRequested && select.value == evt.newValue) Paint(result);
+                    var response = await EduQuestRuntime.Student.Leaderboard(assignmentId, activityId);
+                    if (this == null || !StudentNavigation.RankingRequested || ownSerial != requestSerial ||
+                        subjectId != assignmentId || chosenActivityId != activityId) return;
+                    current = response;
+                    RenderCurrent();
                 });
+            }
+
+            generalButton.clicked += () =>
+            {
+                ++requestSerial;
+                activityMode = false;
+                chosenActivityId = null;
+                if (current.assignmentId == subjectId && current.activityId == null) RenderCurrent();
+                else Load(subjectId, null);
+            };
+            activityButton.clicked += () =>
+            {
+                ++requestSerial;
+                activityMode = true;
+                chosenActivityId = null;
+                if (current.assignmentId == subjectId) RenderCurrent();
+                else Load(subjectId, null);
+            };
+            subjectSelect.RegisterValueChangedCallback(evt =>
+            {
+                int idx = subjectNames.IndexOf(evt.newValue);
+                if (idx < 0 || idx >= subjects.Length) return;
+                subjectId = subjects[idx].assignmentId;
+                chosenActivityId = null;
+                Load(subjectId, null);
             });
+            RenderCurrent();
         }
 
         private void SetupProfile()
@@ -542,21 +705,6 @@ namespace EduQuest.Student
         private void SetupPractice()
         {
             var list = Items();
-            // Disponible desde el primer día: usa el nivel original, sin modificar sus assets.
-            var runner = new VisualElement();
-            runner.AddToClassList("featured-game");
-            runner.Add(Text("AVENTURA DE MOVIMIENTO · PANTALLA HORIZONTAL", "featured-tag"));
-            runner.Add(Text("Corre y aprende", "featured-title"));
-            runner.Add(Text("Corré, saltá obstáculos y respondé preguntas. Por ahora usa el banco de demostración incorporado al nivel original. No afecta notas, puntos ni monedas del perfil.", "featured-detail"));
-            var playRunner = new Button(() =>
-            {
-                if (!StudentNavigation.GoRunnerPractice())
-                    Status("No se encontró el nivel del juego. Agregá Nivel01.unity a la Scene List del perfil Android.");
-            }) { text = "CORRER Y RESPONDER" };
-            playRunner.AddToClassList("primary");
-            playRunner.AddToClassList("featured-action");
-            runner.Add(playRunner);
-            list.Add(runner);
             list.Add(Text("DESAFÍOS DE PREGUNTAS", "eyebrow"));
             Run(async () =>
             {
@@ -570,7 +718,6 @@ namespace EduQuest.Student
                 foreach (var game in games)
                 {
                     var selected = game;
-                    // No duplicar el runner cuando el servidor agregue múltiples tipos.
                     if (selected.gameType != "true_false") continue;
                     ListRow(list, "Verdadero o falso", selected.activities + " actividades de las materias publicadas · Sin nota ni puntos", "PRACTICAR", () =>
                     {

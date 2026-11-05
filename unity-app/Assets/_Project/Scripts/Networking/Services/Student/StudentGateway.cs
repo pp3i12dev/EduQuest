@@ -16,9 +16,19 @@ namespace EduQuest.Student
         // Nunca abrir downloadPath en navegador sin JWT: se descarga por la API autorizada.
         public Task<byte[]> DownloadStudyMaterial(int materialId) =>
             api.GetBytesAsync("/student/materials/" + materialId + "/file");
-        public Task<LeaderboardDTO> Leaderboard(int? activityId = null) =>
-            api.GetAsync<LeaderboardDTO>("/student/leaderboard" +
-                (activityId.HasValue ? "?activityId=" + activityId.Value : ""));
+        public Task<LeaderboardDTO> Leaderboard(int? assignmentId = null, int? activityId = null)
+        {
+            string url = "/student/leaderboard";
+            string sep = "?";
+            if (assignmentId.HasValue)
+            {
+                url += sep + "assignmentId=" + assignmentId.Value;
+                sep = "&";
+            }
+            if (activityId.HasValue)
+                url += sep + "activityId=" + activityId.Value;
+            return api.GetAsync<LeaderboardDTO>(url);
+        }
         public Task<HistoryDTO> History(bool includeHidden = false) =>
             api.GetAsync<HistoryDTO>("/student/history" + (includeHidden ? "?includeHidden=true" : ""));
         public Task<AttemptDetailDTO> HistoryDetail(int attemptId) => api.GetAsync<AttemptDetailDTO>("/student/history/" + attemptId);
@@ -36,9 +46,9 @@ namespace EduQuest.Student
         public Task<MessageDTO> ChangePassword(string oldPassword, string newPassword) =>
             api.PatchAsync<object, MessageDTO>("/users/me/password", new { currentPassword = oldPassword, newPassword, confirmPassword = newPassword });
         public Task<QuestionSetDTO> Play(int activityId) => api.GetAsync<QuestionSetDTO>("/student/activities/" + activityId + "/play");
-        public Task<ResultDTO> Complete(int activityId, AnswerDTO[] answers, int durationSeconds) =>
-            api.PostAsync<object, ResultDTO>("/student/activities/" + activityId + "/complete", new { answers, timeInSec = durationSeconds });
-        public Task<RunnerPracticeBankDTO> RunnerBank() => api.GetAsync<RunnerPracticeBankDTO>("/student/practice/runner-bank");
+        public Task<ResultDTO> Complete(int activityId, AnswerDTO[] answers, int durationSeconds, bool practice = false) =>
+            api.PostAsync<object, ResultDTO>("/student/activities/" + activityId + "/complete", new { answers, timeInSec = durationSeconds, practice });
+
         public Task<GameTypeDTO[]> PracticeGames() => api.GetAsync<GameTypeDTO[]>("/student/practice/games");
         public Task<QuestionSetDTO> PracticeQuestions(string type) => api.GetAsync<QuestionSetDTO>("/student/practice/questions?gameType=" + System.Uri.EscapeDataString(type));
         public Task<ResultDTO> CheckPractice(string type, AnswerDTO[] answers) =>

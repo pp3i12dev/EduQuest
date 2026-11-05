@@ -9,9 +9,9 @@ namespace EduQuest.Student
     public partial class EduQuestScreen
     {
         private static readonly string[] BoyAvatars =
-            { "boy_01", "boy_02", "boy_03", "boy_04", "boy_05", "boy_06" };
+            { "boy_01", "boy_02", "boy_03", "boy_04", "boy_05", "boy_06", "boy_07", "boy_08", "boy_09", "boy_10" };
         private static readonly string[] GirlAvatars =
-            { "girl_01", "girl_02", "girl_03", "girl_04", "girl_05", "girl_06" };
+            { "girl_01", "girl_02", "girl_03", "girl_04", "girl_05", "girl_06", "girl_07", "girl_08", "girl_09", "girl_10" };
 
         private static string savedAvatarId = "boy_01";
         private static int savedAvatarUserId = -1;
@@ -57,7 +57,7 @@ namespace EduQuest.Student
             if (sprite != null) element.style.backgroundImage = new StyleBackground(sprite);
             else if (tex != null) element.style.backgroundImage = new StyleBackground(tex);
             else { Debug.LogWarning("EduQuest: avatar no importado en Resources: " + key); return; }
-            element.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+            element.style.unityBackgroundScaleMode = element.name == "drawer-avatar" ? ScaleMode.ScaleAndCrop : ScaleMode.ScaleToFit;
         }
 
         // Se invoca al abrir cada pantalla autenticada. En el Home el resultado

@@ -770,3 +770,91 @@
     padding: 10px; margin-bottom: 10px;
 }
 .eq-theme .eq-table-toggle { margin-bottom: 4px; }
+
+/* Entrega 21: Configuración discreta, accesible y sin desbordamiento. */
+.eq-theme .home-student-card { position: relative; }
+.eq-theme .home-settings-corner {
+  position: absolute; top: 9px; right: 9px; width: 39px; height: 39px;
+  min-width: 39px; min-height: 39px; flex-shrink: 0;
+  padding: 6px; border-radius: 14px;
+  border-width: 1px; border-color: rgb(174,135,249);
+  background-color: rgb(248,239,255);
+  -unity-background-scale-mode: scale-to-fit;
+  -unity-background-image-tint-color: rgb(84,47,172);
+}
+.eq-theme .home-settings-corner:hover { background-color: rgb(255,226,166); }
+.eq-theme .home-menu-layer .sidebar .art-navsettings {
+  display: flex; width: 30px; min-width: 30px; height: 30px;
+  -unity-background-scale-mode: scale-to-fit;
+  -unity-background-image-tint-color: rgb(255,210,74);
+  opacity: 1;
+}
+.eq-theme .home-menu-layer .sidebar .nav-active .art-navsettings {
+  -unity-background-image-tint-color: rgb(50,28,121);
+}
+.eq-theme .settings-panel { margin-top: 4px; }
+.eq-theme .settings-heading-row { flex-direction: row; align-items: center; margin-bottom: 6px; }
+.eq-theme .settings-heading-icon { width: 34px; min-width: 34px; height: 34px; margin-right: 12px; -unity-background-scale-mode: scale-to-fit; -unity-background-image-tint-color: rgb(81,42,164); }
+.eq-theme .settings-back-top { height: 45px; min-height: 45px; border-radius: 14px; background-color: rgb(255,196,44); color: rgb(50,31,112); -unity-font-style: bold; border-width: 0; }
+.eq-theme .password-eye-button { position: absolute; top: 6px; right: 9px; width: 43px; height: 43px; min-width: 43px; min-height: 43px; border-width: 0; border-radius: 12px; padding: 8px; background-color: rgba(232,223,252,0.7); -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .password-eye-button:hover { background-color: rgb(255,231,166); }
+.eq-theme .password-eye-button.is-visible { background-color: rgb(255,220,133); }
+
+
+/* Entrega 25 - ajustes definitivos de navegación y ranking móvil */
+.eq-theme .home-settings-floating {
+  position: absolute; right: 16px; bottom: 16px;
+  width: 48px; height: 48px; min-width: 48px; min-height: 48px;
+  padding: 9px; border-radius: 24px;
+  background-color: rgb(255,213,87);
+  border-width: 2px; border-color: rgb(109,64,196);
+  -unity-background-scale-mode: scale-to-fit;
+  -unity-background-image-tint-color: rgb(67,36,145);
+}
+.eq-theme .home-settings-floating:hover { background-color: rgb(255,232,166); }
+.eq-theme .home-content { padding-bottom: 78px; }
+.eq-theme .drawer-head { align-items: flex-start; width: 100%; }
+.eq-theme .drawer-avatar {
+  width: 76px; height: 76px; min-width: 76px; min-height: 76px;
+  border-radius: 38px; overflow: hidden;
+  background-color: rgb(255,255,255); border-width: 3px;
+  border-color: rgb(255,206,87); align-self: flex-start;
+  -unity-background-scale-mode: scale-and-crop;
+}
+.eq-theme .drawer-name, .eq-theme .drawer-level {
+  width: 100%; min-width: 0; align-self: flex-start;
+  -unity-text-align: middle-left; white-space: normal;
+}
+.eq-theme .drawer-close {
+  align-self: flex-end; -unity-text-align: middle-center;
+  font-size: 24px; -unity-font-style: bold;
+}
+.eq-theme .home-menu-layer .sidebar .art-navsettings {
+  -unity-background-image-tint-color: rgb(255,255,255);
+}
+.eq-theme .home-menu-layer .sidebar .nav-active .art-navsettings {
+  -unity-background-image-tint-color: rgb(54,29,128);
+}
+.eq-theme .settings-panel { width: 100%; min-width: 0; }
+.eq-theme .settings-heading-row { width: 100%; min-width: 0; flex-direction: row; align-items: center; }
+.eq-theme .eq-settings-heading-text { flex-grow: 1; flex-shrink: 1; min-width: 0; }
+.eq-theme .eq-settings-heading-text .heading { font-size: 19px; white-space: normal; }
+.eq-theme .eq-settings-heading-subtitle { font-size: 17px; color: rgb(92,54,168); -unity-font-style: bold; }
+.eq-theme .eq-rank-mode-bar { flex-direction: row; width: 100%; margin-bottom: 11px; }
+.eq-theme .eq-rank-mode-button { flex-grow: 1; flex-shrink: 1; min-width: 0; min-height: 46px; margin-right: 3px; margin-left: 3px; border-radius: 14px; background-color: rgb(232,220,251); color: rgb(80,48,145); -unity-font-style: bold; font-size: 13px; }
+.eq-theme .eq-rank-mode-active { background-color: rgb(255,199,56); color: rgb(64,38,124); }
+.eq-theme .eq-rank-list { width: 100%; min-width: 0; }
+.eq-theme .eq-rank-line { width: 100%; min-width: 0; flex-direction: row; align-items: center; min-height: 60px; padding: 6px 3px; border-bottom-width: 1px; border-bottom-color: rgb(214,194,247); }
+.eq-theme .eq-rank-line-even { background-color: rgb(251,248,255); }
+.eq-theme .eq-rank-line-odd { background-color: rgb(238,231,255); }
+.eq-theme .eq-rank-line-self { background-color: rgb(255,239,179); }
+.eq-theme .eq-rank-line-head { background-color: rgb(89,50,167); min-height: 39px; border-radius: 8px; }
+.eq-theme .eq-rank-head-label { color: white; -unity-font-style: bold; font-size: 10px; }
+.eq-theme .eq-rank-star { width: 43px; min-width: 43px; height: 41px; min-height: 41px; justify-content: center; align-items: center; -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .eq-rank-star-number { color: rgb(78,47,133); font-size: 13px; -unity-font-style: bold; -unity-text-align: middle-center; }
+.eq-theme .eq-rank-name-column { flex-grow: 1; flex-shrink: 1; min-width: 0; padding-left: 4px; padding-right: 2px; }
+.eq-theme .eq-rank-name { white-space: normal; font-size: 12px; color: rgb(62,38,123); -unity-font-style: bold; }
+.eq-theme .eq-rank-caption { font-size: 9px; color: rgb(107,83,154); white-space: normal; }
+.eq-theme .eq-rank-points { width: 61px; min-width: 61px; font-size: 12px; color: rgb(12,116,127); -unity-font-style: bold; -unity-text-align: middle-center; }
+.eq-theme .eq-rank-grade { width: 49px; min-width: 49px; font-size: 12px; color: rgb(119,53,167); -unity-font-style: bold; -unity-text-align: middle-center; }
+.eq-theme .eq-rank-head-cell { color: rgb(255,255,255); }

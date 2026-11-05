@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine.Networking;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -17,7 +16,6 @@ namespace EduQuest.Student
         private string selectedMatchingConcept;
         private int questionIndex;
         private float startedAt;
-        private Texture2D diagramTexture;
         private string selectedMemoryCard;
         private readonly List<MemoryCard> memoryCards = new List<MemoryCard>();
         private sealed class MemoryCard
@@ -40,32 +38,11 @@ namespace EduQuest.Student
             memoryCards.Clear(); memoryCards.AddRange(randomized);
             selectedMemoryCard = null;
         }
-        private async Task LoadDiagramIfNeeded()
-        {
-            diagramTexture = null;
-            if (currentQuestions?.gameType != "image_label") return;
-            string path = currentQuestions.imageUrl ?? "";
-            if (!System.Text.RegularExpressions.Regex.IsMatch(path, @"^/uploads/[a-fA-F0-9-]{36}\.(png|jpg|jpeg|webp)$"))
-                throw new Exception("La ilustración de esta actividad tiene una ruta inválida.");
-            string api = ApiConfig.BaseUrl.TrimEnd('/');
-            string origin = api.EndsWith("/api", StringComparison.OrdinalIgnoreCase)
-                ? api.Substring(0, api.Length - 4) : api;
-            using (var request = UnityWebRequestTexture.GetTexture(origin + path))
-            {
-                request.timeout = 25;
-                var op = request.SendWebRequest();
-                while (!op.isDone) await Task.Yield();
-                if (request.result != UnityWebRequest.Result.Success)
-                    throw new Exception("No se pudo descargar la imagen educativa. Revisá la conexión y la URL del backend.");
-                diagramTexture = DownloadHandlerTexture.GetContent(request);
-            }
-        }
-
         private bool IsExtendedGame()
         {
             if (currentQuestions == null) return false;
             string type = currentQuestions.gameType;
-            return type == "sequence" || type == "classification" || type == "fill_blank" || type == "spot_error" || type == "memory" || type == "image_label";
+            return type == "sequence" || type == "classification" || type == "fill_blank" || type == "spot_error" || type == "memory";
         }
 
         private void SetupGame()
@@ -95,7 +72,6 @@ namespace EduQuest.Student
                 matchingAnswers.Clear();
                 selectedMatchingConcept = null;
                 if (currentQuestions.gameType == "memory") PrepareMemoryCards();
-                await LoadDiagramIfNeeded();
                 if (this == null) return;
                 DisplayQuestion();
             });
@@ -169,7 +145,6 @@ namespace EduQuest.Student
             board.style.display = DisplayStyle.Flex;
             var questions = currentQuestions.questions;
             if (type == "memory") { RenderMemoryBoard(board); return; }
-            if (type == "image_label") { RenderImageLabelBoard(board); return; }
             if (type == "sequence")
             {
                 Q<Label>("question-position").text = "Pasos ordenados: " + choiceAnswers.Count + " / " + questions.Length;
@@ -271,56 +246,6 @@ namespace EduQuest.Student
             choiceAnswers[left] = right;
             selectedMemoryCard = null;
             DisplayQuestion();
-        }
-        private void RenderImageLabelBoard(VisualElement board)
-        {
-            var qs = currentQuestions.questions;
-            Q<Button>("finish").SetEnabled(choiceAnswers.Count == qs.Length);
-            Q<Label>("question-position").text = "Etiquetas completadas: " + choiceAnswers.Count + " / " + qs.Length;
-            Q<Label>("question-text").text = "Tocá un punto de la ilustración y elegí la etiqueta que le corresponde.";
-            if (diagramTexture == null) { board.Add(Text("No se pudo cargar la imagen.", "muted")); return; }
-            var frame = new VisualElement();
-            frame.AddToClassList("eq-diagram-frame");
-            frame.style.backgroundImage = new StyleBackground(diagramTexture);
-            frame.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
-            // La altura respeta exactamente la proporción de la imagen.
-            // Así los marcadores quedan sobre sus coordenadas, sin bandas vacías.
-            frame.RegisterCallback<GeometryChangedEvent>(evt =>
-            {
-                float width = evt.newRect.width;
-                float height = width * diagramTexture.height / diagramTexture.width;
-                if (width > 0 && Math.Abs(evt.newRect.height - height) > 1f) frame.style.height = height;
-            });
-            var current = qs[Math.Min(questionIndex, qs.Length - 1)];
-            for (int i = 0; i < qs.Length; i++)
-            {
-                var item = qs[i];
-                var index = i;
-                var marker = new Button(() => { questionIndex = index; DisplayQuestion(); }) { text = (i + 1).ToString() };
-                marker.AddToClassList("eq-diagram-pin");
-                if (choiceAnswers.ContainsKey(item.id)) marker.AddToClassList("eq-diagram-answered");
-                if (i == questionIndex) marker.AddToClassList("eq-diagram-selected");
-                marker.style.left = Length.Percent(item.x);
-                marker.style.top = Length.Percent(item.y);
-                frame.Add(marker);
-            }
-            board.Add(frame);
-            board.Add(Text("Punto " + (questionIndex + 1) + " · Seleccioná su etiqueta:", "eyebrow"));
-            foreach (var option in current.options ?? Array.Empty<RemoteChoiceDTO>())
-            {
-                string id = option.id;
-                var tile = new Button(() =>
-                {
-                    choiceAnswers[current.id] = id;
-                    int next = Array.FindIndex(qs, q => !choiceAnswers.ContainsKey(q.id));
-                    if (next >= 0) questionIndex = next;
-                    DisplayQuestion();
-                }) { text = option.text };
-                tile.AddToClassList("game-option-tile");
-                if (choiceAnswers.TryGetValue(current.id, out var picked) && picked == id)
-                    tile.AddToClassList("eq-diagram-answered");
-                board.Add(tile);
-            }
         }
         private void ChooseSequenceStep(string optionId)
         {
@@ -455,14 +380,6 @@ namespace EduQuest.Student
                     throw;
                 }
             });
-        }
-        private void OnDestroy()
-        {
-            if (diagramTexture != null)
-            {
-                Destroy(diagramTexture);
-                diagramTexture = null;
-            }
         }
         private void SetupResult()
         {

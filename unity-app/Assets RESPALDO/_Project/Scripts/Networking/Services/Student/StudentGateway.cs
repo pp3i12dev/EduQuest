@@ -38,7 +38,7 @@ namespace EduQuest.Student
         public Task<QuestionSetDTO> Play(int activityId) => api.GetAsync<QuestionSetDTO>("/student/activities/" + activityId + "/play");
         public Task<ResultDTO> Complete(int activityId, AnswerDTO[] answers, int durationSeconds) =>
             api.PostAsync<object, ResultDTO>("/student/activities/" + activityId + "/complete", new { answers, timeInSec = durationSeconds });
-        public Task<RunnerPracticeBankDTO> RunnerBank() => api.GetAsync<RunnerPracticeBankDTO>("/student/practice/runner-bank");
+
         public Task<GameTypeDTO[]> PracticeGames() => api.GetAsync<GameTypeDTO[]>("/student/practice/games");
         public Task<QuestionSetDTO> PracticeQuestions(string type) => api.GetAsync<QuestionSetDTO>("/student/practice/questions?gameType=" + System.Uri.EscapeDataString(type));
         public Task<ResultDTO> CheckPractice(string type, AnswerDTO[] answers) =>

@@ -76,7 +76,7 @@ namespace EduQuest.Student
         {
             if (fallbackListener == null) return;
             bool anotherEnabled = false;
-            foreach (var other in FindObjectsByType<AudioListener>(FindObjectsSortMode.None))
+            foreach (var other in FindObjectsByType<AudioListener>())
             {
                 if (other != fallbackListener && other.isActiveAndEnabled)
                 { anotherEnabled = true; break; }

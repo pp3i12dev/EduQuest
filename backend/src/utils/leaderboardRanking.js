@@ -2,6 +2,7 @@
 // La puntuación general usa TODAS las actividades activas del curso como denominador.
 export function rankStudents({ students = [], activities = [], attempts = [], activityId = null }) {
   const activityIds = new Set(activities.map(x => x.id));
+  const awards = new Map(activities.map(x => [x.id, Number(x.pointsAwarded) || 0]));
   const eligible = new Set(students.map(x => x.id));
   const best = new Map();
   for (const a of attempts) {
@@ -14,6 +15,7 @@ export function rankStudents({ students = [], activities = [], attempts = [], ac
   const rows = students.map(student => {
     const scores = selectedIds.map(id => best.get(`${student.id}:${id}`));
     const completedCount = scores.filter(v => v !== undefined).length;
+    const points = Math.round(selectedIds.reduce((sum, id) => sum + ((best.get(`${student.id}:${id}`) ?? 0) / 100) * (awards.get(id) || 0), 0));
     const score = selectedIds.length
       ? Math.round(scores.reduce((sum, n) => sum + (n ?? 0), 0) / selectedIds.length * 10) / 10
       : 0;
@@ -21,6 +23,7 @@ export function rankStudents({ students = [], activities = [], attempts = [], ac
       studentId: student.id,
       name: student.name,
       score,
+      points,
       grade: Math.round(score) / 10,
       completedCount,
       totalActivities: selectedIds.length,

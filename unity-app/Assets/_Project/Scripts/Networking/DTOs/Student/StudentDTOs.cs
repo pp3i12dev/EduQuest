@@ -43,17 +43,19 @@ namespace EduQuest.Student
     [Serializable] public class LeaderboardDTO
     {
         public int courseId, academicYear, totalActivities;
-        public string courseName, mode, activityName, policy;
-        public int? activityId, myPosition;
+        public string courseName, subjectName, mode, activityName, policy;
+        public int? assignmentId, activityId, myPosition;
+        public LeaderboardSubjectDTO[] subjects;
         public LeaderboardActivityDTO[] activities;
         public LeaderboardRowDTO[] rows;
     }
+    [Serializable] public class LeaderboardSubjectDTO { public int assignmentId; public string name; }
     [Serializable] public class LeaderboardActivityDTO { public int id; public string title; }
     [Serializable] public class LeaderboardRowDTO
     {
         public int? studentId, position;
         public string name;
-        public float score, grade;
+        public float score, grade, points;
         public int completedCount, totalActivities, coverage;
         public bool isMe;
     }
@@ -64,12 +66,13 @@ namespace EduQuest.Student
     // contiene las mismas definiciones desordenadas, identificadas por tokens opacos.
     // correctAnswer JAMÁS aparece en esta respuesta.
     [Serializable] public class QuestionDTO { public string id, text; public float x, y; public RemoteChoiceDTO[] options; }
-    [Serializable] public class QuestionSetDTO { public int id; public string title, description, gameType, imageUrl; public QuestionDTO[] questions; }
+    [Serializable] public class QuestionSetDTO { public int id; public string title, description, gameType; public QuestionDTO[] questions; }
     [Serializable] public class AnswerDTO { public string id; public bool answer; public string optionId; }
     [Serializable] public class ResultDTO
     {
         public int score, correct, total, earnedPoints, attemptId, points, level, coins;
         public float grade;
+        public bool practiceOnly;
         public string message;
         public ReviewAnswerDTO[] review;
     }
@@ -120,4 +123,3 @@ namespace EduQuest.Student
     [Serializable] public class RemoteMatchingQuestionDTO { public string id, prompt; public RemoteChoiceDTO[] left, right; }
 }
 
-namespace EduQuest.Student { [System.Serializable] public class RunnerPracticeBankDTO { public string mode; public bool rewarded; public RunnerQuestionDTO[] questions; } [System.Serializable] public class RunnerQuestionDTO { public string id, text, correctAnswer; public RemoteChoiceDTO[] options; } }

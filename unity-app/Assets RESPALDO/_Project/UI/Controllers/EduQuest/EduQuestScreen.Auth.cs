@@ -23,6 +23,22 @@ namespace EduQuest.Student
         private void SetupLogin()
         {
             Password("password");
+            // El icono de ojo era un VisualElement inerte. Ahora es un Button
+            // táctil que cambia realmente TextField.isPasswordField.
+            var passwordField = Q<TextField>("password");
+            var togglePassword = Q<Button>("toggle-password");
+            if (passwordField != null && togglePassword != null)
+            {
+                togglePassword.clicked += () =>
+                {
+                    bool show = passwordField.isPasswordField;
+                    passwordField.isPasswordField = !show;
+                    togglePassword.tooltip = show ? "Ocultar contraseña" : "Mostrar contraseña";
+                    togglePassword.EnableInClassList("is-visible", show);
+                    passwordField.MarkDirtyRepaint();
+                    passwordField.Query<TextElement>().ForEach(element => element.MarkDirtyRepaint());
+                };
+            }
             Click("back", () => StudentNavigation.Go("Welcome"));
             // StudentNavigation puede abrirla en Editor aunque el perfil Android
             // todavía no tenga una Scene List; para un APK sí debe incluirse.

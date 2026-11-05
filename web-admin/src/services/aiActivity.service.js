@@ -1,12 +1,7 @@
 import api from '../api/axios';
 
 export const aiActivityService = {
-  uploadDiagram: async (teacherSubjectId, image) => {
-    const form = new FormData();
-    form.append('teacherSubjectId', String(teacherSubjectId));
-    form.append('image', image);
-    return (await api.post('/ai-activities/diagram', form)).data;
-  },
+  status: async () => (await api.get('/ai-activities/status')).data,
   archive: async (id, teacherSubjectId) =>
     (await api.delete(`/ai-activities/activities/${id}`, { data: { teacherSubjectId, confirm: 'ELIMINAR' } })).data,
   preview: async payload => (await api.post('/ai-activities/preview', payload)).data,

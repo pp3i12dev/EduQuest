@@ -4,13 +4,13 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-// Las 12 escenas EQ_*.unity ya están en el ZIP: este menú solamente las incorpora al build.
+// Las 13 escenas EQ_*.unity ya están en el ZIP: este menú solamente las incorpora al build.
 public static class EduQuestBuildSetup
 {
-    [MenuItem("EduQuest/Configurar 12 escenas UI Toolkit en Build Profiles")]
+    [MenuItem("EduQuest/Configurar 13 escenas UI Toolkit en Build Profiles")]
     public static void Configure()
     {
-        var paths = new [] { "Welcome", "Login", "ForgotPassword", "Register", "Home", "Subjects", "Activities", "Profile", "History", "Practice", "Game", "Result" }
+        var paths = new [] { "Welcome", "Login", "ForgotPassword", "Register", "Home", "Subjects", "Activities", "Profile", "Settings", "History", "Practice", "Game", "Result" }
             .Select(name => "Assets/_Project/Scenes/EduQuest/EQ_" + name + ".unity").ToArray();
         foreach (var path in paths)
         {
@@ -20,12 +20,12 @@ public static class EduQuestBuildSetup
                 return;
             }
         }
-        // EQ_Welcome primero, conservar escenas antiguas y CorreCoco, sin alterar archivos de juegos.
-        var extras = EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path)).ToArray();
+        // EQ_Welcome primero; excluir del Build escenas de videojuegos retirados.
+        var extras = EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path) && !s.path.Contains("/_Project/Juegos/")).ToArray();
         EditorBuildSettings.scenes = paths.Select(x => new EditorBuildSettingsScene(x, true)).Concat(extras).ToArray();
-        Debug.Log("EduQuest: las 12 escenas EQ_ quedaron en la Shared Scene List. " +
+        Debug.Log("EduQuest: las 13 escenas EQ_ quedaron en la Shared Scene List. " +
                   "Si tu Build Profile tiene una Scene List propia, agregalas también allí.");
-        EditorUtility.DisplayDialog("EduQuest", "Las 12 escenas se agregaron a Shared Scene List. Si tu perfil tiene Scene List propia, revisala en File > Build Profiles. Abrí EQ_Welcome y presioná Play.", "Aceptar");
+        EditorUtility.DisplayDialog("EduQuest", "Las 13 escenas se agregaron a Shared Scene List. Si tu perfil tiene Scene List propia, revisala en File > Build Profiles. Abrí EQ_Welcome y presioná Play.", "Aceptar");
     }
 }
 #endif

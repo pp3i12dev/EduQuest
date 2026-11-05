@@ -1,9 +1,8 @@
 import { getPrisma } from '../config/prisma.js';
 
-// IDs inmutables: se corresponden con las texturas de Unity en Resources/EduQuest/Avatars.
 const AVAILABLE_AVATARS = new Set([
-  'boy_01', 'boy_02', 'boy_03', 'boy_04', 'boy_05', 'boy_06',
-  'girl_01', 'girl_02', 'girl_03', 'girl_04', 'girl_05', 'girl_06',
+  'boy_01', 'boy_02', 'boy_03', 'boy_04', 'boy_05', 'boy_06', 'boy_07', 'boy_08', 'boy_09', 'boy_10',
+  'girl_01', 'girl_02', 'girl_03', 'girl_04', 'girl_05', 'girl_06', 'girl_07', 'girl_08', 'girl_09', 'girl_10',
 ]);
 const DEFAULT_AVATAR = 'boy_01';
 
@@ -33,7 +32,6 @@ export async function updateMyAvatar(requester, body) {
   const current = student.avatarConfig?.configJson;
   const existingConfig = current && typeof current === 'object' && !Array.isArray(current) ? current : {};
   const configJson = { ...existingConfig, avatarId };
-  // Una configuración por estudiante, sin añadir columnas ni migraciones.
   await prisma.avatarConfig.upsert({
     where: { studentId: student.id },
     create: { studentId: student.id, configJson },

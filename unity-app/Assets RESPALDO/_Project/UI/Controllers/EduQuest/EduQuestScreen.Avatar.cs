@@ -57,7 +57,7 @@ namespace EduQuest.Student
             if (sprite != null) element.style.backgroundImage = new StyleBackground(sprite);
             else if (tex != null) element.style.backgroundImage = new StyleBackground(tex);
             else { Debug.LogWarning("EduQuest: avatar no importado en Resources: " + key); return; }
-            element.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+            element.style.unityBackgroundScaleMode = element.name == "drawer-avatar" ? ScaleMode.ScaleAndCrop : ScaleMode.ScaleToFit;
         }
 
         // Se invoca al abrir cada pantalla autenticada. En el Home el resultado

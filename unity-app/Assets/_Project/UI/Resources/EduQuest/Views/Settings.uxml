@@ -9,7 +9,7 @@
             <ui:VisualElement class="logo-group small"><ui:VisualElement class="logo-star art-star" /><ui:VisualElement class="logo-text art-logo" /></ui:VisualElement>
           </ui:VisualElement>
           <ui:VisualElement class="white-panel content-panel settings-panel">
-            <ui:VisualElement class="settings-heading-row"><ui:VisualElement class="settings-heading-icon art-settings-gear" /><ui:Label text="Configuración de audio" class="heading" /></ui:VisualElement>
+            <ui:VisualElement class="settings-heading-row"><ui:VisualElement class="settings-heading-icon art-settings-gear" /><ui:VisualElement class="eq-settings-heading-text"><ui:Label text="Configuración" class="heading" /></ui:VisualElement></ui:VisualElement>
             <ui:Label text="Personalizá la música y los efectos de los juegos." class="subheading" />
             <ui:VisualElement name="audio-settings" class="glass eq-audio-settings">
               <ui:Label text="Efectos de sonido" class="question" />
