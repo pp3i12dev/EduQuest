@@ -9,7 +9,6 @@ export const PERMISSIONS = {
     'subject:manage': ['DIRECTOR', 'PRECEPTOR'],
 
     'teacher:assignSubject': ['DIRECTOR', 'PRECEPTOR'],
-    'student:enroll': ['DIRECTOR', 'PRECEPTOR'],
     'schedule:manage': ['DIRECTOR', 'PRECEPTOR'],
 
     'director:list': ['DIRECTOR'],

@@ -116,7 +116,7 @@ namespace EduQuest.Student
             if (screen != null && backdrop != null)
             {
                 screen.style.backgroundImage = new StyleBackground(backdrop);
-                screen.style.unityBackgroundScaleMode = ScaleMode.ScaleAndCrop;
+                screen.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
             }
             PaintClass("art-logo", "Logo");
             PaintClass("art-star", "AchievementStar");
@@ -192,7 +192,9 @@ namespace EduQuest.Student
                 if (!resourceExists) return;
 
                 element.style.backgroundImage = background;
-                element.style.unityBackgroundScaleMode = stretch ? ScaleMode.StretchToFill : ScaleMode.ScaleToFit;
+                element.style.backgroundSize = stretch
+                    ? new BackgroundSize(new Length(100, LengthUnit.Percent), new Length(100, LengthUnit.Percent))
+                    : new BackgroundSize(BackgroundSizeType.Contain);
                 if (stretch) element.style.backgroundColor = Color.clear;
             });
 

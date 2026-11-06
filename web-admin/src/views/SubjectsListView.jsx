@@ -1,3 +1,4 @@
+import { SHIFTS, shiftLabel } from '../utils/courseShift';
 
 import { useContext, useMemo, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
@@ -67,6 +68,7 @@ export default function SubjectsListView() {
 
     const [filterInstitutionId, setFilterInstitutionId] = useState('');
     const [filterCareerId, setFilterCareerId] = useState('');
+    const [filterShift, setFilterShift] = useState('');
     const [filterCourseId, setFilterCourseId] = useState('');
     const institutionId = isSuperAdmin ? Number(filterInstitutionId) : Number(user?.institutionId);
     const availableCareers = useMemo(() =>
@@ -108,17 +110,20 @@ export default function SubjectsListView() {
         courses.map(course => [Number(course.id), course])
     ), [courses]);
 
+    const visibleCoursesByShift = useMemo(() => !filterShift ? availableCourses : availableCourses.filter(course =>
+        filterShift === 'SIN_DEFINIR' ? !course.shift : course.shift === filterShift), [availableCourses, filterShift]);
+
     const isRelatedToVisibleCourse = courseId => {
         return courseMatchesSelection(courseById.get(Number(courseId)), {
-            institutionId, careerId: filterCareerId, courseId: filterCourseId,
+            institutionId, careerId: filterCareerId, courseId: filterCourseId, shift: filterShift,
         });
     };
 
     // Una materia puede participar en más de un curso. Se muestra cuando
     // al menos una de sus vinculaciones corresponde a los filtros elegidos.
     const filteredSubjects = useMemo(() => subjectsForSelection(subjects, courses, {
-        institutionId, careerId: filterCareerId, courseId: filterCourseId,
-    }), [subjects, courses, institutionId, filterCareerId, filterCourseId]);
+        institutionId, careerId: filterCareerId, courseId: filterCourseId, shift: filterShift,
+    }), [subjects, courses, institutionId, filterCareerId, filterCourseId, filterShift]);
 
     const isSaving =
         createMutation.isPending ||
@@ -356,7 +361,7 @@ export default function SubjectsListView() {
                     <h3 className="text-sm font-semibold text-white">Filtrar materias creadas</h3>
                     <span className="text-xs text-slate-400">{filteredSubjects.length} de {subjects.length} materias</span>
                 </div>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                     {isSuperAdmin && (
                         <label className="space-y-1 text-xs text-slate-300">
                             <span>Institución</span>
@@ -366,6 +371,7 @@ export default function SubjectsListView() {
                                 onChange={event => {
                                     setFilterInstitutionId(event.target.value);
                                     setFilterCareerId('');
+                                    setFilterShift('');
                                     setFilterCourseId('');
                                 }}
                                 className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white"
@@ -387,6 +393,7 @@ export default function SubjectsListView() {
                             disabled={!institutionId}
                             onChange={event => {
                                 setFilterCareerId(event.target.value);
+                                setFilterShift('');
                                 setFilterCourseId('');
                             }}
                             className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
@@ -395,6 +402,14 @@ export default function SubjectsListView() {
                             {availableCareers.map(career => (
                                 <option key={career.id} value={career.id}>{career.nombre}</option>
                             ))}
+                        </select>
+                    </label>
+                    <label className="space-y-1 text-xs text-slate-300">
+                        <span>Turno</span>
+                        <select value={filterShift} disabled={!filterCareerId} onChange={e => { setFilterShift(e.target.value); setFilterCourseId(''); }} className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white disabled:opacity-50">
+                            <option value="">Todos los turnos</option>
+                            {SHIFTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                            <option value="SIN_DEFINIR">Sin turno definido (cursos anteriores)</option>
                         </select>
                     </label>
                     <label className="space-y-1 text-xs text-slate-300">
@@ -407,8 +422,8 @@ export default function SubjectsListView() {
                             className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <option value="">Todos los cursos</option>
-                            {availableCourses.map(course => (
-                                <option key={course.id} value={course.id}>{course.nombre} ({course.academicYear})</option>
+                            {visibleCoursesByShift.map(course => (
+                                <option key={course.id} value={course.id}>{course.nombre} · {shiftLabel(course.shift)} ({course.academicYear})</option>
                             ))}
                         </select>
                     </label>
@@ -427,6 +442,7 @@ export default function SubjectsListView() {
                         onClick={() => {
                             setFilterInstitutionId('');
                             setFilterCareerId('');
+                            setFilterShift('');
                             setFilterCourseId('');
                         }}
                         className="cursor-pointer text-xs font-medium text-blue-300 hover:text-blue-200 hover:underline"

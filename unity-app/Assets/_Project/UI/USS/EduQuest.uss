@@ -1503,3 +1503,10 @@
     min-width: 0;
     align-items: stretch;
 }
+
+/* Historial: insignia renderizada desde el sprite AchievementStar, no un glifo de fuente. */
+.eq-theme .eq-history-points { flex-direction: row; align-items: center; justify-content: center; width: 100%; }
+.eq-theme .eq-history-points-icon { width: 34px; height: 34px; min-width: 34px; margin-right: 10px; -unity-background-scale-mode: scale-to-fit; }
+.eq-theme .eq-history-points .stat-number { width: auto; flex-grow: 0; flex-shrink: 1; -unity-text-align: middle-left; }
+/* Barra horizontal accesible incluso con mouse: el arrastre también está habilitado. */
+.eq-theme .eq-data-scroll .unity-scroll-view__horizontal-scroller { height: 16px; min-height: 16px; }

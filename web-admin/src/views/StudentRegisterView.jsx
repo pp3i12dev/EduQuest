@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { GraduationCap, ChevronLeft, LoaderCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import api from '../api/axios';
 import logo from '../assets/images/logo2.png';
+import { courseLabel } from '../utils/courseShift';
 
 const initial = { institutionId: '', careerId: '', courseId: '', firstName: '', lastName: '', dni: '', email: '', telefono: '', password: '', repeatPassword: '' };
 const fieldClass = 'w-full min-w-0 rounded-xl border border-slate-600 bg-slate-950/75 px-3.5 py-3 text-sm text-white outline-none focus:border-sky-400 disabled:opacity-50';
@@ -91,9 +92,10 @@ export default function StudentRegisterView() {
                   {careers.map(c => <option value={c.id} key={c.id}>{c.nombre} ({c.level})</option>)}
                   <option value="none">Cursos generales (sin carrera asignada)</option>
                 </select></label>
+              <p className="text-xs text-sky-200">El turno viene definido por el curso. No necesitás seleccionarlo por separado.</p>
               <label className="block text-sm font-medium text-slate-200">Curso
                 <select name="courseId" className={`mt-2 ${fieldClass}`} value={values.courseId} onChange={field} disabled={!values.careerId} required>
-                  <option value="">Seleccioná tu curso</option>{courses.map(c => <option value={c.id} key={c.id}>{c.nombre} · {c.academicYear}</option>)}
+                  <option value="">Seleccioná tu curso</option>{courses.map(c => <option value={c.id} key={c.id}>{courseLabel(c)}</option>)}
                 </select></label>
             </fieldset>
             <fieldset className="space-y-4"><legend className="mb-4 text-lg font-bold">2. Datos personales</legend>

@@ -1,3 +1,4 @@
+import { courseLabel } from '../utils/courseShift';
 
 import { useState, useContext, useMemo, useEffect } from 'react';
 import {
@@ -347,7 +348,7 @@ function InviteForm({ onSubmit, onClose, isSaving, error }) {
                                                 key={course.id}
                                                 value={course.id}
                                             >
-                                                {course.nombre}
+                                                {courseLabel(course)}
                                             </option>
                                         ))}
                                     </select>

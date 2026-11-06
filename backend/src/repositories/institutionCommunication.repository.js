@@ -6,7 +6,7 @@ const relations = {
   institution: { select: { id: true, nombre: true, direccion: true } },
   audiences: true,
   careers: { include: { career: { select: { id: true, nombre: true } } } },
-  courses: { include: { course: { select: { id: true, nombre: true, careerId: true } } } },
+  courses: { include: { course: { select: { id: true, nombre: true, careerId: true, shift: true } } } },
   createdBy: { select: { id: true, firstName: true, lastName: true } },
   revisions: { orderBy: { version: 'desc' }, select: { id: true, version: true, action: true, createdAt: true, createdById: true } },
 };
@@ -21,7 +21,7 @@ export const institutionCommunicationRepository = {
     const db = prisma();
     const [careers, courses, institution] = await Promise.all([
       db.career.findMany({ where: { institutionId }, select: { id: true, nombre: true }, orderBy: { nombre: 'asc' } }),
-      db.course.findMany({ where: { institutionId }, select: { id: true, nombre: true, careerId: true }, orderBy: { nombre: 'asc' } }),
+      db.course.findMany({ where: { institutionId }, select: { id: true, nombre: true, careerId: true, shift: true }, orderBy: { nombre: 'asc' } }),
       db.institution.findUnique({ where: { id: institutionId }, select: { id: true, nombre: true, direccion: true } }),
     ]);
     return { careers, courses, institution };

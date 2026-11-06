@@ -274,9 +274,13 @@ namespace EduQuest.Student
         {
             var scroll = new ScrollView(ScrollViewMode.Horizontal);
             scroll.AddToClassList("eq-data-scroll");
-            scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            // Barra visible para teclado/mouse; el gesto táctil continúa funcionando.
+            scroll.horizontalScrollerVisibility = ScrollerVisibility.Auto;
             scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
             scroll.style.width = Length.Percent(100);
+            // UI Toolkit no ofrece arrastre de contenido con mouse de forma nativa
+            // en todas las versiones. Se habilita sin interferir con los botones.
+            AttachMouseDrag(scroll);
             var grid = new VisualElement();
             grid.AddToClassList("eq-data-table");
             float totalWidth = widths.Sum();
@@ -290,6 +294,44 @@ namespace EduQuest.Student
             scroll.Add(grid);
             destination.Add(scroll);
             return scroll;
+        }
+
+        private static void AttachMouseDrag(ScrollView scroll)
+        {
+            bool dragging = false;
+            int activePointer = -1;
+            float startX = 0;
+            float startOffset = 0;
+
+            scroll.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                if (evt.pointerType != UnityEngine.UIElements.PointerType.mouse || evt.button != 0) return;
+                // Los botones de cada fila deben seguir recibiendo sus clics.
+                var target = evt.target as VisualElement;
+                while (target != null && target != scroll)
+                {
+                    if (target is Button || target is Scroller) return;
+                    target = target.parent;
+                }
+                dragging = true;
+                activePointer = evt.pointerId;
+                startX = evt.position.x;
+                startOffset = scroll.scrollOffset.x;
+                scroll.CapturePointer(activePointer);
+            });
+            scroll.RegisterCallback<PointerMoveEvent>(evt =>
+            {
+                if (!dragging || evt.pointerId != activePointer) return;
+                scroll.scrollOffset = new Vector2(startOffset + startX - evt.position.x, scroll.scrollOffset.y);
+            });
+            scroll.RegisterCallback<PointerUpEvent>(evt =>
+            {
+                if (!dragging || evt.pointerId != activePointer) return;
+                dragging = false;
+                if (scroll.HasPointerCapture(activePointer)) scroll.ReleasePointer(activePointer);
+                activePointer = -1;
+            });
+            scroll.RegisterCallback<PointerCaptureOutEvent>(_ => { dragging = false; activePointer = -1; });
         }
 
         private static VisualElement DataCell(string value, float width, string kind = "")
@@ -359,7 +401,7 @@ namespace EduQuest.Student
                 var data = await EduQuestRuntime.Student.History(includeHidden);
                 if (this == null || historyShowHidden != includeHidden || StudentNavigation.RankingRequested) return;
                 var points = Q<Label>("total-points");
-                if (points != null) points.text = "★ " + data.totalPoints.ToString("N0") + " puntos totales";
+                if (points != null) points.text = "Puntos totales: " + data.totalPoints.ToString("N0");
                 var note = Q<Label>("history-note");
                 if (note != null) note.text = data.retentionPolicy ?? "Se conservan los resultados recientes.";
                 if (data.items == null || data.items.Length == 0)

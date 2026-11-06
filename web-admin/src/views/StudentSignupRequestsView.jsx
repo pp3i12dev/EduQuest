@@ -1,3 +1,4 @@
+import { shiftLabel } from '../utils/courseShift';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -118,7 +119,7 @@ export default function StudentSignupRequestsView() {
             <button type="button" onClick={() => { setInstitutionId(''); setCareerKey(''); setCourseId(''); }} className="text-sky-300 hover:underline">Instituciones</button>
             {effectiveInstitution && <><ChevronRight size={15}/><button type="button" onClick={() => { setCareerKey(''); setCourseId(''); }} className="text-sky-300 hover:underline">{institutions.find(i => i.id === effectiveInstitution)?.nombre}</button></>}
             {effectiveCareer && <><ChevronRight size={15}/><button type="button" className="text-sky-300 hover:underline" onClick={() => setCourseId('')}>{careers.find(c => c.id === effectiveCareer)?.nombre}</button></>}
-            {activeCourse && <><ChevronRight size={15}/><span className="font-semibold text-white">{activeCourse.nombre}</span></>}
+            {activeCourse && <><ChevronRight size={15}/><span className="font-semibold text-white">{activeCourse.nombre} · {shiftLabel(activeCourse.shift)}</span></>}
           </nav>
           {institutions.length > 1 && <div>
             <h2 className="mb-3 flex items-center gap-2 font-semibold"><Building2 size={19}/> 1. Seleccioná una institución</h2>
@@ -134,7 +135,7 @@ export default function StudentSignupRequestsView() {
             <h2 className="mb-3 flex items-center gap-2 font-semibold"><BookOpen size={19}/> {institutions.length > 1 ? '3.' : '2.'} Elegí el curso para revisar las solicitudes</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{visibleCourses.map(c => <button key={c.id} type="button" onClick={() => setCourseId(String(c.id))}
               className={`rounded-xl border p-4 text-left transition ${courseId === String(c.id) ? 'border-blue-400 bg-blue-500/15' : 'border-slate-700 bg-slate-950 hover:border-blue-500/60'}`}>
-              <span className="flex items-center justify-between gap-2"><span className="font-semibold">{c.nombre}</span><span className="rounded-full bg-blue-500/20 px-2.5 py-1 text-xs font-bold text-blue-200">{c.requestCount}</span></span>
+              <span className="flex items-center justify-between gap-2"><span className="font-semibold">{c.nombre} · {shiftLabel(c.shift)}</span><span className="rounded-full bg-blue-500/20 px-2.5 py-1 text-xs font-bold text-blue-200">{c.requestCount}</span></span>
               <span className="mt-2 block text-xs text-slate-400">Ciclo lectivo {c.academicYear} · {c.enrolledCount} matriculados en total</span>
             </button>)}</div>
           </div>}
@@ -143,7 +144,7 @@ export default function StudentSignupRequestsView() {
 
     {activeCourse && <div className={panel}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="text-xl font-bold">{activeCourse.nombre} · {activeCourse.career?.nombre || 'Sin carrera'}</h2><p className="mt-1 text-sm text-slate-400">{activeCourse.institution?.nombre} · {tab.toLowerCase()} · {rows.length} alumno(s)</p></div>
+        <div><h2 className="text-xl font-bold">{activeCourse.nombre} · {shiftLabel(activeCourse.shift)} · {activeCourse.career?.nombre || 'Sin carrera'}</h2><p className="mt-1 text-sm text-slate-400">{activeCourse.institution?.nombre} · {tab.toLowerCase()} · {rows.length} alumno(s)</p></div>
         <button onClick={() => setCourseId('')} className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-3 py-2 text-sm hover:bg-slate-800"><ArrowLeft size={16}/> Cambiar curso</button>
       </div>
       <div className="mt-4"><label className="relative block max-w-lg"><Search size={18} className="absolute left-3 top-3 text-slate-400"/><span className="sr-only">Buscar alumno</span>
@@ -171,7 +172,7 @@ export default function StudentSignupRequestsView() {
 
     {action && <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4" role="presentation"><div role="dialog" aria-modal="true" aria-labelledby="signup-modal-title" className="w-full max-w-lg rounded-2xl border border-slate-600 bg-slate-900 p-6 shadow-2xl">
       <h2 id="signup-modal-title" className="text-xl font-bold">{action.decision === 'APPROVED' ? 'Confirmar aprobación' : 'Confirmar rechazo'}</h2>
-      <p className="mt-3 text-sm text-slate-300">{action.ids.length} solicitud(es) de {activeCourse?.nombre} serán {action.decision === 'APPROVED' ? 'aprobadas' : 'rechazadas'}. La operación se realiza en un único lote.</p>
+      <p className="mt-3 text-sm text-slate-300">{action.ids.length} solicitud(es) de {activeCourse?.nombre} · {shiftLabel(activeCourse?.shift)} serán {action.decision === 'APPROVED' ? 'aprobadas' : 'rechazadas'}. La operación se realiza en un único lote.</p>
       {action.decision === 'REJECTED' && <label className="mt-4 block text-sm font-semibold">Motivo del rechazo (obligatorio)<textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} maxLength={500} className="mt-2 w-full rounded-xl border border-slate-600 bg-slate-950 p-3" placeholder="Motivo para el alumno"/></label>}
       {bulk.error && <p role="alert" className="mt-3 text-sm text-rose-300">{bulk.error.response?.data?.message || bulk.error.message}</p>}
       <div className="mt-5 flex justify-end gap-2"><button onClick={() => { setAction(null); bulk.reset(); }} disabled={bulk.isPending} className="rounded-xl border border-slate-600 px-4 py-2.5">Cancelar</button><button onClick={submit} disabled={bulk.isPending || (action.decision === 'REJECTED' && reason.trim().length < 5)} className={`rounded-xl px-4 py-2.5 font-semibold disabled:opacity-40 ${action.decision === 'APPROVED' ? 'bg-emerald-600' : 'bg-rose-600'}`}>{bulk.isPending ? 'Procesando…' : `Confirmar ${action.ids.length}`}</button></div>

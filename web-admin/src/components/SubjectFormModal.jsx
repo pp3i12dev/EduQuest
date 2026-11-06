@@ -1,3 +1,4 @@
+import { shiftLabel, SHIFTS } from '../utils/courseShift';
 import {
     useState,
     useEffect,
@@ -31,7 +32,6 @@ const DAYS = [
     'SABADO',
 ];
 
-const SHIFTS = ['MANANA', 'TARDE', 'NOCHE'];
 const MODALITIES = [
     ['PRESENCIAL', 'Presencial'],
     ['VIRTUAL_SINCRONA', 'Virtual sincrónica (en vivo)'],
@@ -45,12 +45,6 @@ const DAY_NAMES = {
     JUEVES: 'Jueves',
     VIERNES: 'Viernes',
     SABADO: 'Sábado',
-};
-
-const SHIFT_NAMES = {
-    MANANA: 'Mañana',
-    TARDE: 'Tarde',
-    NOCHE: 'Noche',
 };
 
 const newSchedule = () => ({
@@ -140,6 +134,7 @@ export default function SubjectFormModal({
     }, [teachersData]);
 
     const [form, setForm] = useState(EMPTY_FORM);
+    const [courseShiftFilter, setCourseShiftFilter] = useState('');
     const [schedules, setSchedules] = useState([]);
     const [scheduleError, setScheduleError] = useState('');
 
@@ -194,6 +189,7 @@ export default function SubjectFormModal({
                 : []
         );
 
+        setCourseShiftFilter(firstAssignment?.course?.shift ?? '');
         setScheduleError('');
     }, [initialData, open, user?.institutionId]);
 
@@ -207,8 +203,9 @@ export default function SubjectFormModal({
     }, [careers, selectedInstitutionId]);
 
     const filteredCourses = useMemo(() => {
-        return coursesForCareer(courses, selectedInstitutionId, selectedCareerId);
-    }, [courses, selectedInstitutionId, selectedCareerId]);
+        const matches = coursesForCareer(courses, selectedInstitutionId, selectedCareerId);
+        return courseShiftFilter ? matches.filter(course => course.shift === courseShiftFilter) : matches;
+    }, [courses, selectedInstitutionId, selectedCareerId, courseShiftFilter]);
 
     // La lista de cursos puede llegar después de que se abre el modal.
     // Completar la carrera inicial sin sobrescribir cambios manuales.
@@ -251,6 +248,7 @@ export default function SubjectFormModal({
         selectedAssignment.teacherId !== selectedTeacherId;
 
     const handleInstitutionChange = value => {
+        setCourseShiftFilter('');
         setSchedules([]);
         setScheduleError('');
 
@@ -264,6 +262,7 @@ export default function SubjectFormModal({
     };
 
     const handleCareerChange = value => {
+        setCourseShiftFilter('');
         setSchedules([]);
         setScheduleError('');
         setForm(current => ({
@@ -518,6 +517,18 @@ export default function SubjectFormModal({
                 </div>
 
                 <div className="space-y-2">
+                    <label htmlFor="subject-course-shift" className="block text-sm font-medium text-slate-300">Turno del curso</label>
+                    <select id="subject-course-shift" value={courseShiftFilter} disabled={!form.careerId} onChange={e => {
+                        setCourseShiftFilter(e.target.value);
+                        setForm(current => ({ ...current, courseId: '', teacherId: '' }));
+                        setSchedules([]);
+                    }} className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-50">
+                        <option value="">Todos los turnos</option>
+                        {SHIFTS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
+                    </select>
+                </div>
+
+                <div className="space-y-2">
                     <label
                         htmlFor="subject-course"
                         className="block text-sm font-medium text-slate-300"
@@ -546,7 +557,7 @@ export default function SubjectFormModal({
                                 key={course.id}
                                 value={course.id}
                             >
-                                {course.nombre}
+                                {course.nombre} · {shiftLabel(course.shift)}
                                 {isEditing &&
                                     assignedCourseIds.has(course.id)
                                     ? ' — asignado'
@@ -653,7 +664,7 @@ export default function SubjectFormModal({
                             onClick={() => {
                                 setSchedules(current => [
                                     ...current,
-                                    newSchedule(),
+                                    { ...newSchedule(), shift: courses.find(c => Number(c.id) === Number(form.courseId))?.shift ?? 'MANANA' },
                                 ]);
                                 setScheduleError('');
                             }}
@@ -737,12 +748,9 @@ export default function SubjectFormModal({
                                         }
                                         className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
                                     >
-                                        {SHIFTS.map(shift => (
-                                            <option
-                                                key={shift}
-                                                value={shift}
-                                            >
-                                                {SHIFT_NAMES[shift]}
+                                        {SHIFTS.map(({ value, label }) => (
+                                            <option key={value} value={value}>
+                                                {label}
                                             </option>
                                         ))}
                                     </select>

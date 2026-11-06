@@ -2,7 +2,7 @@ enum EducationLevel {
   JARDIN
   PRIMARIO
   SECUNDARIO
-  TERCIARIO
+  TECNICATURA_SUPERIOR
   UNIVERSITARIO
   POSTGRADO
   CURSO
@@ -46,6 +46,9 @@ model Course {
   id Int @id @default(autoincrement())
   nombre String
   academicYear Int @default(2026)
+  // Turno de pertenencia del curso. Nullable únicamente para no alterar cursos antiguos;
+  // las altas nuevas deben enviarlo obligatoriamente.
+  shift Shift?
   createdAt DateTime @default(now())
   institutionId Int
   institution Institution @relation(fields: [institutionId], references: [id])
@@ -58,6 +61,7 @@ model Course {
   invitations Invitation[]
   earlyNotices EarlyNotice[]
   institutionEvents InstitutionEventCourse[]
+  @@index([institutionId, careerId, academicYear, shift])
 }
 
 model Subject {

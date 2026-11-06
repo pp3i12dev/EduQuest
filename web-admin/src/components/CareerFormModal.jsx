@@ -5,7 +5,7 @@ const LEVELS = [
     { value: 'JARDIN', label: 'Jardín' },
     { value: 'PRIMARIO', label: 'Primario' },
     { value: 'SECUNDARIO', label: 'Secundario' },
-    { value: 'TERCIARIO', label: 'Terciario' },
+    { value: 'TECNICATURA_SUPERIOR', label: 'Tecnicatura Superior' },
     { value: 'UNIVERSITARIO', label: 'Universitario' },
     { value: 'POSTGRADO', label: 'Postgrado' },
     { value: 'CURSO', label: 'Curso' },

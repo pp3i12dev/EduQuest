@@ -264,6 +264,7 @@ export const earlyNoticeRepository = {
                         id: true,
                         nombre: true,
                         institutionId: true,
+                        shift: true,
 
                         career: {
                             select: {

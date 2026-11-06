@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useInstitutions } from '../hooks/useInstitution';
 import { useCareersAdmin } from '../hooks/useCareerAdmin';
+import { SHIFTS } from '../utils/courseShift';
 
 const currentYear = new Date().getFullYear();
 
@@ -10,6 +11,7 @@ const emptyForm = () => ({
     academicYear: String(currentYear),
     careerId: '',
     institutionId: '',
+    shift: '',
 });
 
 export default function CourseFormModal({
@@ -39,6 +41,7 @@ export default function CourseFormModal({
                         initialData.academicYear ?? currentYear
                     ),
                     institutionId: String(initialData.institutionId ?? institutionId ?? ''),
+                    shift: initialData.shift ?? '',
                     careerId:
                         initialData.careerId != null
                             ? String(initialData.careerId)
@@ -75,7 +78,8 @@ export default function CourseFormModal({
             return;
         }
 
-        const payload = { nombre, academicYear, careerId };
+        if (!SHIFTS.some(item => item.value === form.shift)) return;
+        const payload = { nombre, academicYear, careerId, shift: form.shift };
         if (isSuperAdmin && !initialData?.id) {
             if (!Number(form.institutionId)) return;
             payload.institutionId = Number(form.institutionId);
@@ -203,6 +207,15 @@ export default function CourseFormModal({
                             para esta institución.
                         </p>
                     )}
+                </div>
+
+                <div className="space-y-2">
+                    <label htmlFor="course-shift" className="block text-sm font-medium">Turno del curso</label>
+                    <select id="course-shift" value={form.shift} required onChange={e => setForm(current => ({ ...current, shift: e.target.value }))} className={inputClass}>
+                        <option value="">Elegí el turno</option>
+                        {SHIFTS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
+                    </select>
+                    {initialData && !initialData.shift && <p className="text-xs text-amber-300">Este curso fue creado antes de incorporar turnos. Elegí su turno real antes de guardar.</p>}
                 </div>
 
                 {formError && (

@@ -10,6 +10,8 @@ import {
     useDeleteCareer,
 } from '../hooks/useCareerAdmin';
 import { useInstitutions } from '../hooks/useInstitution';
+import { useCoursesAdmin } from '../hooks/useCourseAdmin';
+import { SHIFTS, shiftLabel } from '../utils/courseShift';
 
 import CareerFormModal from '../components/CareerFormModal';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -19,7 +21,8 @@ const LEVEL_LABELS = {
     JARDIN: 'Jardín',
     PRIMARIO: 'Primario',
     SECUNDARIO: 'Secundario',
-    TERCIARIO: 'Terciario',
+    TECNICATURA_SUPERIOR: 'Tecnicatura Superior',
+    TERCIARIO: 'Tecnicatura Superior', // Compatibilidad temporal de lectura con el backend anterior
     UNIVERSITARIO: 'Universitario',
     POSTGRADO: 'Postgrado',
     CURSO: 'Curso',
@@ -43,6 +46,17 @@ export default function CareersListView() {
         useCareersAdmin();
 
     const { data: institutions = [] } = useInstitutions();
+    const { data: courses = [] } = useCoursesAdmin();
+    const turnsByCareer = useMemo(() => {
+        const byCareer = new Map();
+        (Array.isArray(courses) ? courses : []).forEach(course => {
+            if (!course.careerId) return;
+            const key = Number(course.careerId);
+            if (!byCareer.has(key)) byCareer.set(key, new Set());
+            byCareer.get(key).add(course.shift ?? '');
+        });
+        return byCareer;
+    }, [courses]);
 
     const createMutation = useCreateCareer();
     const updateMutation = useUpdateCareer();
@@ -200,6 +214,7 @@ export default function CareersListView() {
                         <tr>
                             <th className="px-4 py-3">Nombre</th>
                             <th className="px-4 py-3">Nivel</th>
+                            <th className="px-4 py-3">Turnos ofrecidos</th>
                             {isSuperAdmin && (
                                 <th className="px-4 py-3">Institución</th>
                             )}
@@ -211,7 +226,7 @@ export default function CareersListView() {
                         {isLoading ? (
                             <tr>
                                 <td
-                                    colSpan={isSuperAdmin ? 4 : 3}
+                                    colSpan={isSuperAdmin ? 5 : 4}
                                     className="px-4 py-8 text-center text-slate-400"
                                 >
                                     Cargando carreras...
@@ -220,7 +235,7 @@ export default function CareersListView() {
                         ) : filteredCareers.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={isSuperAdmin ? 4 : 3}
+                                    colSpan={isSuperAdmin ? 5 : 4}
                                     className="px-4 py-8 text-center text-slate-400"
                                 >
                                     No se encontraron carreras.
@@ -240,6 +255,14 @@ export default function CareersListView() {
                                         {LEVEL_LABELS[career.level] ?? career.level}
                                     </td>
 
+                                    <td className="px-4 py-3">
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {[...(turnsByCareer.get(career.id) ?? [])].length
+                                              ? [...(turnsByCareer.get(career.id) ?? [])].sort((a,b)=>SHIFTS.findIndex(s=>s.value===a)-SHIFTS.findIndex(s=>s.value===b)).map(shift =>
+                                                  <span key={shift || 'none'} className="rounded-full bg-violet-500/10 px-2.5 py-1 text-xs text-violet-200">{shiftLabel(shift)}</span>)
+                                              : <span className="text-xs text-slate-500">Sin cursos</span>}
+                                        </div>
+                                    </td>
                                     {isSuperAdmin && (
                                         <td className="px-4 py-3">
                                             {career.institution?.nombre ||

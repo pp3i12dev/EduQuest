@@ -14,6 +14,18 @@ namespace EduQuest.Student
         private List<CourseDTO> courses = new List<CourseDTO>();
         private int selectedInstitution, selectedCareer, selectedCourse;
 
+        private static string CourseShiftLabel(string shift)
+        {
+            switch (shift)
+            {
+                case "MANANA": return "mañana";
+                case "TARDE": return "tarde";
+                case "NOCHE": return "noche";
+                default: return "por definir";
+            }
+        }
+
+
         private void SetupWelcome()
         {
             Click("login", () => StudentNavigation.Go("Login"));
@@ -128,7 +140,7 @@ namespace EduQuest.Student
                     var list = await EduQuestRuntime.Academic.GetCoursesAsync(careerForRequest);
                     if (this == null || selectedCareer != careerForRequest) return;
                     courses = list ?? new List<CourseDTO>();
-                    cou.choices = new []{ "Seleccioná un curso" }.Concat(courses.Select(x => x.nombre + " · " + x.academicYear)).ToList();
+                    cou.choices = new []{ "Seleccioná un curso" }.Concat(courses.Select(x => x.nombre + " · Turno " + CourseShiftLabel(x.shift) + " · " + x.academicYear)).ToList();
                     cou.index = 0;
                     if (courses.Count == 0) Status("No hay cursos asociados a esta carrera.");
                 });

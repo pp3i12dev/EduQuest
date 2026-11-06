@@ -72,6 +72,8 @@ const DAYS = {
     DOMINGO: 'Domingo',
 };
 
+const MODALITIES = { PRESENCIAL: 'Presencial', VIRTUAL_SINCRONA: 'Virtual sincrónica', VIRTUAL_ASINCRONA: 'Virtual asincrónica' };
+
 const SHIFTS = {
     MANANA: 'Mañana',
     TARDE: 'Tarde',
@@ -379,14 +381,15 @@ function NoticeDetails({ notice, onClose, token }) {
                         <p className="mt-1 text-sm font-semibold text-blue-300">{getAffectedClasses(notice).length || 1} clase(s) afectada(s)</p>
                         <div className="mt-4 overflow-x-auto">
                             <table className="w-full text-left text-sm">
-                                <thead className="border-b border-slate-700 text-xs uppercase text-slate-400"><tr><th className="py-2 pr-4">Fecha</th><th className="py-2 pr-4">Horario</th><th className="py-2 pr-4">Materia</th><th className="py-2">Curso</th></tr></thead>
+                                <thead className="border-b border-slate-700 text-xs uppercase text-slate-400"><tr><th className="py-2 pr-4">Fecha</th><th className="py-2 pr-4">Horario</th><th className="py-2 pr-4">Materia</th><th className="py-2 pr-4">Curso</th><th className="py-2">Modalidad</th></tr></thead>
                                 <tbody className="divide-y divide-slate-800">
                                     {(getAffectedClasses(notice).length ? getAffectedClasses(notice) : [{ classDate: notice.classDate, startTime: notice.startTime, endTime: notice.endTime }]).map((cls, i) => (
                                         <tr key={cls.id ?? i} className="text-slate-200">
                                             <td className="py-2 pr-4 whitespace-nowrap">{formatClassDate(cls.classDate)}</td>
                                             <td className="py-2 pr-4 whitespace-nowrap">{cls.startTime} a {cls.endTime}</td>
                                             <td className="py-2 pr-4">{cls.teacherSubject?.subject?.nombre || notice.subject?.nombre || '—'}</td>
-                                            <td className="py-2">{cls.teacherSubject?.course?.nombre || notice.course?.nombre || '—'}</td>
+                                            <td className="py-2 pr-4">{cls.teacherSubject?.course?.nombre || notice.course?.nombre || '—'}</td>
+                                            <td className="py-2 whitespace-nowrap">{MODALITIES[cls.modality] || (cls.modality || '—')}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -599,6 +602,8 @@ export default function EarlyNoticesView({
 
     const [actionError, setActionError] = useState('');
     const [actionSuccess, setActionSuccess] = useState('');
+    const [reviewDecision, setReviewDecision] = useState(null);
+    const [reviewReason, setReviewReason] = useState('');
 
     const roles = getRoles(currentUser);
 
@@ -758,65 +763,38 @@ export default function EarlyNoticesView({
         }
     };
 
-    const handleConfirm = async (notice) => {
-        if (
-            !window.confirm(
-                '¿Confirmar este aviso? Al confirmarlo quedará disponible para los alumnos correspondientes.'
-            )
-        ) {
-            return;
-        }
-
-        try {
-            clearMessages();
-
-            await actions.confirm.mutateAsync(notice.id);
-
-            setActionSuccess(
-                'El aviso fue confirmado correctamente.'
-            );
-        } catch (err) {
-            setActionError(
-                getErrorMessage(
-                    err,
-                    'No se pudo confirmar el aviso.'
-                )
-            );
-        }
+    const handleConfirm = (notice) => {
+        clearMessages();
+        setReviewReason('');
+        setReviewDecision({ notice, reject: false });
     };
 
-    const handleReject = async (notice) => {
-        const reason = window.prompt(
-            'Indicá el motivo del rechazo:'
-        );
+    const handleReject = (notice) => {
+        clearMessages();
+        setReviewReason('');
+        setReviewDecision({ notice, reject: true });
+    };
 
-        if (reason === null) return;
-
-        if (!reason.trim()) {
-            setActionError(
-                'Debés indicar un motivo de rechazo.'
-            );
+    const submitReviewDecision = async (event) => {
+        event.preventDefault();
+        if (!reviewDecision || isBusy) return;
+        if (reviewDecision.reject && !reviewReason.trim()) {
+            setActionError('Debés indicar un motivo de rechazo.');
             return;
         }
-
         try {
             clearMessages();
-
-            await actions.reject.mutateAsync({
-                id: notice.id,
-                rejectionReason: reason.trim(),
-            });
-
-            setActionSuccess(
-                'El aviso fue rechazado correctamente.'
-            );
+            if (reviewDecision.reject) {
+                await actions.reject.mutateAsync({ id: reviewDecision.notice.id, rejectionReason: reviewReason.trim() });
+                setActionSuccess('El aviso fue rechazado correctamente.');
+            } else {
+                await actions.confirm.mutateAsync(reviewDecision.notice.id);
+                setActionSuccess('El aviso fue confirmado correctamente.');
+            }
+            setReviewDecision(null);
+            setReviewReason('');
         } catch (err) {
-            setActionError(
-                getErrorMessage(
-                    err,
-                    'No se pudo rechazar el aviso.'
-                )
-            );
+            setActionError(getErrorMessage(err, 'No se pudo procesar el aviso.'));
         }
     };
 
@@ -1282,6 +1260,24 @@ export default function EarlyNoticesView({
                         <ChevronRight size={18} />
                     </button>
                 </div>
+            )}
+
+            {reviewDecision && createPortal(
+                <div className="fixed inset-0 z-[210] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm" onMouseDown={event => { if (event.target === event.currentTarget && !isBusy) setReviewDecision(null); }}>
+                    <form role="dialog" aria-modal="true" aria-labelledby="review-notice-heading" onSubmit={submitReviewDecision} className="w-full max-w-lg space-y-5 rounded-2xl border border-slate-700 bg-slate-900 p-6 text-white shadow-2xl">
+                        <div className="flex items-start gap-3">
+                            {reviewDecision.reject ? <XCircle className="mt-1 shrink-0 text-rose-400" /> : <CheckCircle2 className="mt-1 shrink-0 text-emerald-400" />}
+                            <div><h2 id="review-notice-heading" className="text-xl font-bold">{reviewDecision.reject ? 'Rechazar aviso temprano' : 'Confirmar aviso temprano'}</h2><p className="mt-1 text-sm text-slate-400">Aviso #{reviewDecision.notice.id}</p></div>
+                        </div>
+                        <p className="text-sm text-slate-300">{reviewDecision.reject ? 'El aviso será rechazado. Indicá el motivo para dejar constancia de la decisión.' : '¿Confirmás este aviso? Quedará validado para los alumnos afectados y se procesarán las notificaciones correspondientes.'}</p>
+                        {reviewDecision.reject && <label className="block text-sm font-semibold">Motivo del rechazo<textarea autoFocus required maxLength={2000} rows={3} value={reviewReason} onChange={event => setReviewReason(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-600 bg-slate-950 p-3 text-white outline-none focus:border-blue-500" /></label>}
+                        {actionError && <p role="alert" className="text-sm text-rose-300">{actionError}</p>}
+                        <div className="flex flex-wrap justify-end gap-3">
+                            <button type="button" disabled={isBusy} onClick={() => { setReviewDecision(null); clearMessages(); }} className="rounded-xl border border-slate-600 px-5 py-2.5 font-semibold hover:bg-slate-800">Volver</button>
+                            <button type="submit" disabled={isBusy || (reviewDecision.reject && !reviewReason.trim())} className={`rounded-xl px-5 py-2.5 font-semibold disabled:opacity-50 ${reviewDecision.reject ? 'bg-rose-700 hover:bg-rose-600' : 'bg-emerald-600 hover:bg-emerald-500'}`}>{isBusy ? 'Procesando…' : reviewDecision.reject ? 'Confirmar rechazo' : 'Confirmar aviso'}</button>
+                        </div>
+                    </form>
+                </div>, document.body
             )}
 
             {/* MODALES */}

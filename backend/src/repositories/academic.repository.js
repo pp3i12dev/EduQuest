@@ -21,7 +21,7 @@ export const listCoursesByCareer = (careerId) => {
     const prisma = getPrisma();
     return prisma.course.findMany({
         where: { careerId },
-        select: { id: true, nombre: true, academicYear: true },
+        select: { id: true, nombre: true, academicYear: true, shift: true },
         orderBy: { nombre: 'asc' },
     });
 };
@@ -43,6 +43,6 @@ export const findTeacherProfileByUserId = (userId) => {
 
 export const listCoursesByInstitution = (institutionId, careerId) => getPrisma().course.findMany({
   where: { institutionId, ...(careerId === 'none' ? { careerId: null } : careerId ? { careerId: Number(careerId) } : {}) },
-  select: { id: true, nombre: true, academicYear: true, careerId: true },
+  select: { id: true, nombre: true, academicYear: true, careerId: true, shift: true },
   orderBy: [{ academicYear: 'desc' }, { nombre: 'asc' }],
 });

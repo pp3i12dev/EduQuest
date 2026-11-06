@@ -1,3 +1,4 @@
+import { shiftLabel } from '../utils/courseShift';
 import { todayArgentina } from '../utils/institutionDate';
 import { createPortal } from 'react-dom';
 import { useContext, useEffect, useMemo, useState } from 'react';
@@ -5,6 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useEarlyNoticeCreationOptions } from '../hooks/useEarlyNotices';
 
 const DAYS = ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'];
+const MODALITY_LABELS = { PRESENCIAL: 'Presencial', VIRTUAL_SINCRONA: 'Virtual sincrónica', VIRTUAL_ASINCRONA: 'Virtual asincrónica' };
 const DAY_LABELS = { LUNES:'Lunes', MARTES:'Martes', MIERCOLES:'Miércoles', JUEVES:'Jueves', VIERNES:'Viernes', SABADO:'Sábado' };
 const TYPES = [
   ['ABSENCE','Ausencia'], ['LATE_ARRIVAL','Llegada tarde'],
@@ -74,7 +76,7 @@ export default function EarlyNoticeFormModal(props) {
       for (const a of teacherAssignments) {
         for (const s of scheduleFor(a,schedules)) {
           if (s.day !== day) continue;
-          result.push({key:`${a.id}:${s.id}:${classDate}`,teacherSubjectId:Number(a.id),scheduleId:Number(s.id),classDate,subject:a.subject?.nombre,course:a.course?.nombre,shift:s.shift,startTime:s.startTime,endTime:s.endTime});
+          result.push({key:`${a.id}:${s.id}:${classDate}`,teacherSubjectId:Number(a.id),scheduleId:Number(s.id),classDate,subject:a.subject?.nombre,course:a.course?.nombre,courseShift:a.course?.shift,shift:s.shift,startTime:s.startTime,endTime:s.endTime,modality:s.modality || 'PRESENCIAL'});
         }
       }
     }
@@ -136,7 +138,7 @@ export default function EarlyNoticeFormModal(props) {
             <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-lg font-bold">Clases afectadas</h3><p className="text-sm text-slate-400">Se muestran los horarios reales del docente, incluso de distintas materias y cursos. Ninguna clase se selecciona automáticamente.</p></div><span className="rounded-lg bg-blue-900 px-3 py-2 text-sm font-bold">{chosen.length} de {classes.length} seleccionadas</span></div>
             {classes.length>0 && <div className="flex gap-3"><button type="button" className="cursor-pointer text-sm text-blue-300 hover:underline" onClick={()=>setSelected(classes.map(c=>c.key))}>Seleccionar todas</button><button type="button" className="cursor-pointer text-sm text-slate-300 hover:underline" onClick={()=>setSelected([])}>Quitar selección</button></div>}
             <div className="max-h-80 space-y-2 overflow-y-auto rounded-xl border border-slate-700 p-3">
-              {classes.length===0 ? <p className="p-3 text-sm text-slate-400">{!teacherId || !start || !effectiveEnd ? 'Elegí docente y período para consultar sus clases.' : 'No hay clases programadas para ese período.'}</p> : classes.map(c=><label key={c.key} className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-700 bg-slate-800 p-3 hover:border-blue-500"><input type="checkbox" className="mt-1 h-4 w-4 accent-blue-500" checked={selectedSet.has(c.key)} onChange={e=>setSelected(old=>e.target.checked?[...old,c.key]:old.filter(k=>k!==c.key))}/><span><strong>{DAY_LABELS[DAYS[dateAtUTC(c.classDate).getUTCDay()]]} {format(c.classDate)} · {c.startTime}–{c.endTime}</strong><span className="block text-sm text-slate-300">{c.subject} · {c.course} · {c.shift}</span></span></label>)}
+              {classes.length===0 ? <p className="p-3 text-sm text-slate-400">{!teacherId || !start || !effectiveEnd ? 'Elegí docente y período para consultar sus clases.' : 'No hay clases programadas para ese período.'}</p> : classes.map(c=><label key={c.key} className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-700 bg-slate-800 p-3 hover:border-blue-500"><input type="checkbox" className="mt-1 h-4 w-4 accent-blue-500" checked={selectedSet.has(c.key)} onChange={e=>setSelected(old=>e.target.checked?[...old,c.key]:old.filter(k=>k!==c.key))}/><span><strong>{DAY_LABELS[DAYS[dateAtUTC(c.classDate).getUTCDay()]]} {format(c.classDate)} · {c.startTime}–{c.endTime}</strong><span className="block text-sm text-slate-300">{c.subject} · {c.course} · Turno {shiftLabel(c.courseShift)} · Horario {shiftLabel(c.shift)} · <strong className="text-cyan-300">{MODALITY_LABELS[c.modality] || c.modality}</strong></span></span></label>)}
             </div>
           </section>
           {type==='LATE_ARRIVAL' && <label className="block space-y-2 text-sm font-semibold">Hora estimada de llegada<input type="time" className={FIELD} value={arrival} onChange={e=>setArrival(e.target.value)} required/></label>}

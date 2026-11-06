@@ -73,7 +73,7 @@ export async function dashboard(requester) {
     points: student.puntosTotales, level: student.nivelActual, coins: student.monedas,
     finishedGames: attempts.filter(a => a.isCompleted).length,
     pendingActivities: activities.filter(a => a.gameType !== 'image_label' && !done.has(a.id)).length,
-    courses: currentCourses.map(c => ({ id: c.course.id, name: c.course.nombre, year: c.course.academicYear })),
+    courses: currentCourses.map(c => ({ id: c.course.id, name: c.course.nombre, year: c.course.academicYear, shift: c.course.shift })),
     progressRule: 'Primera finalización: porcentaje correcto × pointsAwarded; 500 puntos por nivel; repetir no da puntos',
   };
 }

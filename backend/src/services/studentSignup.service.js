@@ -23,7 +23,7 @@ const inInstitution = (user) => user.isSuperAdmin ? {} : { institutionId: Number
 const courseFields = {
   select: {
     courses: { select: { course: {
-      select: { id: true, nombre: true, academicYear: true, institutionId: true,
+      select: { id: true, nombre: true, academicYear: true, shift: true, institutionId: true,
         career: { select: { id: true, nombre: true } },
         institution: { select: { id: true, nombre: true } } },
     } } },
@@ -62,7 +62,7 @@ export async function listSignupCourseGroups(requester, query = {}) {
   const courses = await db.course.findMany({
     where: inInstitution(requester),
     select: {
-      id: true, nombre: true, academicYear: true, institutionId: true,
+      id: true, nombre: true, academicYear: true, shift: true, institutionId: true,
       institution: { select: { id: true, nombre: true } },
       career: { select: { id: true, nombre: true } },
       _count: { select: { students: { where: {

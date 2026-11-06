@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 namespace EduQuest.Student
 {
     [Serializable] public class DashboardDTO { public int points, level, coins, finishedGames, pendingActivities; public CourseInfoDTO[] courses; public string progressRule; }
-    [Serializable] public class CourseInfoDTO { public int id, year; public string name; }
+    [Serializable] public class CourseInfoDTO { public int id, year; public string name, shift; }
     [Serializable] public class SubjectDTO { public int id, subjectId, courseId; public string name, teacherName, courseName; }
     [Serializable] public class ActivityDTO { public int id, pointsAwarded; public string title, description, gameType, teacherName, subjectName, createdAt; public bool completed; [JsonProperty("bestScore")] public int? bestScore { get; set; } }
     [Serializable] public class HistoryDTO
@@ -21,7 +21,7 @@ namespace EduQuest.Student
         public float grade;
         public bool canHide, canDelete, studentHidden, reviewAvailable;
         public string deleteBlockedReason;
-        public int? earnedPoints;
+        [JsonProperty("earnedPoints")] public int? earnedPoints { get; set; }
         public string studentName, activityTitle, subjectName, courseName, unitName, topicName, completedAt;
     }
     [Serializable] public class ReviewAnswerDTO
@@ -44,7 +44,9 @@ namespace EduQuest.Student
     {
         public int courseId, academicYear, totalActivities;
         public string courseName, subjectName, mode, activityName, policy;
-        public int? assignmentId, activityId, myPosition;
+        [JsonProperty("assignmentId")] public int? assignmentId { get; set; }
+        [JsonProperty("activityId")] public int? activityId { get; set; }
+        [JsonProperty("myPosition")] public int? myPosition { get; set; }
         public LeaderboardSubjectDTO[] subjects;
         public LeaderboardActivityDTO[] activities;
         public LeaderboardRowDTO[] rows;
@@ -53,7 +55,8 @@ namespace EduQuest.Student
     [Serializable] public class LeaderboardActivityDTO { public int id; public string title; }
     [Serializable] public class LeaderboardRowDTO
     {
-        public int? studentId, position;
+        [JsonProperty("studentId")] public int? studentId { get; set; }
+        [JsonProperty("position")] public int? position { get; set; }
         public string name;
         public float score, grade, points;
         public int completedCount, totalActivities, coverage;
