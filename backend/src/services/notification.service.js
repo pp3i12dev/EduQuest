@@ -20,9 +20,10 @@ export const notificationService = {
         if (!courseIds.length) courseIds.push(notice.courseId);
         const allRows = (await Promise.all(courseIds.map(id => repo.findStudentsByCourse(id)))).flat();
         const students = [...new Map(allRows.map(r => r.student.user).map(u => [u.id, u])).values()];
+        const modalityLabel = { PRESENCIAL: 'Presencial', VIRTUAL_SINCRONA: 'Virtual sincrónica', VIRTUAL_ASINCRONA: 'Virtual asincrónica' };
         const lines = affected.map(c => {
             const d = c.classDate.toISOString().slice(0, 10);
-            return `${d} ${c.startTime}-${c.endTime} · ${c.teacherSubject.subject.nombre} · ${c.teacherSubject.course.nombre}`;
+            return `${d} ${c.startTime}-${c.endTime} · ${c.teacherSubject.subject.nombre} · ${c.teacherSubject.course.nombre} · ${modalityLabel[c.modality] || c.modality || 'Modalidad no especificada'}`;
         });
         const base = `${notice.teacherSubject?.teacher?.user?.firstName ?? 'Docente'} ${notice.teacherSubject?.teacher?.user?.lastName ?? ''}`.trim();
         const detail = `${base}\nClases afectadas:\n${lines.join('\n') || 'Consultar aviso'}${notice.virtualMeetingUrl ? `\nVideollamada: ${notice.virtualMeetingUrl}` : ''}${notice.virtualInstructions ? `\nMaterial: ${notice.virtualInstructions}` : ''}`;

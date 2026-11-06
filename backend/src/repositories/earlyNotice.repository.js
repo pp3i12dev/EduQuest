@@ -86,6 +86,7 @@ export const createNoticeWithClasses = (data, classes, creatorId) =>
                 classDate: item.classDate,
                 day: item.day,
                 shift: item.shift,
+                modality: item.modality,
                 startTime: item.startTime,
                 endTime: item.endTime,
             })),
@@ -110,6 +111,7 @@ export const createNoticeWithClasses = (data, classes, creatorId) =>
                         classDate: c.classDate.toISOString().slice(0, 10),
                         day: c.day,
                         shift: c.shift,
+                        modality: c.modality,
                         startTime: c.startTime,
                         endTime: c.endTime,
                     })),
@@ -357,6 +359,7 @@ export const earlyNoticeRepository = {
                         shift: true,
                         startTime: true,
                         endTime: true,
+                        modality: true,
                     },
 
                     orderBy: [
@@ -612,7 +615,7 @@ export const earlyNoticeRepository = {
                             teacherSubjectId: c.teacherSubjectId,
                             scheduleId: c.scheduleId,
                             classDate: c.classDate.toISOString().slice(0, 10),
-                            day: c.day, shift: c.shift, startTime: c.startTime, endTime: c.endTime,
+                            day: c.day, shift: c.shift, modality: c.modality, startTime: c.startTime, endTime: c.endTime,
                         })),
                     },
                 },
@@ -647,7 +650,7 @@ export const earlyNoticeRepository = {
                         classes: updated.affectedClasses.map(c => ({
                             teacherSubjectId: c.teacherSubjectId, scheduleId: c.scheduleId,
                             classDate: c.classDate.toISOString().slice(0, 10), day: c.day,
-                            shift: c.shift, startTime: c.startTime, endTime: c.endTime,
+                            shift: c.shift, modality: c.modality, startTime: c.startTime, endTime: c.endTime,
                         })),
                     },
                 },

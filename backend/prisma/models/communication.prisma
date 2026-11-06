@@ -10,6 +10,7 @@ model EarlyNoticeClass {
   classDate DateTime @db.Date
   day ScheduleDay
   shift Shift
+  modality ClassModality @default(PRESENCIAL)
   startTime String
   endTime String
   @@unique([earlyNoticeId, teacherSubjectId, classDate, startTime, endTime])

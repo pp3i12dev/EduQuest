@@ -80,7 +80,18 @@ export const institutionCommunicationRepository = {
       } });
       const type = old ? 'EVENT_UPDATED' : 'EVENT_CREATED';
       const label = data.kind === 'SUSPENSION' ? 'Suspensión de actividades' : 'Evento institucional';
-      const body = `${old ? 'Comunicación actualizada' : 'Nueva comunicación'}: ${label}\n${data.title}\n${data.details}\nDesde: ${data.startsAt.toISOString()}\nHasta: ${data.endsAt.toISOString()}\nVersión: ${version}`;
+      const activityLabels = {
+        PRESENTIAL_CLASSES: 'Clases presenciales',
+        VIRTUAL_SYNCHRONOUS_CLASSES: 'Clases virtuales sincrónicas',
+        VIRTUAL_ASYNCHRONOUS_CLASSES: 'Clases virtuales asincrónicas',
+        VIRTUAL_CLASSES: 'Clases virtuales (ambas modalidades)',
+        EXAMS: 'Evaluaciones', ADMINISTRATIVE: 'Actividades administrativas',
+        EXTRACURRICULAR: 'Actividades extracurriculares',
+      };
+      const affected = data.kind === 'SUSPENSION'
+        ? `\nActividades afectadas: ${data.affectedActivities.map(a => activityLabels[a] || a).join(', ')}`
+        : '';
+      const body = `${old ? 'Comunicación actualizada' : 'Nueva comunicación'}: ${label}\n${data.title}\n${data.details}${affected}\nDesde: ${data.startsAt.toISOString()}\nHasta: ${data.endsAt.toISOString()}\nVersión: ${version}`;
       for (const id of recipientIds) {
         const n = await tx.notification.create({ data: {
           userId: id, institutionEventId: record.id, type, title: `${label}: ${data.title}`, message: body, revision: version,

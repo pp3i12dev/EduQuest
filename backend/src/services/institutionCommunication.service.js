@@ -3,7 +3,7 @@ import { institutionCommunicationRepository as repo } from '../repositories/inst
 
 const fail = (message, status = 400) => { const e = new Error(message); e.status = status; throw e; };
 const allowedRoles = ['STUDENT', 'TEACHER', 'PRECEPTOR', 'DIRECTOR'];
-const allowedActivities = ['PRESENTIAL_CLASSES', 'VIRTUAL_CLASSES', 'EXAMS', 'ADMINISTRATIVE', 'EXTRACURRICULAR'];
+const allowedActivities = ['PRESENTIAL_CLASSES', 'VIRTUAL_SYNCHRONOUS_CLASSES', 'VIRTUAL_ASYNCHRONOUS_CLASSES', 'VIRTUAL_CLASSES', 'EXAMS', 'ADMINISTRATIVE', 'EXTRACURRICULAR'];
 const allowedShifts = ['MANANA', 'TARDE', 'NOCHE'];
 const allowedReasons = ['HOLIDAY', 'MOURNING', 'WEATHER', 'FACILITIES', 'STRIKE', 'OTHER'];
 const intId = value => { const n = Number(value); if (!Number.isSafeInteger(n) || n < 1) fail('ID inválido'); return n; };
@@ -66,11 +66,10 @@ const normalize = async (body, user, current) => {
   if (locationType === 'OTHER' && (!venueName || !venueAddress || venueName.length > 180 || venueAddress.length > 300)) fail('Ingresá lugar y dirección válidos');
   const startsAt = date(body.startsAt, 'Inicio');
   const endsAt = date(body.endsAt, 'Fin');
-  // Bloquea publicar comunicaciones retroactivas. En edición, permite conservar
-  // la fecha pasada de un evento histórico sin reescribirla a otra fecha anterior.
-  if (!current || startsAt.getTime() !== current.startsAt.getTime()) {
-    requireCurrentOrFutureDate(startsAt, 'La fecha de inicio');
-  }
+  // Una edición también publica notificaciones nuevas. Nunca se publican
+  // comunicaciones con fecha anterior a hoy, aunque la fecha original no cambie.
+  // Los eventos antiguos continúan disponibles en Historial (solo lectura).
+  requireCurrentOrFutureDate(startsAt, 'La fecha de inicio');
   if (startsAt > endsAt) fail('El fin no puede ser anterior al inicio');
   const scope = body.scope;
   if (!['INSTITUTION', 'CAREERS', 'COURSES'].includes(scope)) fail('Alcance inválido');
@@ -79,7 +78,17 @@ const normalize = async (body, user, current) => {
   const courseIds = scope === 'COURSES' ? uniqueIds(body.courseIds) : [];
   if (scope === 'CAREERS' && !careerIds.length || scope === 'COURSES' && !courseIds.length) fail('Seleccioná al menos una carrera o curso');
   if (careerIds.length && (await repo.careers(institutionId, careerIds)).length !== careerIds.length) fail('Carrera fuera de la institución', 403);
-  if (courseIds.length && (await repo.courses(institutionId, courseIds)).length !== courseIds.length) fail('Curso fuera de la institución', 403);
+  if (courseIds.length) {
+    const foundCourses = await repo.courses(institutionId, courseIds);
+    if (foundCourses.length !== courseIds.length) fail('Curso fuera de la institución', 403);
+    // En alcance por cursos se elige primero una carrera. Impide falsificar
+    // una combinación de cursos de otra carrera desde una petición HTTP.
+    if (body.courseCareerId != null && body.courseCareerId !== '') {
+      const courseCareerId = intId(body.courseCareerId);
+      if (!foundCourses.every(c => c.careerId === courseCareerId))
+        fail('Los cursos elegidos no pertenecen a la carrera seleccionada', 400);
+    }
+  }
   let suspensionReason = null, affectedActivities = [], affectedShifts = [];
   if (kind === 'SUSPENSION') {
     suspensionReason = body.suspensionReason;

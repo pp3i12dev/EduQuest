@@ -400,6 +400,7 @@ export const earlyNoticeService = {
             classes.push({
                 teacherSubjectId: assignment.id, scheduleId: schedule.id,
                 classDate: date, day: schedule.day, shift: schedule.shift,
+                modality: schedule.modality,
                 startTime: schedule.startTime, endTime: schedule.endTime,
             });
         }
@@ -480,7 +481,7 @@ export const earlyNoticeService = {
             assignments.set(assignment.id, assignment);
             classes.push({
                 teacherSubjectId: assignment.id, scheduleId: schedule.id, classDate: date,
-                day: schedule.day, shift: schedule.shift, startTime: schedule.startTime, endTime: schedule.endTime,
+                day: schedule.day, shift: schedule.shift, modality: schedule.modality, startTime: schedule.startTime, endTime: schedule.endTime,
             });
         }
         classes.sort((a,b) => a.classDate - b.classDate || a.startTime.localeCompare(b.startTime));
