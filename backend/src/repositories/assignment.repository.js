@@ -323,102 +323,50 @@ export const findTeacherSubjectAssignment = (id) => {
     });
 };
 
-// Asigna un único docente vigente por materia y curso.
-//
-// - Desactiva a cualquier responsable anterior.
-// - Reactiva una asignación histórica si ya existía.
-// - Nunca elimina contenidos, actividades ni historial.
-// - Ejecuta los cambios dentro de una transacción.
-//
-// El bloqueo transaccional serializa las operaciones
-// concurrentes sobre la misma materia y curso.
-export const createTeacherSubject = (
-    teacherId,
-    subjectId,
-    courseId
-) => {
+// Nunca reemplazar automáticamente al docente responsable desde «Asignar».
+// Para cambiarlo se utiliza la edición explícita de la materia.
+// El índice único parcial en PostgreSQL también protege esta regla cuando
+// dos solicitudes concurrentes intentan asignar docentes distintos.
+export const createTeacherSubject = (teacherId, subjectId, courseId) => {
     const prisma = getPrisma();
-
     return prisma.$transaction(async (tx) => {
-        await tx.$queryRaw`
-            SELECT pg_advisory_xact_lock(
-                ${subjectId}::integer,
-                ${courseId}::integer
-            )
-        `;
+        // Misma clave de bloqueo usada al editar una materia.
+        // $executeRaw maneja correctamente el SELECT de una función void.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${subjectId}::integer, ${courseId}::integer)`;
 
-        const currentAssignment =
-            await tx.teacherSubject.findFirst({
-                where: {
-                    subjectId,
-                    courseId,
-                    isActive: true,
-                },
-                select: {
-                    id: true,
-                    teacherId: true,
-                },
-            });
+        const active = await tx.teacherSubject.findMany({
+            where: { subjectId, courseId, isActive: true },
+            select: { id: true, teacherId: true },
+        });
+        if (active.length > 1 || active.some(item => item.teacherId !== teacherId)) {
+            const error = new Error(
+                'Esta materia ya tiene un docente responsable en ese curso. ' +
+                'Quitá la asignación actual antes de asignar otro docente, ' +
+                'o realizá un cambio explícito desde la edición de la materia.'
+            );
+            error.code = 'SUBJECT_ALREADY_HAS_TEACHER';
+            throw error;
+        }
 
-        // Si ya es el responsable vigente, no hace falta
-        // generar una asignación nueva.
-        if (
-            currentAssignment?.teacherId === teacherId
-        ) {
+        if (active.length === 1) {
             return tx.teacherSubject.findUnique({
-                where: {
-                    id: currentAssignment.id,
-                },
+                where: { id: active[0].id },
                 include: {
-                    teacher: {
-                        include: {
-                            user: true,
-                        },
-                    },
+                    teacher: { include: { user: true } },
                     subject: true,
                     course: true,
                 },
             });
         }
 
-        // Los docentes anteriores pasan a histórico.
-        await tx.teacherSubject.updateMany({
-            where: {
-                subjectId,
-                courseId,
-                isActive: true,
-            },
-            data: {
-                isActive: false,
-            },
-        });
-
-        // La combinación docente-materia-curso es única.
-        // Si existía históricamente, se reactiva.
-        // Si nunca existió, se crea.
+        // Un docente que había estado asignado puede reactivarse, sin borrar
+        // el contenido histórico vinculado a su registro anterior.
         return tx.teacherSubject.upsert({
-            where: {
-                teacherId_subjectId_courseId: {
-                    teacherId,
-                    subjectId,
-                    courseId,
-                },
-            },
-            update: {
-                isActive: true,
-            },
-            create: {
-                teacherId,
-                subjectId,
-                courseId,
-                isActive: true,
-            },
+            where: { teacherId_subjectId_courseId: { teacherId, subjectId, courseId } },
+            update: { isActive: true },
+            create: { teacherId, subjectId, courseId, isActive: true },
             include: {
-                teacher: {
-                    include: {
-                        user: true,
-                    },
-                },
+                teacher: { include: { user: true } },
                 subject: true,
                 course: true,
             },

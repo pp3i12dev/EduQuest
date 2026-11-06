@@ -56,23 +56,93 @@ export async function assignments(requester) {
   return rows.map(a => ({ id: a.id, courseId: a.course.id, courseName: a.course.nombre,
     academicYear: a.course.academicYear, subjectName: a.subject.nombre, isActive: a.isActive }));
 }
+// Los filtros se obtienen de toda la materia, no únicamente de la página visible.
+// También incluyen intentos de actividades antiguas (conservadas por su historial).
+export async function filters(requester, rawAssignmentId, query = {}) {
+  const assignment = await assignmentFor(requester, rawAssignmentId);
+  const includeArchived = query.includeArchived === 'true';
+  const where = {
+    isCompleted: true,
+    ...(includeArchived ? {} : { teacherArchivedAt: null }),
+    OR: [
+      { teacherSubjectIdSnapshot: assignment.id },
+      { teacherSubjectIdSnapshot: null, activity: { teacherSubjectId: assignment.id } },
+    ],
+  };
+  const prisma = getPrisma();
+  const combinations = await prisma.gameAttempt.groupBy({
+    by: ['activityId', 'studentId'], where, _count: { _all: true },
+  });
+  const activityIds = [...new Set(combinations.map(row => row.activityId))];
+  const studentIds = [...new Set(combinations.map(row => row.studentId))];
+  const [activities, studentProfiles] = await Promise.all([
+    activityIds.length ? prisma.activity.findMany({
+      where: { id: { in: activityIds } }, select: { id: true, title: true },
+    }) : [],
+    studentIds.length ? prisma.studentProfile.findMany({
+      where: { id: { in: studentIds } },
+      select: { id: true, user: { select: { firstName: true, lastName: true } } },
+    }) : [],
+  ]);
+  const titles = new Map(activities.map(a => [a.id, a.title]));
+  const names = new Map(studentProfiles.map(s => [s.id,
+    [s.user?.firstName, s.user?.lastName].filter(Boolean).join(' ') || `Alumno ${s.id}`]));
+  const activityGroups = new Map();
+  const studentGroups = new Map();
+  for (const entry of combinations) {
+    const activity = activityGroups.get(entry.activityId) || {
+      id: entry.activityId, title: titles.get(entry.activityId) || `Actividad ${entry.activityId}`,
+      results: 0, studentCount: 0,
+    };
+    activity.results += entry._count._all;
+    activity.studentCount += 1;
+    activityGroups.set(entry.activityId, activity);
+    const student = studentGroups.get(entry.studentId) || {
+      id: entry.studentId, name: names.get(entry.studentId) || `Alumno ${entry.studentId}`, results: 0,
+    };
+    student.results += entry._count._all;
+    studentGroups.set(entry.studentId, student);
+  }
+  return {
+    activities: [...activityGroups.values()].sort((a, b) => a.title.localeCompare(b.title, 'es')),
+    students: [...studentGroups.values()].sort((a, b) => a.name.localeCompare(b.name, 'es')),
+  };
+}
+
 export async function list(requester, rawAssignmentId, query = {}) {
   const assignment = await assignmentFor(requester, rawAssignmentId);
   const studentId = query.studentId ? idOf(query.studentId) : undefined;
   const activityId = query.activityId ? idOf(query.activityId) : undefined;
   const includeArchived = query.includeArchived === 'true';
-  const rows = await getPrisma().gameAttempt.findMany({
-    where: {
-      isCompleted: true, ...(studentId ? { studentId } : {}),
-      ...(activityId ? { activityId } : {}),
-      ...(includeArchived ? {} : { teacherArchivedAt: null }),
-      OR: [{ teacherSubjectIdSnapshot: assignment.id },
-        { teacherSubjectIdSnapshot: null, activity: { teacherSubjectId: assignment.id } }],
-    },
-    include: includeAttempt, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 500,
+  const page = query.page ? idOf(query.page) : 1;
+  const pageSize = query.pageSize ? idOf(query.pageSize) : 50;
+  if (pageSize > 100) throw fail(400, 'Máximo 100 resultados por página.');
+  if (page > 1000000) throw fail(400, 'Número de página fuera de rango.');
+  const where = {
+    isCompleted: true,
+    ...(studentId ? { studentId } : {}),
+    ...(activityId ? { activityId } : {}),
+    ...(includeArchived ? {} : { teacherArchivedAt: null }),
+    OR: [
+      { teacherSubjectIdSnapshot: assignment.id },
+      { teacherSubjectIdSnapshot: null, activity: { teacherSubjectId: assignment.id } },
+    ],
+  };
+  const prisma = getPrisma();
+  const total = await prisma.gameAttempt.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const rows = await prisma.gameAttempt.findMany({
+    where, include: includeAttempt,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    skip: (safePage - 1) * pageSize, take: pageSize,
   });
-  return { assignment: { id: assignment.id, course: assignment.course.nombre,
-    subject: assignment.subject.nombre }, records: rows.map(r => shape(r)) };
+  return {
+    assignment: { id: assignment.id, course: assignment.course.nombre,
+      subject: assignment.subject.nombre },
+    records: rows.map(r => shape(r)),
+    pagination: { page: safePage, pageSize, total, totalPages },
+  };
 }
 async function ownAttempt(requester, rawId) {
   const attempt = await getPrisma().gameAttempt.findUnique({
@@ -101,8 +171,15 @@ export async function removePermanently(requester, id, body = {}) {
   if (a.earnedPoints == null) throw fail(409, 'El intento es anterior al registro de puntos por partida. Se puede archivar, pero no borrar automáticamente sin una conciliación manual.');
   const prisma = getPrisma();
   return prisma.$transaction(async tx => {
-    const fresh = await tx.gameAttempt.findUnique({ where: { id: a.id }, select: { id: true, studentId: true, earnedPoints: true } });
+    const fresh = await tx.gameAttempt.findUnique({ where: { id: a.id },
+      select: { id: true, studentId: true, activityId: true, earnedPoints: true } });
     if (!fresh) throw fail(404, 'El resultado ya fue eliminado.');
+    const firstCompetitive = await tx.gameAttempt.findFirst({
+      where: { studentId: fresh.studentId, activityId: fresh.activityId, isCompleted: true },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }], select: { id: true },
+    });
+    if (firstCompetitive?.id === fresh.id)
+      throw fail(409, 'El primer intento competitivo es una calificación académica protegida. Podés archivarlo, pero no borrarlo definitivamente.');
     if (fresh.earnedPoints == null) throw fail(409, 'No se conocen los puntos reales de este resultado.');
     const student = await tx.studentProfile.findUnique({ where: { id: fresh.studentId }, select: { puntosTotales: true } });
     if (!student || student.puntosTotales < fresh.earnedPoints) throw fail(409, 'Saldo inconsistente. No se puede descontar la recompensa sin conciliación.');

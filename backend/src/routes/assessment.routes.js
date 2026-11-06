@@ -7,6 +7,7 @@ router.use(authenticate, requirePermission('grade:manage'));
 router.get('/assignments', ctrl.assignments);
 router.get('/assignments/:assignmentId/leaderboard', teacherLeaderboard);
 router.get('/assignments/:assignmentId/attempts', ctrl.list);
+router.get('/assignments/:assignmentId/filters', ctrl.filters);
 router.get('/attempts/:id', ctrl.detail);
 router.patch('/attempts/:id/archive', ctrl.archived);
 router.delete('/attempts/:id', ctrl.remove);

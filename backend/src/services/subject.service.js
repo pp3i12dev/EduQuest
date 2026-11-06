@@ -242,6 +242,11 @@ export const createSubjectService = async (body, requester) => {
         'Curso'
     );
 
+    const careerId = parsePositiveId(
+        body.careerId,
+        'Carrera'
+    );
+
     const schedules =
         validateSchedules(body.schedules ?? []);
 
@@ -250,13 +255,14 @@ export const createSubjectService = async (body, requester) => {
             nombre,
             institutionId,
             teacherId,
+            careerId,
             courseId,
             schedules,
         });
 
         if (!subject) {
             throw new ServiceError(
-                'El docente o curso no pertenece a la institución seleccionada.'
+                'La institución, carrera, curso y docente seleccionados deben corresponder entre sí.'
             );
         }
 
@@ -308,6 +314,15 @@ export const updateSubjectService = async (
             ? undefined
             : parsePositiveId(body.courseId, 'Curso');
 
+    const careerId =
+        body.careerId === undefined
+            ? undefined
+            : parsePositiveId(body.careerId, 'Carrera');
+
+    if (careerId !== undefined && courseId === undefined) {
+        throw new ServiceError('Para seleccionar una carrera también tenés que indicar su curso.');
+    }
+
     const schedules =
         validateSchedules(body.schedules);
 
@@ -319,6 +334,7 @@ export const updateSubjectService = async (
                 nombre,
                 isActive: body.isActive,
                 teacherId,
+                careerId,
                 courseId,
                 schedules,
             }

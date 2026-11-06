@@ -39,7 +39,12 @@ async function build(courseId, {
   if (!course) throw fail(404, 'Curso no encontrado.');
 
   const subjectAssignments = await prisma.teacherSubject.findMany({
-    where: { courseId, isActive: true, subject: { isActive: true } },
+    // La vista docente ya verificó la titularidad de la asignación solicitada.
+    // Una materia archivada mantiene acceso a su historial sin responder 403.
+    // No exponemos materias de otros docentes en el selector docente.
+    where: teacherView
+      ? { courseId, id: parsePositiveOptional(assignmentId) }
+      : { courseId, isActive: true, subject: { isActive: true } },
     select: { id: true, subject: { select: { nombre: true } } },
     orderBy: [{ id: 'asc' }],
   });

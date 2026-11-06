@@ -192,8 +192,11 @@ export const assignTeacherToSubjectService = async (body, requester) => {
     try {
         return await assignmentRepository.createTeacherSubject(teacherId, subjectId, courseId);
     } catch (error) {
+        if (error.code === 'SUBJECT_ALREADY_HAS_TEACHER') {
+            throw new ServiceError(error.message, 409);
+        }
         if (error.code === 'P2002') {
-            throw new ServiceError('El docente ya está asignado a esta materia y curso', 409);
+            throw new ServiceError('La materia ya tiene un docente responsable en ese curso.', 409);
         }
         throw error;
     }

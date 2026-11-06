@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   Archive, ArchiveRestore, BookOpen, CalendarClock, CheckCircle2,
@@ -40,6 +40,11 @@ export default function TeacherAssessmentsView() {
   const [assignments, setAssignments] = useState([]);
   const [assignmentId, setAssignmentId] = useState('');
   const [rows, setRows] = useState([]);
+  const [filterOptions, setFilterOptions] = useState({ activities: [], students: [] });
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 50, total: 0, totalPages: 1 });
+  const requestSequence = useRef(0);
+  const [filterVersion, setFilterVersion] = useState(0);
   const [studentId, setStudentId] = useState('');
   const [search, setSearch] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
@@ -74,67 +79,113 @@ export default function TeacherAssessmentsView() {
   }, [routeAssignmentId]);
 
   useEffect(() => {
+    setFocusActivity(activityId);
+    setRankingActivity(activityId);
+    setRankingStage(activityId ? 'detail' : 'general');
+    setStudentId('');
+  }, [assignmentId, activityId]);
+
+  useEffect(() => {
     if (!assignmentId) { setLeaderboard(null); return; }
     let alive = true;
     setRankingLoading(true);
     assessmentService.leaderboard(assignmentId, rankingActivity)
-      .then(data => { if (alive) setLeaderboard(data); })
+      .then(data => { if (alive) { setLeaderboard(data); setError(''); } })
       .catch(e => { if (alive) { setLeaderboard(null); setError(e.response?.data?.message || 'No se pudo consultar la clasificación.'); } })
       .finally(() => { if (alive) setRankingLoading(false); });
     return () => { alive = false; };
   }, [assignmentId, rankingActivity]);
 
   const loadAttempts = async () => {
-    if (!assignmentId) { setRows([]); return; }
+    const requestId = ++requestSequence.current;
+    if (!assignmentId || viewMode === 'ranking' ||
+      (viewMode === 'activity' && !focusActivity) ||
+      (viewMode === 'student' && !studentId)) {
+      setRows([]);
+      setPagination({ page: 1, pageSize: 50, total: 0, totalPages: 1 });
+      setBusy(false);
+      return;
+    }
     setBusy(true);
     setError('');
     try {
-      const data = await assessmentService.list(assignmentId, { includeArchived });
+      const data = await assessmentService.list(assignmentId, {
+        includeArchived, page, pageSize: 50,
+        activityId: viewMode === 'activity' ? focusActivity : '',
+        studentId: viewMode === 'student' ? studentId : '',
+      });
+      if (requestId !== requestSequence.current) return;
       setRows(data.records || []);
+      setPagination(data.pagination || { page: 1, pageSize: 50, total: data.records?.length || 0, totalPages: 1 });
+      if (data.pagination?.page && data.pagination.page !== page) setPage(data.pagination.page);
     } catch (e) {
+      if (requestId !== requestSequence.current) return;
       setError(e.response?.data?.message || 'No se pudo consultar el historial.');
+      setRows([]);
     } finally {
-      setBusy(false);
+      if (requestId === requestSequence.current) setBusy(false);
     }
   };
+
+  // Los enlaces directos del taller deben actualizar el filtro aunque React
+  // reutilice el mismo componente en otra ruta.
+  useEffect(() => {
+    setFocusActivity(activityId);
+    setRankingActivity(activityId);
+    setRankingStage(activityId ? 'detail' : 'general');
+    if (activityId && params.get('view') !== 'ranking') setViewMode('activity');
+  }, [activityId, params]);
+
+  useEffect(() => {
+    let active = true;
+    if (!assignmentId) {
+      setFilterOptions({ activities: [], students: [] });
+      return () => { active = false; };
+    }
+    assessmentService.filters(assignmentId, includeArchived)
+      .then(options => { if (active) setFilterOptions({ activities: options.activities || [], students: options.students || [] }); })
+      .catch(e => { if (active) { setFilterOptions({ activities: [], students: [] }); setError(e.response?.data?.message || 'No se pudieron cargar los filtros de resultados.'); } });
+    return () => { active = false; };
+  }, [assignmentId, includeArchived, filterVersion]);
+
+  useEffect(() => { setPage(1); }, [assignmentId, viewMode, studentId, focusActivity, includeArchived]);
 
   useEffect(() => {
     setSelected(null);
     setDeleting(null);
-    setStudentId('');
-    setSearch('');
     loadAttempts();
-    // La consulta depende de la asignación y de si se incluyen los archivados.
+    // Cada respuesta anterior queda invalidada al cambiar el filtro o desmontar la vista.
+    return () => { requestSequence.current += 1; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assignmentId, includeArchived, activityId]);
+  }, [assignmentId, includeArchived, page, studentId, focusActivity, viewMode]);
 
   const assignment = assignments.find(item => String(item.id) === String(assignmentId));
   const students = useMemo(() => {
     const map = new Map();
-    // Clasificación docente: también incluye alumnos que aún no realizaron intentos.
+    // Todos los alumnos históricos del filtro vienen del backend, no de la página.
+    for (const entry of filterOptions.students || []) map.set(String(entry.id), entry.name);
+    // Incluimos también matriculados activos que aún no jugaron.
     for (const entry of leaderboard?.rows || []) {
-      if (entry.studentId != null) map.set(String(entry.studentId), entry.name);
+      if (entry.studentId != null && !map.has(String(entry.studentId))) map.set(String(entry.studentId), entry.name);
     }
-    for (const record of rows) map.set(String(record.studentId), record.studentName);
     return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], 'es'));
-  }, [rows, leaderboard]);
+  }, [filterOptions.students, leaderboard]);
 
   const activityGroups = useMemo(() => {
     const groups = new Map();
-    // También ofrecer actividades publicadas con 0 intentos.
+    for (const entry of filterOptions.activities || []) {
+      groups.set(String(entry.id), {
+        key: String(entry.id), label: entry.title,
+        results: entry.results || 0, studentCount: entry.studentCount || 0,
+      });
+    }
+    // También se ofrecen actividades activas sin ninguna realización.
     for (const activity of leaderboard?.activities || []) {
-      groups.set(String(activity.id), { key: String(activity.id), label: activity.title, results: 0, students: new Set() });
+      const key = String(activity.id);
+      if (!groups.has(key)) groups.set(key, { key, label: activity.title, results: 0, studentCount: 0 });
     }
-    for (const row of rows) {
-      const key = row.activityId == null ? `historical:${row.content}` : String(row.activityId);
-      if (!groups.has(key)) groups.set(key, { key, label: row.content, results: 0, students: new Set() });
-      const group = groups.get(key);
-      group.results += 1;
-      group.students.add(row.studentId);
-    }
-    return [...groups.values()].map(group => ({ ...group, studentCount: group.students.size }))
-      .sort((a, b) => a.label.localeCompare(b.label, 'es'));
-  }, [rows, leaderboard]);
+    return [...groups.values()].sort((a, b) => a.label.localeCompare(b.label, 'es'));
+  }, [filterOptions.activities, leaderboard]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('es');
@@ -175,6 +226,7 @@ export default function TeacherAssessmentsView() {
       await assessmentService.archive(row.id, !row.archived);
       setNotice(row.archived ? 'Resultado restaurado.' : 'Resultado archivado: no aparece en la lista principal.');
       setSelected(null);
+      setFilterVersion(v => v + 1);
       await loadAttempts();
     } catch (e) {
       setError(e.response?.data?.message || 'No se pudo cambiar el estado.');
@@ -190,6 +242,7 @@ export default function TeacherAssessmentsView() {
       setDeleting(null);
       setConfirmText('');
       setSelected(null);
+      setFilterVersion(v => v + 1);
       await loadAttempts();
     } catch (e) {
       setError(e.response?.data?.message || 'No se pudo eliminar el resultado.');
@@ -259,10 +312,10 @@ export default function TeacherAssessmentsView() {
         </section>
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumen de resultados">
         {[
-          { label: 'Actividades realizadas', value: statistics.count, icon: ClipboardCheck, tone: 'border-sky-500/30 bg-sky-500/10 text-sky-300' },
-          { label: 'Alumnos evaluados', value: statistics.students, icon: Users, tone: 'border-violet-500/30 bg-violet-500/10 text-violet-300' },
-          { label: 'Puntaje promedio', value: `${statistics.score}%`, icon: TrendingUp, tone: 'border-amber-500/30 bg-amber-500/10 text-amber-300' },
-          { label: 'Calificación promedio', value: gradeText(statistics.grade), icon: GraduationCap, tone: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' },
+          { label: 'Intentos en esta página', value: statistics.count, icon: ClipboardCheck, tone: 'border-sky-500/30 bg-sky-500/10 text-sky-300' },
+          { label: 'Alumnos en esta página', value: statistics.students, icon: Users, tone: 'border-violet-500/30 bg-violet-500/10 text-violet-300' },
+          { label: 'Aciertos (página)', value: `${statistics.score}%`, icon: TrendingUp, tone: 'border-amber-500/30 bg-amber-500/10 text-amber-300' },
+          { label: 'Nota media (página)', value: gradeText(statistics.grade), icon: GraduationCap, tone: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' },
         ].map(card => (
           <div key={card.label} className={`rounded-2xl border p-4 ${card.tone}`}>
             <div className="flex items-center gap-2 text-xs font-medium"><card.icon size={16} /> {card.label}</div>
@@ -272,6 +325,7 @@ export default function TeacherAssessmentsView() {
       </section>
 
       </>}
+      {viewMode === 'ranking' && error && <p role="alert" className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-sm text-rose-200">{error}</p>}
       {viewMode === 'ranking' && (
       <section className="rounded-2xl border border-amber-500/30 bg-[#101b2f]/95 p-4 sm:p-5" aria-label="Clasificaciones por materia">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -355,13 +409,14 @@ export default function TeacherAssessmentsView() {
           </label>}
           <label className="flex flex-col gap-2 text-xs font-semibold text-slate-400">Buscar contenido
             <div className="relative"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input className={`${inputStyle} pl-10`} value={search} onChange={e => setSearch(e.target.value)} placeholder="Alumno, unidad, tema..." />
+              <input className={`${inputStyle} pl-10`} value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar en esta página..." />
             </div>
           </label>
           <button type="button" onClick={loadAttempts} disabled={busy || !assignmentId} className={`${actionBase} h-[46px] border-indigo-500/40 bg-indigo-500/20 px-4 text-indigo-100 hover:bg-indigo-500/30`}>
             <RefreshCw size={16} className={busy ? 'animate-spin' : ''} /> Actualizar
           </button>
         </div>
+        <p className="mt-2 text-xs text-slate-500">La búsqueda y los promedios se calculan sobre la página visible. Para consultar un alumno o una actividad, usá las tarjetas superiores: aplican el filtro a todo el historial del servidor.</p>
         <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-700/70 bg-slate-800/45 px-3 py-2 text-xs font-medium text-slate-300">
           <input type="checkbox" className="accent-indigo-500" checked={includeArchived} onChange={e => setIncludeArchived(e.target.checked)} /> Incluir resultados archivados
         </label>
@@ -373,7 +428,7 @@ export default function TeacherAssessmentsView() {
       <section className="overflow-hidden rounded-2xl border border-slate-700/80 bg-[#101a2e]/95 shadow-xl shadow-black/10">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/70 px-5 py-4">
           <div className="flex items-center gap-2 font-bold"><CalendarClock size={18} className="text-sky-300" /> {viewMode === 'activity' ? '2. Resultados de la actividad' : '2. Historial del alumno'}</div>
-          <span className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1 text-xs font-medium text-sky-200">{filtered.length} {filtered.length === 1 ? 'registro' : 'registros'}</span>
+          <span className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1 text-xs font-medium text-sky-200">{filtered.length} visibles · {pagination.total} en total</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1060px] text-left text-sm">
@@ -405,6 +460,13 @@ export default function TeacherAssessmentsView() {
         </div>
         {!busy && filtered.length === 0 && !error && <div className="px-6 py-12 text-center"><BookOpen size={32} className="mx-auto mb-3 text-indigo-300" /><p className="font-semibold text-slate-200">Sin resultados para estos filtros</p><p className="mt-1 text-xs text-slate-400">Probá con otro alumno o verificá que haya actividades completadas.</p></div>}
         {busy && <div className="p-8 text-center text-sm text-sky-300">Consultando resultados...</div>}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-700/70 px-5 py-4 text-xs text-slate-300">
+          <span>Página {pagination.page} de {pagination.totalPages} · {pagination.total} resultados encontrados</span>
+          <div className="flex items-center gap-2">
+            <button type="button" className={`${actionBase} border-slate-600 text-slate-100 hover:bg-slate-700`} disabled={busy || page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Anterior</button>
+            <button type="button" className={`${actionBase} border-slate-600 text-slate-100 hover:bg-slate-700`} disabled={busy || page >= pagination.totalPages} onClick={() => setPage(p => p + 1)}>Siguiente</button>
+          </div>
+        </div>
       </section>
 
       </>}
@@ -419,7 +481,7 @@ export default function TeacherAssessmentsView() {
           </div><button type="button" className={`${actionBase} border-slate-600 text-slate-200 hover:bg-slate-700`} onClick={() => setSelected(null)}><X size={16} /> Cerrar</button></div>
           {!selected.review ? <p className="mt-5 rounded-lg border border-amber-400/20 bg-amber-500/10 p-4 text-sm text-amber-200">Este intento se creó antes de registrar las respuestas individuales. No es posible reconstruirlas.</p> :
             <div className="mt-5 space-y-3">{selected.review.map((q, i) => <div key={`${q.id}-${i}`} className={`rounded-xl border p-4 ${q.isCorrect ? 'border-emerald-500/25 bg-emerald-500/10' : 'border-rose-500/25 bg-rose-500/10'}`}>
-              <div className="flex items-start gap-2">{q.isCorrect ? <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-300" /> : <XCircle size={18} className="mt-0.5 shrink-0 text-rose-300" />}<div><p className="font-semibold">{i + 1}. {q.text}</p><p className={`mt-2 text-sm ${q.isCorrect ? 'text-emerald-200' : 'text-rose-200'}`}>{q.isCorrect ? 'Respuesta correcta' : 'Respuesta incorrecta'} · Respondió: {describeAnswer(q.givenAnswer, q.options)}</p>{!q.isCorrect && <p className="mt-1 text-sm text-sky-200">Respuesta esperada: {describeAnswer(q.correctAnswer, q.options)}</p>}</div></div>
+              <div className="flex items-start gap-2">{q.isCorrect ? <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-300" /> : <XCircle size={18} className="mt-0.5 shrink-0 text-rose-300" />}<div><p className="font-semibold">{i + 1}. {q.text}</p><p className={`mt-2 text-sm ${q.isCorrect ? 'text-emerald-200' : 'text-rose-200'}`}>{q.isCorrect ? 'Respuesta correcta' : 'Respuesta incorrecta'} · Respondió: {describeAnswer(q.givenAnswer, q.options)}</p>{!q.isCorrect && <p className="mt-1 text-sm text-sky-200">Respuesta esperada: {describeAnswer(q.correctAnswer, q.options)}</p>}{q.explanation && <p className="mt-2 rounded-lg border border-indigo-400/20 bg-indigo-500/10 p-3 text-sm text-indigo-100"><strong>Explicación:</strong> {q.explanation}</p>}</div></div>
             </div>)}</div>}
         </div>
       </div>}
@@ -427,7 +489,7 @@ export default function TeacherAssessmentsView() {
       {deleting && <div role="dialog" aria-modal="true" aria-label="Eliminar definitivamente" className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 p-4">
         <div className="w-full max-w-lg rounded-2xl border border-rose-500/45 bg-[#151a2b] p-6 shadow-2xl">
           <div className="flex items-center gap-2 text-rose-300"><Trash2 size={22} /><h2 className="text-xl font-bold">Eliminar definitivamente</h2></div>
-          <p className="mt-3 text-sm leading-relaxed text-slate-300"><strong>{deleting.studentName}</strong> · {deleting.content}. Esta operación elimina el resultado y descuenta los puntos que otorgó; no se puede deshacer. Los intentos históricos sin puntos exactos no se pueden borrar automáticamente.</p>
+          <p className="mt-3 text-sm leading-relaxed text-slate-300"><strong>{deleting.studentName}</strong> · {deleting.content}. La primera partida competitiva está protegida y no puede borrarse: sí puede archivarse. Los intentos históricos posteriores pueden eliminarse si se conocen sus puntos; se descontarán las recompensas que otorgaron. Esta operación es irreversible.</p>
           <label className="mt-4 block text-sm text-slate-200">Escribí <strong className="text-rose-300">BORRAR</strong> para confirmar
             <input className={`${inputStyle} mt-2`} value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder="BORRAR" />
           </label>

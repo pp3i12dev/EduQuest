@@ -1,5 +1,10 @@
 
-import { useMemo, useState } from 'react';
+import { useContext, useMemo, useState } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { useInstitutions } from '../hooks/useInstitution';
+import { useCareersAdmin } from '../hooks/useCareerAdmin';
+import { useCoursesAdmin } from '../hooks/useCourseAdmin';
+import { careersForInstitution, coursesForCareer, courseMatchesSelection, subjectsForSelection } from '../utils/subjectHierarchy';
 
 import {
     useSubjectsAdmin,
@@ -47,6 +52,29 @@ const getErrorMessage = (error, fallback) =>
     fallback;
 
 export default function SubjectsListView() {
+    const { user } = useContext(AuthContext);
+    const isSuperAdmin = user?.isSuperAdmin === true || user?.roles?.includes('SUPER_ADMIN');
+    const { data: institutionsData = [] } = useInstitutions(isSuperAdmin);
+    const { data: careersData = [] } = useCareersAdmin();
+    const { data: coursesData = [] } = useCoursesAdmin();
+
+    const institutions = useMemo(() => Array.isArray(institutionsData)
+        ? institutionsData : institutionsData?.institutions ?? institutionsData?.data ?? [], [institutionsData]);
+    const careers = useMemo(() => Array.isArray(careersData)
+        ? careersData : careersData?.careers ?? careersData?.data ?? [], [careersData]);
+    const courses = useMemo(() => Array.isArray(coursesData)
+        ? coursesData : coursesData?.courses ?? coursesData?.data ?? [], [coursesData]);
+
+    const [filterInstitutionId, setFilterInstitutionId] = useState('');
+    const [filterCareerId, setFilterCareerId] = useState('');
+    const [filterCourseId, setFilterCourseId] = useState('');
+    const institutionId = isSuperAdmin ? Number(filterInstitutionId) : Number(user?.institutionId);
+    const availableCareers = useMemo(() =>
+        careersForInstitution(careers, institutionId), [careers, institutionId]);
+    const availableCourses = useMemo(() =>
+        coursesForCareer(courses, institutionId, filterCareerId),
+        [courses, institutionId, filterCareerId]);
+
     const {
         data: subjectsData = [],
         isLoading,
@@ -75,6 +103,22 @@ export default function SubjectsListView() {
             []
         );
     }, [subjectsData]);
+
+    const courseById = useMemo(() => new Map(
+        courses.map(course => [Number(course.id), course])
+    ), [courses]);
+
+    const isRelatedToVisibleCourse = courseId => {
+        return courseMatchesSelection(courseById.get(Number(courseId)), {
+            institutionId, careerId: filterCareerId, courseId: filterCourseId,
+        });
+    };
+
+    // Una materia puede participar en más de un curso. Se muestra cuando
+    // al menos una de sus vinculaciones corresponde a los filtros elegidos.
+    const filteredSubjects = useMemo(() => subjectsForSelection(subjects, courses, {
+        institutionId, careerId: filterCareerId, courseId: filterCourseId,
+    }), [subjects, courses, institutionId, filterCareerId, filterCourseId]);
 
     const isSaving =
         createMutation.isPending ||
@@ -193,7 +237,9 @@ export default function SubjectsListView() {
     );
 
     const renderSchedules = subject => {
-        const schedules = [...(subject.schedules ?? [])].sort(
+        const schedules = (subject.schedules ?? [])
+            .filter(schedule => isRelatedToVisibleCourse(schedule.courseId ?? schedule.course?.id))
+            .slice().sort(
             (a, b) => {
                 const dayDifference =
                     (DAY_ORDER[a.day] ?? 99) -
@@ -305,6 +351,91 @@ export default function SubjectsListView() {
                 </button>
             </div>
 
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-white">Filtrar materias creadas</h3>
+                    <span className="text-xs text-slate-400">{filteredSubjects.length} de {subjects.length} materias</span>
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    {isSuperAdmin && (
+                        <label className="space-y-1 text-xs text-slate-300">
+                            <span>Institución</span>
+                            <select
+                                aria-label="Filtrar por institución"
+                                value={filterInstitutionId}
+                                onChange={event => {
+                                    setFilterInstitutionId(event.target.value);
+                                    setFilterCareerId('');
+                                    setFilterCourseId('');
+                                }}
+                                className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white"
+                            >
+                                <option value="">Todas las instituciones</option>
+                                {institutions.map(institution => (
+                                    <option key={institution.id} value={institution.id}>
+                                        {institution.nombre ?? institution.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    )}
+                    <label className="space-y-1 text-xs text-slate-300">
+                        <span>Carrera / nivel</span>
+                        <select
+                            aria-label="Filtrar por carrera"
+                            value={filterCareerId}
+                            disabled={!institutionId}
+                            onChange={event => {
+                                setFilterCareerId(event.target.value);
+                                setFilterCourseId('');
+                            }}
+                            className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <option value="">Todas las carreras</option>
+                            {availableCareers.map(career => (
+                                <option key={career.id} value={career.id}>{career.nombre}</option>
+                            ))}
+                        </select>
+                    </label>
+                    <label className="space-y-1 text-xs text-slate-300">
+                        <span>Curso</span>
+                        <select
+                            aria-label="Filtrar por curso"
+                            value={filterCourseId}
+                            disabled={!filterCareerId}
+                            onChange={event => setFilterCourseId(event.target.value)}
+                            className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <option value="">Todos los cursos</option>
+                            {availableCourses.map(course => (
+                                <option key={course.id} value={course.id}>{course.nombre} ({course.academicYear})</option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
+                {isSuperAdmin && !filterInstitutionId && (
+                    <p className="mt-3 text-xs text-slate-400">
+                        Seleccioná una institución para filtrar por carrera y curso.
+                    </p>
+                )}
+                {filterCareerId && availableCourses.length === 0 && (
+                    <p className="mt-3 text-xs text-amber-300">No hay cursos registrados en la carrera seleccionada.</p>
+                )}
+                <div className="mt-3 flex justify-end">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setFilterInstitutionId('');
+                            setFilterCareerId('');
+                            setFilterCourseId('');
+                        }}
+                        className="cursor-pointer text-xs font-medium text-blue-300 hover:text-blue-200 hover:underline"
+                    >
+                        Limpiar filtros
+                    </button>
+                </div>
+            </div>
+
             {isError && (
                 <div
                     role="alert"
@@ -371,11 +502,16 @@ export default function SubjectsListView() {
                         </thead>
 
                         <tbody>
-                            {subjects.map(subject => {
+                            {filteredSubjects.length === 0 && (
+                                <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400">
+                                    No hay materias asociadas a esos filtros.
+                                </td></tr>
+                            )}
+                            {filteredSubjects.map(subject => {
                                 const activeAssignments =
                                     (subject.teachers ?? []).filter(
-                                        assignment =>
-                                            assignment.isActive
+                                        assignment => assignment.isActive &&
+                                            isRelatedToVisibleCourse(assignment.courseId ?? assignment.course?.id)
                                     );
 
                                 const isActive =
@@ -434,6 +570,9 @@ export default function SubjectsListView() {
                                                                 key={assignment.id}
                                                                 className="text-slate-300"
                                                             >
+                                                                <span className="block text-xs text-violet-300">
+                                                                    {assignment.course?.career?.nombre ?? 'Sin carrera'}
+                                                                </span>
                                                                 {assignment.course?.nombre ||
                                                                     'Curso no disponible'}
                                                             </div>
