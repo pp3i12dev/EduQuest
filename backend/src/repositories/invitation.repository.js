@@ -64,6 +64,10 @@ export const createUserFromInvitation = ({ invitationId, userCreateData }) => {
         if (consumed.count !== 1) {
             throw Object.assign(new Error('La invitación fue utilizada o venció'), { status: 409 });
         }
-        return tx.user.create({ data: userCreateData });
+        return tx.user.create({ data: {
+            ...userCreateData,
+            directoryContactEmail: userCreateData.email ?? null,
+            directoryContactPhone: userCreateData.telefono ?? null,
+        } });
     });
 };

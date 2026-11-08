@@ -24,6 +24,7 @@ import UsersListView from '../views/UsersListView';
 import InvitationsListView from '../views/InvitationListView';
 import AcceptInvitationView from '../views/AcceptInvitationView';
 import ProfileView from '../views/ProfileView';
+import ServiceConfigView from '../views/ServiceConfigView';
 
 import CareersListView from '../views/CareersListView';
 import CoursesListView from '../views/CoursesListView';
@@ -107,6 +108,8 @@ export default function AppRoutes() {
                         path="profile"
                         element={<ProfileView />}
                     />
+
+                    <Route path="service-config" element={<RoleRoute action="services:view"><ServiceConfigView /></RoleRoute>} />
 
                     <Route path="institution-communications" element={<InstitutionCommunicationsView />} />
                     <Route path="directory" element={<InstitutionDirectoryView />} />

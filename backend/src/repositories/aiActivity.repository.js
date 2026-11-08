@@ -9,7 +9,7 @@ export async function getOwnedTeacherSubject(userId, teacherSubjectId) {
     where: { id: teacherSubjectId, isActive: true, teacher: { userId } },
     include: {
       subject: { select: { nombre: true } },
-      course: { select: { nombre: true, academicYear: true } },
+      course: { select: { nombre: true, academicYear: true, institutionId: true } },
       contents: { select: { id: true, name: true, storageKey: true, mimeType: true, sizeBytes: true } },
     },
   });

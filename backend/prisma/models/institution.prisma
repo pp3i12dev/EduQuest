@@ -15,5 +15,6 @@ model Institution {
   subjects Subject[]
   invitations Invitation[]
   earlyNotices EarlyNotice[]
+  serviceConfig InstitutionServiceConfig?
   events InstitutionEvent[]
 }

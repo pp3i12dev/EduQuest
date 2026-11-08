@@ -1,0 +1,40 @@
+// Solo valores destinados al directorio. No alterar email/telefono de autenticación.
+function invalid(message) { throw Object.assign(new Error(message), { status: 400 }); }
+
+export function effectiveDirectoryContact(user = {}) {
+  // null/undefined corresponde a una cuenta anterior a la migración.
+  // Cadena vacía significa que el propietario borró el dato explícitamente.
+  return {
+    email: user.directoryContactEmail == null ? (user.email ?? '') : user.directoryContactEmail,
+    phone: user.directoryContactPhone == null ? (user.telefono ?? '') : user.directoryContactPhone,
+  };
+}
+
+export function normalizeDirectoryEmail(value) {
+  if (typeof value !== 'string') invalid('El correo de contacto debe ser texto.');
+  const email = value.trim().toLowerCase();
+  if (email && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+    invalid('Ingresá un correo electrónico de contacto válido.');
+  }
+  return email;
+}
+
+export function normalizeDirectoryPhone(value) {
+  if (typeof value !== 'string') invalid('El teléfono de contacto debe ser texto.');
+  const phone = value.trim().replace(/\s+/g, ' ');
+  const digits = phone.replace(/\D/g, '');
+  if (phone && (!/^\+?[\d\s().-]+$/.test(phone) || phone.length > 35 || digits.length < 7 || digits.length > 15)) {
+    invalid('Ingresá un teléfono de contacto válido (7 a 15 dígitos).');
+  }
+  return phone;
+}
+
+export function sharedDirectoryContact(user, viewerRoles = []) {
+  const effective = effectiveDirectoryContact(user);
+  const allows = roles => Array.isArray(roles) &&
+    viewerRoles.some(role => roles.includes(role));
+  return {
+    email: allows(user.directoryEmailRoles) ? (effective.email || null) : null,
+    telefono: allows(user.directoryPhoneRoles) ? (effective.phone || null) : null,
+  };
+}

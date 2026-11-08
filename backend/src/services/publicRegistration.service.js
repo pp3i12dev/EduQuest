@@ -3,6 +3,7 @@ import { getPrisma } from '../config/prisma.js';
 import { hashPassword } from '../utils/password.js';
 import { sendEmailVerificationEmail, sendStaffSignupDecisionEmail } from '../utils/mailer.js';
 import { canAnyRole } from '../config/permissions.js';
+import { mailConfigured } from './serviceConfig.service.js';
 
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const bad = (message, status = 400) => { const e = new Error(message); e.status = status; throw e; };
@@ -11,8 +12,8 @@ const STAFF = ['DIRECTOR', 'PRECEPTOR', 'TEACHER'];
 const generic = 'Si existe una cuenta pendiente con ese correo, enviaremos un nuevo enlace de verificación.';
 const ttl = () => new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-export function ensureVerificationEmailConfigured() {
-  if (!process.env.SMTP_HOST || !process.env.MAIL_FROM || !process.env.FRONTEND_URL) {
+export async function ensureVerificationEmailConfigured(institutionId) {
+  if (!process.env.FRONTEND_URL || !(await mailConfigured(institutionId))) {
     bad('El registro no está disponible porque la institución aún no configuró el envío de correos.', 503);
   }
 }
@@ -25,7 +26,6 @@ export async function sendVerificationToUser(user, raw) {
 }
 
 export async function registerStaffService(data = {}) {
-  ensureVerificationEmailConfigured();
   const role = String(data.role || '').toUpperCase();
   if (!STAFF.includes(role)) bad('Seleccioná un rol de personal válido.');
   const email = String(data.email || '').trim().toLowerCase();
@@ -41,6 +41,7 @@ export async function registerStaffService(data = {}) {
   if (typeof password !== 'string' || password.length < 10 || password.length > 128)
     bad('La contraseña debe tener entre 10 y 128 caracteres.');
   if (!Number.isSafeInteger(institutionId) || institutionId < 1) bad('Elegí una institución.');
+  await ensureVerificationEmailConfigured(institutionId);
   if (telefono && telefono.length > 35) bad('El teléfono es demasiado largo.');
   const db = getPrisma();
   if (!await db.institution.findFirst({ where: { id: institutionId, isActive: true }, select: { id: true } }))
@@ -52,11 +53,13 @@ export async function registerStaffService(data = {}) {
   try {
     user = await db.user.create({
       data: {
-        dni, email, firstName, lastName, telefono, passwordHash: await hashPassword(password),
+        dni, email, firstName, lastName, telefono,
+        directoryContactEmail: email, directoryContactPhone: telefono,
+        passwordHash: await hashPassword(password),
         institutionId, isActive: false, signupStatus: 'PENDING', requestedRole: role,
         emailVerificationTokens: { create: { tokenHash: challenge.tokenHash, expiresAt: challenge.expiresAt } },
       },
-      select: { id: true, email: true, firstName: true },
+      select: { id: true, email: true, firstName: true, institutionId: true },
     });
   } catch (error) {
     if (error?.code === 'P2002') bad('Ya existe una cuenta con el correo o DNI ingresado.', 409);
@@ -80,10 +83,10 @@ export async function resendVerificationService({ email } = {}) {
   const user = await db.user.findFirst({
     where: { email: { equals: normalized, mode: 'insensitive' }, emailVerifiedAt: null,
       requestedRole: { in: [...STAFF, 'STUDENT'] }, deletedAt: null, isActive: false },
-    select: { id: true, email: true, firstName: true },
+    select: { id: true, email: true, firstName: true, institutionId: true },
   });
   if (!user) return { message: generic };
-  ensureVerificationEmailConfigured();
+  await ensureVerificationEmailConfigured(user.institutionId);
   const recent = await db.emailVerificationToken.findFirst({
     where: { userId: user.id, createdAt: { gt: new Date(Date.now() - 2 * 60 * 1000) } },
     select: { id: true },
@@ -168,7 +171,7 @@ export async function reviewStaffService(requester, { id, decision, reason } = {
     const user = await tx.user.findFirst({ where: { id: userId, ...scopedInstitution(requester),
       requestedRole: { in: STAFF }, emailVerifiedAt: { not: null }, isActive: false,
       signupStatus: 'PENDING', deletedAt: null },
-      select: { id: true, firstName: true, email: true, requestedRole: true } });
+      select: { id: true, firstName: true, email: true, requestedRole: true, institutionId: true } });
     if (!user) bad('La solicitud no está disponible o cambió de estado.', 409);
     if (!canReview(requester, user.requestedRole)) bad('No tenés permiso para aprobar este rol.', 403);
     const changed = await tx.user.updateMany({ where: {
@@ -183,7 +186,7 @@ export async function reviewStaffService(requester, { id, decision, reason } = {
     }
     return user;
   });
-  if (process.env.SMTP_HOST && process.env.MAIL_FROM) {
+  if (await mailConfigured(approved.institutionId)) {
     try { await sendStaffSignupDecisionEmail({ to: approved.email, name: approved.firstName,
       status: choice, role: approved.requestedRole, reason: why }); }
     catch (e) { console.warn('[EduQuest] No se entregó la decisión de personal:', e?.message); }

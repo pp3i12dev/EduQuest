@@ -1,5 +1,6 @@
 import { EXTRA_TYPES, gameRows, normalizeExtraGame } from '../utils/gameMechanics.js';
 import { getPrisma } from '../config/prisma.js';
+import { getGeminiSettings } from './serviceConfig.service.js';
 import { findTeacherProfileByUserId } from '../repositories/teacherSubject.repository.js';
 import { getOwnedTeacherSubject, readOwnedPdf, createReviewedDraft, getOwnedDraft, updateOwnedStatus, updateReviewedDraft } from '../repositories/aiActivity.repository.js';
 
@@ -86,10 +87,10 @@ const geminiFields = type => ({
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const retryableGeminiStatus = (status) => status === 408 || status === 429 || (status >= 500 && status <= 599);
 
-async function callGemini({ prompt, type, count, pdf, difficulty }) {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) throw fail(503, 'Falta configurar GEMINI_API_KEY en el backend; no se generaron preguntas.');
-  const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+async function callGemini({ prompt, type, count, pdf, difficulty, institutionId }) {
+  const config = await getGeminiSettings(institutionId);
+  if (!config) throw fail(503, 'Tu institución todavía no configuró y habilitó Gemini.');
+  const { key, model } = config;
   if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw fail(500, 'Modelo Gemini inválido.');
   const parts = [{ text: `Actuá como asistente docente. Produci exactamente ${count} elementos educativos en español argentino, precisos y adecuados a la edad del curso.
 Fuente de instrucciones: ${prompt}.
@@ -187,7 +188,7 @@ export async function previewQuestions(user, body = {}) {
   checkLimit(user.id);
   const prompt = `Materia: ${assignment.subject.nombre}; Curso: ${assignment.course.nombre}; Año: ${assignment.course.academicYear}. Unidad: ${topic.unit.title}. Tema: ${topic.title}. ${instructions || 'Generar preguntas de los contenidos principales del material suministrado.'}`;
   const difficulty = difficultyLabel(body.difficulty ?? 5);
-  const rows = await callGemini({ prompt, type, count, pdf, difficulty });
+  const rows = await callGemini({ prompt, type, count, pdf, difficulty, institutionId: assignment.course.institutionId });
   const content = { ...normalizeGenerated(type, rows), difficulty };
   return { gameType: type, content, questionCount: Object.values(content)[0].length, sourceDocument: pdf?.name || null,
     message: 'Borrador generado por IA. Revisá cada pregunta y su solución antes de guardar. Ninguna actividad se publicó.' };

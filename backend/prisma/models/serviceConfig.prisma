@@ -1,0 +1,43 @@
+// Configuraciones por institución. Credenciales cifradas en el backend (AES-256-GCM).
+// v2 usa una subclave HKDF de JWT_SECRET (sin clave adicional). v1 antiguo sigue compatible si se conserva SERVICE_CONFIG_ENCRYPTION_KEY.
+model InstitutionServiceConfig {
+  institutionId Int @id
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  smtpProvider String @default("gmail")
+  smtpUser String?
+  smtpPasswordEncrypted String? @db.Text
+  smtpFromName String?
+  smtpEnabled Boolean @default(false)
+  geminiKeyEncrypted String? @db.Text
+  geminiModel String @default("gemini-2.5-flash")
+  geminiEnabled Boolean @default(false)
+  updatedById Int?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+// Un único par VAPID por despliegue; múltiples instituciones comparten origen/PWA.
+model WebPushServerConfig {
+  id Int @id @default(1)
+  publicKey String
+  privateKeyEncrypted String @db.Text
+  subject String
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Bitácora sin secretos: registra quién modificó cada servicio y cuándo.
+model ServiceConfigAudit {
+  id Int @id @default(autoincrement())
+  actorId Int
+  institutionId Int?
+  // Copia de identidad: sigue visible incluso si el usuario cambia nombre o se elimina.
+  actorName String?
+  actorEmail String?
+  actorRole String?
+  action String
+  createdAt DateTime @default(now())
+  @@index([institutionId, createdAt])
+  @@index([actorId, createdAt])
+}

@@ -1,5 +1,7 @@
 import { notificationEmailRepository as repo } from '../repositories/notificationEmail.repository.js';
 import { sendEarlyNoticeEmail, sendInstitutionCommunicationEmail } from '../utils/mailer.js';
+import { mailConfigured } from './serviceConfig.service.js';
+import { getPrisma } from '../config/prisma.js';
 
 const INTERVAL_MS = 30_000;
 let timer = null;
@@ -11,6 +13,14 @@ export const processPendingNotificationEmails = async () => {
   try {
     const pending = await repo.listPending(20);
     for (const { id } of pending) {
+      // Si el colegio todavía no configuró SMTP, conservar la entrega pendiente
+      // en vez de consumir sus tres intentos durante el alta inicial.
+      const pendingDelivery = await getPrisma().notificationDelivery.findUnique({
+        where: { id },
+        select: { recipient: true, notification: { select: { earlyNotice: { select: { institutionId: true } }, institutionEvent: { select: { institutionId: true } } } } },
+      });
+      const institutionId = pendingDelivery?.notification?.earlyNotice?.institutionId || pendingDelivery?.notification?.institutionEvent?.institutionId;
+      if (!institutionId || !(await mailConfigured(institutionId))) continue;
       let delivery;
       try {
         delivery = await repo.claim(id);
@@ -78,10 +88,6 @@ export const processPendingNotificationEmails = async () => {
 };
 
 export const startNotificationEmailProcessor = () => {
-  if (process.env.NOTIFICATION_EMAIL_ENABLED !== 'true') {
-    console.info('[EduQuest][EMAIL] Procesador desactivado');
-    return;
-  }
   if (timer) return;
   console.info('[EduQuest][EMAIL] Procesador iniciado (cada 30 segundos)');
   void processPendingNotificationEmails();

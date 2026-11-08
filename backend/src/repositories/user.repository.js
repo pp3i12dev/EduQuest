@@ -62,6 +62,8 @@ export const createUserWithProfile = ({
   return prisma.user.create({
     data: {
       ...userData,
+      directoryContactEmail: userData.email ?? null,
+      directoryContactPhone: userData.telefono ?? null,
       [profileField]: {
         create: profileData,
       },
@@ -79,6 +81,8 @@ export const createStudentSelfSignup = ({ userData, courseId, tokenHash, expires
     const user = await tx.user.create({
       data: {
         ...userData,
+        directoryContactEmail: userData.email ?? null,
+        directoryContactPhone: userData.telefono ?? null,
         isActive: false,
         signupStatus: 'PENDING',
         requestedRole: 'STUDENT',

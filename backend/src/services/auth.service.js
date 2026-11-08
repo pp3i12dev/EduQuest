@@ -107,7 +107,6 @@ export const registerStudentService = async (data) => {
     if (process.env.NODE_ENV === 'production' && process.env.PUBLIC_STUDENT_ENROLLMENT_ENABLED !== 'true') {
         throw new ServiceError('La inscripción pública de alumnos todavía no está habilitada para esta institución.', 503);
     }
-    ensureVerificationEmailConfigured();
     const {
         dni,
         email,
@@ -119,6 +118,7 @@ export const registerStudentService = async (data) => {
         institutionId,
         courseId,
     } = data;
+    await ensureVerificationEmailConfigured(Number(institutionId));
 
     if (
         !dni ||

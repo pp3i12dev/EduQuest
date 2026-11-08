@@ -15,6 +15,7 @@ export const FRONTEND_PERMISSIONS = {
     'invitation:manage': ['DIRECTOR', 'PRECEPTOR', 'TEACHER'],
 
     'institution:manage': ['DIRECTOR'],
+    'services:view': ['DIRECTOR', 'PRECEPTOR'],
     'career:manage': ['DIRECTOR', 'PRECEPTOR'],
     'course:manage': ['DIRECTOR', 'PRECEPTOR'],
     'subject:manage': ['DIRECTOR', 'PRECEPTOR'],

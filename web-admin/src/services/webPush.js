@@ -52,7 +52,16 @@ export async function activatePush(prepared) {
     ? 'granted'
     : await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('No se concedió el permiso. Podés intentarlo más adelante desde Mi perfil.');
-  const sub = prepared.existingSubscription || await prepared.registration.pushManager.subscribe({
+  let current = prepared.existingSubscription || await prepared.registration.pushManager.getSubscription();
+  if (current?.options?.applicationServerKey) {
+    const oldKey = new Uint8Array(current.options.applicationServerKey);
+    const newKey = bytesFromBase64Url(prepared.publicKey);
+    if (oldKey.length !== newKey.length || oldKey.some((value, i) => value !== newKey[i])) {
+      await current.unsubscribe();
+      current = null;
+    }
+  }
+  const sub = current || await prepared.registration.pushManager.subscribe({
     userVisibleOnly: true, applicationServerKey: bytesFromBase64Url(prepared.publicKey),
   });
   try {

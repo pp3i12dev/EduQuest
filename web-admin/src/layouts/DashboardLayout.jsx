@@ -25,7 +25,7 @@ import {
     ShieldCheck,
     PanelLeftClose,
     PanelLeftOpen,
-    Sparkles,
+    Settings2,
     ContactRound,
     UsersRound,
     Presentation,
@@ -226,6 +226,7 @@ export default function DashboardLayout() {
     ) {
         displayRoles.unshift('SUPER_ADMIN');
     }
+    const canViewConfiguration = displayRoles.some(role => ['SUPER_ADMIN', 'DIRECTOR', 'PRECEPTOR'].includes(role));
 
     const fullName =
         [user?.firstName, user?.lastName]
@@ -250,7 +251,7 @@ export default function DashboardLayout() {
                     : location.pathname === item.to ||
                     location.pathname.startsWith(`${item.to}/`)
             )?.label ||
-        (isRoot ? 'Panel principal' : 'Gestión académica');
+        (isRoot ? 'Panel principal' : location.pathname === '/dashboard/service-config' ? 'Configuración' : 'Gestión académica');
 
     const todayLabel = new Intl.DateTimeFormat('es-AR', {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -264,6 +265,7 @@ export default function DashboardLayout() {
         'institution-communications': 'Comunicaciones institucionales',
         staff: 'Solicitudes de personal', directory: 'Directorio institucional',
         profile: 'Mi perfil',
+        'service-config': 'Configuración',
     };
     const routePart = location.pathname.split('/')[2];
     const assignmentRouteTitles = {
@@ -460,6 +462,15 @@ export default function DashboardLayout() {
                                                     Mi perfil
                                                 </Link>
 
+                                                {canViewConfiguration && <Link
+                                                    to="/dashboard/service-config"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+                                                >
+                                                    <Settings2 size={18} />
+                                                    Configuración
+                                                </Link>}
+
                                                 <button
                                                     type="button"
                                                     onClick={handleLogout}
@@ -540,22 +551,14 @@ export default function DashboardLayout() {
 
                             <div className="mt-auto pt-6">
 
-                                {!sidebarCollapsed && (
-                                    <div className="mb-4 rounded-xl border border-white/10 bg-white/5 p-4">
-                                        <Sparkles
-                                            size={19}
-                                            className="mb-3 text-blue-400"
-                                        />
-
-                                        <p className="text-sm font-semibold text-slate-200">
-                                            Seguí avanzando
-                                        </p>
-
-                                        <p className="mt-2 text-xs leading-relaxed text-slate-400">
-                                            Cada desafío es una oportunidad para aprender.
-                                        </p>
-                                    </div>
-                                )}
+                                {canViewConfiguration && <div className="mb-2">
+                                    <SidebarLink
+                                        to="/dashboard/service-config"
+                                        label="Configuración"
+                                        Icon={Settings2}
+                                        collapsed={sidebarCollapsed}
+                                    />
+                                </div>}
 
                                 <button
                                     type="button"
@@ -685,6 +688,12 @@ export default function DashboardLayout() {
                             </div>
 
                             <div className="border-t border-slate-800 p-4">
+                                {canViewConfiguration && <SidebarLink
+                                    to="/dashboard/service-config"
+                                    label="Configuración"
+                                    Icon={Settings2}
+                                    onNavigate={closeMobileMenu}
+                                />}
                                 <button
                                     type="button"
                                     onClick={handleLogout}

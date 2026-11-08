@@ -774,6 +774,9 @@ function serializeMyProfile(user) {
         dni: user.dni,
         email: user.email,
         telefono: user.telefono ?? null,
+        // El propietario recibe solo sus propios valores de contacto efectivos.
+        directoryContactEmail: user.directoryContactEmail ?? user.email,
+        directoryContactPhone: user.directoryContactPhone ?? user.telefono ?? '',
         directoryEmailVisibility: user.directoryEmailVisibility ?? 'PRIVATE',
         directoryPhoneVisibility: user.directoryPhoneVisibility ?? 'PRIVATE',
         directoryEmailRoles: user.directoryEmailRoles ?? [],

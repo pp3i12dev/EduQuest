@@ -1,4 +1,5 @@
 import { getPrisma } from '../config/prisma.js';
+import { effectiveDirectoryContact, normalizeDirectoryEmail, normalizeDirectoryPhone, sharedDirectoryContact } from '../utils/directoryContact.js';
 
 const STAFF = ['DIRECTOR', 'PRECEPTOR', 'TEACHER'];
 const PRIVACY_ROLES = new Set(['SUPER_ADMIN', 'DIRECTOR', 'PRECEPTOR', 'TEACHER', 'STUDENT']);
@@ -69,6 +70,7 @@ export async function getDirectoryService(requester, query = {}) {
   const [rows, total] = await Promise.all([
     db.user.findMany({ where, orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }], skip: (page-1)*size, take: size,
       select: { id: true, firstName: true, lastName: true, email: true, telefono: true,
+        directoryContactEmail: true, directoryContactPhone: true,
         directoryEmailRoles: true, directoryPhoneRoles: true,
         directorProfile: { select: { position: true } }, preceptorProfile: { select: { shift: true } },
         teacherProfile: { select: { specialty: true } },
@@ -77,26 +79,31 @@ export async function getDirectoryService(requester, query = {}) {
   // La privacidad se verifica en el servidor, con roles obtenidos del token autenticado.
   // Ni SUPER_ADMIN bypass ni correo/telefono por búsqueda deben anular el consentimiento.
   const viewerRoles = requester?.roles || [];
-  const permitted = allowedRoles => Array.isArray(allowedRoles)
-    && viewerRoles.some(role => allowedRoles.includes(role));
   return { total, page, pageSize: size, items: rows.map(row => ({
     id: row.id, firstName: row.firstName, lastName: row.lastName,
     roles: [row.directorProfile && 'DIRECTOR', row.preceptorProfile && 'PRECEPTOR', row.teacherProfile && 'TEACHER'].filter(Boolean),
     position: row.directorProfile?.position || null, shift: row.preceptorProfile?.shift || null,
     specialty: row.teacherProfile?.specialty || null,
-    email: permitted(row.directoryEmailRoles) ? row.email : null,
-    telefono: permitted(row.directoryPhoneRoles) ? row.telefono : null,
+    ...sharedDirectoryContact(row, viewerRoles),
   })) };
 }
 
 export async function updateDirectoryPrivacyService(requester, body = {}) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) bad('Datos inválidos.');
-  const allowed = ['directoryEmailRoles', 'directoryPhoneRoles'];
+  const allowed = ['directoryEmailRoles', 'directoryPhoneRoles', 'directoryContactEmail', 'directoryContactPhone'];
   if (!Object.keys(body).length || Object.keys(body).some(key => !allowed.includes(key))) {
-    bad('Solo se permiten los controles de privacidad por rol del directorio.');
+    bad('Solo se permiten los datos compartidos y los controles de privacidad del directorio.');
   }
   const data = {};
   for (const [key, value] of Object.entries(body)) {
+    if (key === 'directoryContactEmail') {
+      data[key] = normalizeDirectoryEmail(value);
+      continue;
+    }
+    if (key === 'directoryContactPhone') {
+      data[key] = normalizeDirectoryPhone(value);
+      continue;
+    }
     if (!Array.isArray(value) || value.length > PRIVACY_ROLES.size ||
       value.some(role => typeof role !== 'string' || !PRIVACY_ROLES.has(role)) ||
       new Set(value).size !== value.length) {
@@ -107,9 +114,18 @@ export async function updateDirectoryPrivacyService(requester, body = {}) {
   const db = getPrisma();
   const owner = await db.user.findFirst({ where: { id: requester.id, isActive: true, deletedAt: null }, select: { id: true } });
   if (!owner) bad('No se encontró tu cuenta activa.', 404);
+  // Una sola actualización: contacto y privacidad se guardan juntos o no se guardan.
   const updated = await db.user.update({ where: { id: owner.id }, data,
-    select: { directoryEmailRoles: true, directoryPhoneRoles: true } });
-  return updated;
+    select: { email: true, telefono: true,
+      directoryContactEmail: true, directoryContactPhone: true,
+      directoryEmailRoles: true, directoryPhoneRoles: true } });
+  const contact = effectiveDirectoryContact(updated);
+  return {
+    directoryContactEmail: contact.email,
+    directoryContactPhone: contact.phone,
+    directoryEmailRoles: updated.directoryEmailRoles,
+    directoryPhoneRoles: updated.directoryPhoneRoles,
+  };
 }
 
 export async function getDirectoryFiltersService(requester, query = {}) {

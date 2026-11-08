@@ -1,5 +1,6 @@
 import webpush from 'web-push';
 import { getPrisma } from '../config/prisma.js';
+import { getPushCredentials } from './serviceConfig.service.js';
 
 const getId = reqUser => Number(reqUser?.id);
 const fail = (status, message) => { const error = new Error(message); error.status = status; throw error; };
@@ -27,7 +28,7 @@ const validSubscription = sub => sub && typeof sub === 'object'
   && validKey(sub.keys?.p256dh) && validKey(sub.keys?.auth);
 
 export async function saveSubscription(reqUser, sub) {
-  if (!webPushConfigured()) fail(503, 'Web Push no está activado o faltan claves VAPID válidas.');
+  if (!(await webPushConfigured())) fail(503, 'Web Push no está activado o faltan claves VAPID válidas.');
   if (!validSubscription(sub)) fail(400, 'La suscripción Push no es válida o el proveedor es desconocido.');
   const db = getPrisma();
   const userId = getId(reqUser);
@@ -81,7 +82,8 @@ export async function listSubscriptions(reqUser) {
 export async function enqueueWebPushForNotification(tx, userId, notificationId) {
   // Durante una instalación por etapas no interrumpir el sistema de avisos
   // si el nuevo módulo aún no está habilitado y migrado.
-  if (process.env.WEB_PUSH_ENABLED !== 'true') return;
+  const pushStatus = await tx.webPushServerConfig.findUnique({ where: { id: 1 }, select: { enabled: true } });
+  if (!pushStatus?.enabled) return;
   const devices = await tx.webPushSubscription.findMany({
     where: { userId, disabledAt: null }, select: { id: true }, take: 30,
   });
@@ -92,28 +94,28 @@ export async function enqueueWebPushForNotification(tx, userId, notificationId) 
   });
 }
 
-let configured = false;
-const configure = () => {
-  if (configured) return true;
-  if (process.env.WEB_PUSH_ENABLED !== 'true') return false;
-  const { WEB_PUSH_PUBLIC_KEY: publicKey, WEB_PUSH_PRIVATE_KEY: privateKey, WEB_PUSH_SUBJECT: subject } = process.env;
-  if (!publicKey || !privateKey || !subject) return false;
-  try {
-    webpush.setVapidDetails(subject, publicKey, privateKey);
-    configured = true;
-  } catch (error) {
-    console.error('[EduQuest][PUSH] Configuración VAPID inválida:', error.message);
-    return false;
+// Las credenciales pueden configurarse desde React sin reiniciar el servidor.
+let activeFingerprint = null;
+const configure = async () => {
+  const credentials = await getPushCredentials();
+  if (!credentials) return false;
+  const signature = `${credentials.publicKey}:${credentials.privateKey}:${credentials.subject}`;
+  if (signature !== activeFingerprint) {
+    webpush.setVapidDetails(credentials.subject, credentials.publicKey, credentials.privateKey);
+    activeFingerprint = signature;
   }
   return true;
 };
-export const webPushConfigured = () => configure();
+export const webPushConfigured = async () => {
+  try { return await configure(); }
+  catch (error) { console.error('[EduQuest][PUSH] No se pudo cargar VAPID:', error?.message); return false; }
+};
 
 // Prueba autenticada al dispositivo propio, sin generar un aviso académico ficticio.
 // "accepted" indica aceptación por el servicio Push; no certifica entrega visual.
 const testCooldown = new Map();
 export async function sendTestWebPush(reqUser, endpoint) {
-  if (!webPushConfigured()) fail(503, 'Web Push no está configurado en el servidor.');
+  if (!(await webPushConfigured())) fail(503, 'Web Push no está configurado en el servidor.');
   if (typeof endpoint !== 'string' || !isTrustedPushEndpoint(endpoint)) fail(400, 'Dispositivo inválido.');
   const userId = getId(reqUser);
   const db = getPrisma();
@@ -196,7 +198,7 @@ async function isObsolete(db, n) {
 let running = false;
 let interval = null;
 export async function processWebPushQueue() {
-  if (running || !webPushConfigured()) return;
+  if (running || !(await webPushConfigured())) return;
   running = true;
   const db = getPrisma();
   try {
@@ -246,13 +248,15 @@ export async function processWebPushQueue() {
   finally { running = false; }
 }
 export function startWebPushProcessor() {
-  if (process.env.WEB_PUSH_ENABLED !== 'true') {
-    console.info('[EduQuest][PUSH] Desactivado hasta configurar VAPID y WEB_PUSH_ENABLED=true'); return;
-  }
-  if (!webPushConfigured()) { console.warn('[EduQuest][PUSH] Faltan credenciales VAPID válidas'); return; }
+  // Se inicia incluso sin configuración: al generar las claves desde React
+  // el procesador las detecta sin necesidad de reiniciar el servidor.
   if (interval) return;
   void processWebPushQueue();
   interval = setInterval(() => void processWebPushQueue(), 15000);
   interval.unref?.();
 }
-export const publicVapidKey = () => webPushConfigured() ? process.env.WEB_PUSH_PUBLIC_KEY : null;
+export const publicVapidKey = async () => {
+  if (!(await webPushConfigured())) return null;
+  const credentials = await getPushCredentials();
+  return credentials?.publicKey || null;
+};

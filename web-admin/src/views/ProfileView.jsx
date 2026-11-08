@@ -219,6 +219,7 @@ export default function ProfileView() {
     const [legajosForm, setLegajosForm] = useState({ legajoStudent: '', legajoTeacher: '', legajoPreceptor: '' });
     const [directoryMessage, setDirectoryMessage] = useState(null);
     const [directoryPrivacy, setDirectoryPrivacy] = useState({ directoryEmailRoles: [], directoryPhoneRoles: [] });
+    const [directoryContact, setDirectoryContact] = useState({ directoryContactEmail: '', directoryContactPhone: '' });
 
     const [form, setForm] = useState({
         firstName: '',
@@ -267,6 +268,10 @@ export default function ProfileView() {
                 setDirectoryPrivacy({
                     directoryEmailRoles: Array.isArray(data.directoryEmailRoles) ? data.directoryEmailRoles : [],
                     directoryPhoneRoles: Array.isArray(data.directoryPhoneRoles) ? data.directoryPhoneRoles : [],
+                });
+                setDirectoryContact({
+                    directoryContactEmail: data.directoryContactEmail ?? data.email ?? '',
+                    directoryContactPhone: data.directoryContactPhone ?? data.telefono ?? '',
                 });
 
                 setForm({
@@ -431,16 +436,28 @@ export default function ProfileView() {
         setDirectoryMessage(null);
     };
 
-    const saveDirectoryPrivacy = async () => {
+    const saveDirectoryPrivacy = async event => {
+        event.preventDefault();
         setDirectorySaving(true);
         setDirectoryMessage(null);
         try {
-            const result = await directoryService.updatePrivacy(directoryPrivacy);
-            setDirectoryPrivacy(result);
+            const result = await directoryService.updatePrivacy({
+                ...directoryPrivacy,
+                directoryContactEmail: directoryContact.directoryContactEmail.trim(),
+                directoryContactPhone: directoryContact.directoryContactPhone.trim(),
+            });
+            setDirectoryPrivacy({
+                directoryEmailRoles: result.directoryEmailRoles,
+                directoryPhoneRoles: result.directoryPhoneRoles,
+            });
+            setDirectoryContact({
+                directoryContactEmail: result.directoryContactEmail,
+                directoryContactPhone: result.directoryContactPhone,
+            });
             setProfile(current => ({ ...current, ...result }));
-            setDirectoryMessage({ type: 'success', message: 'Preferencias de privacidad guardadas.' });
+            setDirectoryMessage({ type: 'success', message: 'Datos de contacto y permisos de privacidad guardados.' });
         } catch (error) {
-            setDirectoryMessage({ type: 'error', message: error.response?.data?.message || 'No se pudieron guardar las preferencias.' });
+            setDirectoryMessage({ type: 'error', message: error.response?.data?.message || 'No se pudieron guardar los datos compartidos.' });
         } finally { setDirectorySaving(false); }
     };
 
@@ -598,16 +615,32 @@ export default function ProfileView() {
 
             <section className="mb-6 rounded-2xl border border-teal-500/25 bg-[#173149]/90 p-5 shadow-lg sm:p-6" aria-label="Privacidad del directorio">
                 <h2 className="flex items-center gap-2 text-lg font-bold text-white"><ShieldCheck size={22} className="text-teal-300"/> Privacidad de mi contacto</h2>
-                <p className="mt-2 max-w-3xl text-sm text-slate-300">Podés aparecer en el directorio de personal de tu institución sin compartir tus datos personales. Elegí quién podrá ver tu correo electrónico y teléfono. Por defecto permanecen privados.</p>
-                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <p className="mt-2 max-w-3xl text-sm text-slate-300">Elegí qué correo y teléfono querés compartir en el directorio y qué roles pueden ver cada uno. Se completaron inicialmente con los datos de registro; cambiarlos aquí no modifica tu correo de acceso, tus notificaciones ni tus datos privados.</p>
+                <form onSubmit={saveDirectoryPrivacy} className="mt-4 space-y-4">
+                <div className="grid gap-4 lg:grid-cols-2">
                     {[
-                        { field: 'directoryEmailRoles', label: 'Correo electrónico', Icon: Mail },
-                        { field: 'directoryPhoneRoles', label: 'Teléfono', Icon: Phone },
-                    ].map(({ field, label, Icon }) => (
+                        { field: 'directoryEmailRoles', contactField: 'directoryContactEmail', label: 'Correo electrónico para compartir', type: 'email', Icon: Mail },
+                        { field: 'directoryPhoneRoles', contactField: 'directoryContactPhone', label: 'Teléfono para compartir', type: 'tel', Icon: Phone },
+                    ].map(({ field, contactField, label, type, Icon }) => (
                         <fieldset key={field} className="rounded-2xl border border-slate-600/70 bg-slate-900/60 p-4">
                             <legend className="px-1 text-sm font-bold text-white">
                                 <span className="inline-flex items-center gap-2"><Icon size={17} className="text-teal-300" /> {label}</span>
                             </legend>
+                            <label className="mb-4 block">
+                                <span className="mb-2 block text-xs font-medium text-slate-300">Dato visible en el directorio</span>
+                                <input
+                                    type={type}
+                                    value={directoryContact[contactField]}
+                                    onChange={event => {
+                                        setDirectoryContact(current => ({ ...current, [contactField]: event.target.value }));
+                                        setDirectoryMessage(null);
+                                    }}
+                                    maxLength={type === 'email' ? 254 : 35}
+                                    placeholder={type === 'email' ? 'contacto@institucion.edu.ar' : '+54 221 456-7890'}
+                                    autoComplete="off"
+                                    className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-3 text-sm text-white outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20"
+                                />
+                            </label>
                             <p className="mb-3 mt-1 text-xs text-slate-400">Seleccioná exactamente qué roles pueden ver este dato.</p>
                             <div className="space-y-2">
                                 {DIRECTORY_ROLE_OPTIONS.map(({ role, label: roleLabel }) => (
@@ -629,9 +662,11 @@ export default function ProfileView() {
                     ))}
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <button type="button" onClick={saveDirectoryPrivacy} disabled={directorySaving} className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-500 disabled:opacity-40">{directorySaving ? 'Guardando…' : 'Guardar privacidad'}</button>
-                    {directoryMessage && <span role="status" className={directoryMessage.type==='error'?'text-sm text-rose-300':'text-sm text-teal-200'}>{directoryMessage.message}</span>}
+                    <button type="submit" disabled={directorySaving} className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-500 disabled:opacity-40">{directorySaving ? 'Guardando…' : 'Guardar contacto y privacidad'}</button>
+                    {directoryMessage && <span role={directoryMessage.type === 'error' ? 'alert' : 'status'} className={directoryMessage.type==='error'?'text-sm text-rose-300':'text-sm text-teal-200'}>{directoryMessage.message}</span>}
                 </div>
+                <p className="text-xs leading-relaxed text-slate-400">Si vaciás un campo, ese dato no se mostrará a nadie aunque haya casillas seleccionadas. Los contactos compartidos pueden ser distintos de los utilizados para acceder a EduQuest. Un correo alternativo no se verifica automáticamente.</p>
+                </form>
             </section>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">

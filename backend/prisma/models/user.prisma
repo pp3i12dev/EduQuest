@@ -3,6 +3,11 @@ model User {
   dni String @unique
   email String @unique
   telefono String?
+  // Contacto publicado en el directorio; nunca se usa para login ni notificaciones.
+  // null = tomar el dato de registro (compatibilidad con cuentas antiguas).
+  // "" = usuario decidió no compartir ningún dato de este tipo.
+  directoryContactEmail String?
+  directoryContactPhone String?
   directoryEmailVisibility DirectoryVisibility @default(PRIVATE)
   directoryPhoneVisibility DirectoryVisibility @default(PRIVATE)
   // Permisos individuales por rol; estos arrays sustituyen la lectura de la configuración anterior.

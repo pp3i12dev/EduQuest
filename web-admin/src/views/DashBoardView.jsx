@@ -23,6 +23,7 @@ import {
     CalendarDays,
     Megaphone,
     ShieldCheck,
+    Settings2,
     LoaderCircle,
 } from 'lucide-react';
 
@@ -100,6 +101,25 @@ const SECTIONS = {
             key: 'directory', label: 'Abrir directorio', description: 'Contactos de personal',
             color: 'text-teal-300', iconBackground: 'bg-teal-500/10', Icon: UsersRound,
             path: '/dashboard/directory', publicToAuthenticated: true, hideCount: true,
+        }],
+    },
+
+    configuration: {
+        label: 'Configuración',
+        eyebrow: 'Servicios institucionales',
+        description: 'Administrá correo institucional, Gemini y notificaciones Web Push. Consultá también el historial de claves.',
+        color: 'text-teal-300',
+        iconBackground: 'bg-teal-500/10',
+        iconBorder: 'border-teal-500/20',
+        hoverBorder: 'hover:border-teal-500/40',
+        gradient: 'from-teal-500/10 via-transparent to-transparent',
+        Icon: Settings2,
+        directPath: '/dashboard/service-config',
+        items: [{
+            key: 'serviceConfig', label: 'Configuración de servicios',
+            description: 'SMTP, Gemini y Web Push', color: 'text-teal-300',
+            iconBackground: 'bg-teal-500/10', Icon: Settings2,
+            path: '/dashboard/service-config', action: 'services:view', hideCount: true,
         }],
     },
 
@@ -428,7 +448,7 @@ export default function DashboardView() {
     const location = useLocation();
     const navigate = useNavigate();
     const { updateDashboardHeader } = useOutletContext() ?? {};
-    // Los accesos del sidebar usan ?section=; Panel principal sin query muestra siempre las cinco tarjetas.
+    // Los accesos del sidebar usan ?section=; Panel principal sin query muestra las tarjetas habilitadas por rol.
     const getRouteSection = () => new URLSearchParams(location.search).get('section') || location.state?.section || null;
     const [activeSection, setActiveSection] = useState(getRouteSection);
     useEffect(() => {

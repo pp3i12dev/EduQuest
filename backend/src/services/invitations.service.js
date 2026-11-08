@@ -71,6 +71,7 @@ export const createInvitationService = async ({ email, role, courseId, instituti
             to: invitation.email,
             token: invitation.token,
             role: invitation.role,
+            institutionId: invitation.institutionId,
             expiresAt: invitation.expiresAt,
         });
     } catch (error) {
@@ -80,9 +81,7 @@ export const createInvitationService = async ({ email, role, courseId, instituti
         throw new ServiceError('No se pudo enviar el correo de invitación', 502);
     }
 
-    if (process.env.NODE_ENV !== 'production') {
-        console.log(`📧 Invitación enviada a ${email} — token: ${invitation.token}`);
-    }
+    // Nunca registrar el token crudo de invitación, tampoco en desarrollo.
 
     // El token no se devuelve al cliente: solo viaja por email
     const { token, ...safeInvitation } = invitation;
@@ -167,6 +166,8 @@ export const acceptInvitationService = async (token, body) => {
             userCreateData: {
                 dni,
                 email: invitation.email,
+                // El teléfono de la invitación, si se proporcionó, es el dato inicial de contacto.
+                telefono: invitation.telefono ?? null,
                 passwordHash,
                 firstName,
                 lastName,
