@@ -7,6 +7,7 @@ const ROLE_LABELS = {
 
 import { getPrisma } from '../config/prisma.js';
 import { getMailSettings } from '../services/serviceConfig.service.js';
+import { getFrontendBaseUrl } from './frontendBaseUrl.js';
 
 // No se vuelve a usar SMTP global: cada correo sale por la institución correcta.
 // Para registros y recuperación, el usuario destinatario ya existe y permite resolver su institución.
@@ -188,11 +189,14 @@ export const sendStudentSignupDecisionEmail = ({ to, name, status, reason }) => 
 
 // Verificación por correo para alumnos y personal. El token crudo nunca se guarda
 // ni aparece en logs; solo existe en el enlace que se envía al interesado.
-export const sendEmailVerificationEmail = ({ to, name, token }) => {
-  const url = new URL('/verificar-correo', process.env.FRONTEND_URL);
+export const sendEmailVerificationEmail = ({ institutionId, to, name, token }) => {
+  const baseUrl = getFrontendBaseUrl();
+  if (!baseUrl) throw Object.assign(new Error('No hay una dirección pública válida de React para el enlace de verificación.'), { status: 503 });
+  const url = new URL('/verificar-correo', baseUrl);
   url.searchParams.set('token', token);
   const link = url.toString();
   return sendConfiguredMail({
+    institutionId,
     to,
     subject: '[EduQuest] Confirmá tu correo electrónico',
     text: `Hola ${name}. Para confirmar tu correo de EduQuest abrí este enlace (válido por 24 horas): ${link}\n\nSi no solicitaste el registro, ignorá este correo.`,

@@ -22,6 +22,17 @@ export default function StudentRegisterView() {
   const [error, setError] = useState('');
   const [working, setWorking] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState(null);
+  useEffect(() => {
+    setRegistrationStatus(null);
+    if (!values.institutionId) return;
+    let active = true;
+    api.get('/auth/registration-status', { params: { institutionId: values.institutionId, type: 'student' } })
+      .then(({ data }) => { if (active) setRegistrationStatus({ ...data, institutionId: String(values.institutionId) }); })
+      .catch(() => { if (active) setRegistrationStatus({ institutionId: String(values.institutionId), available: null, message: 'No pudimos comprobar la disponibilidad del registro. Podés intentarlo de nuevo.' }); });
+    return () => { active = false; };
+  }, [values.institutionId]);
+
   const field = event => { setValues(v => ({ ...v, [event.target.name]: event.target.value })); setError(''); };
   useEffect(() => {
     let active = true;
@@ -86,6 +97,8 @@ export default function StudentRegisterView() {
                 <select name="institutionId" className={`mt-2 ${fieldClass}`} value={values.institutionId} onChange={field} required>
                   <option value="">Seleccioná la institución</option>{institutions.map(i => <option value={i.id} key={i.id}>{i.nombre}</option>)}
                 </select></label>
+              {registrationStatus?.institutionId === String(values.institutionId) && registrationStatus?.available === false && <p role="alert" className="rounded-xl border border-amber-400/35 bg-amber-500/10 p-3 text-sm text-amber-100">{registrationStatus.message}</p>}
+              {registrationStatus?.institutionId === String(values.institutionId) && registrationStatus?.available === true && <p role="status" className="text-sm text-emerald-300">Correo de verificación disponible para esta institución.</p>}
               <label className="block text-sm font-medium text-slate-200">Nivel educativo o carrera
                 <select name="careerId" className={`mt-2 ${fieldClass}`} value={values.careerId} onChange={field} disabled={!values.institutionId} required>
                   <option value="">Seleccioná nivel o carrera</option>
@@ -119,7 +132,8 @@ export default function StudentRegisterView() {
               <p className="mt-2 text-xs text-slate-300">Si sos menor de edad, realizá este registro con la asistencia de una persona adulta responsable.</p>
             </div>
             {(error || loadError) && <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100"><AlertTriangle size={18}/>{error || loadError}</div>}
-            <button type="submit" disabled={working} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 font-bold text-white hover:bg-blue-500 disabled:opacity-50">{working && <LoaderCircle size={18} className="animate-spin"/>} Crear cuenta y verificar correo</button>
+            {error.includes('cuenta se creó') && <Link className="text-sm font-semibold text-sky-300 underline" to="/verificar-correo">Reenviar correo de verificación (sin crear otra cuenta)</Link>}
+            <button type="submit" disabled={working || (registrationStatus?.institutionId === String(values.institutionId) && registrationStatus?.available === false)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 font-bold text-white hover:bg-blue-500 disabled:opacity-50">{working && <LoaderCircle size={18} className="animate-spin"/>} Crear cuenta y verificar correo</button>
           </form>}
         </div>
       </div>

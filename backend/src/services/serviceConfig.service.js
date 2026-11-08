@@ -59,11 +59,38 @@ export async function getMailSettings(institutionId, { allowDisabled = false } =
   };
 }
 
-export async function mailConfigured(institutionId) {
+// Verificación por institución; una prueba SMTP exitosa en otra institución
+// NO habilita el registro de esta. No exponemos usuario ni contraseña SMTP.
+export async function getMailReadiness(institutionId) {
   const id = Number(institutionId);
-  if (!Number.isSafeInteger(id) || id <= 0) return false;
-  const row = await getPrisma().institutionServiceConfig.findUnique({ where: { institutionId: id }, select: { smtpUser: true, smtpPasswordEncrypted: true, smtpEnabled: true } });
-  return Boolean(row?.smtpEnabled && row.smtpUser && secretUsable(row.smtpPasswordEncrypted));
+  if (!Number.isSafeInteger(id) || id <= 0) return {
+    ready: false, reason: 'INVALID_INSTITUTION', message: 'Seleccioná una institución válida.',
+  };
+  const row = await getPrisma().institutionServiceConfig.findUnique({
+    where: { institutionId: id },
+    select: { smtpProvider: true, smtpUser: true, smtpPasswordEncrypted: true, smtpEnabled: true },
+  });
+  if (!row?.smtpUser || !row.smtpPasswordEncrypted) return {
+    ready: false, reason: 'SMTP_NOT_CONFIGURED',
+    message: 'La institución seleccionada todavía no configuró el correo institucional. Una autoridad debe hacerlo en Configuración → Correo.',
+  };
+  if (!row.smtpEnabled) return {
+    ready: false, reason: 'SMTP_DISABLED',
+    message: 'El envío de correos está desactivado para la institución seleccionada. Una autoridad debe habilitarlo en Configuración.',
+  };
+  if (row.smtpProvider !== 'gmail') return {
+    ready: false, reason: 'SMTP_PROVIDER_UNSUPPORTED',
+    message: 'El proveedor de correo configurado no es compatible con el envío actual de EduQuest.',
+  };
+  if (!secretUsable(row.smtpPasswordEncrypted)) return {
+    ready: false, reason: 'SMTP_CREDENTIAL_UNAVAILABLE',
+    message: 'La credencial SMTP guardada para esta institución ya no se puede recuperar. Una autoridad debe volver a guardar su contraseña de aplicación.',
+  };
+  return { ready: true, reason: null, message: 'Correo institucional habilitado para la inscripción.' };
+}
+
+export async function mailConfigured(institutionId) {
+  return (await getMailReadiness(institutionId)).ready;
 }
 
 export async function getGeminiSettings(institutionId) {

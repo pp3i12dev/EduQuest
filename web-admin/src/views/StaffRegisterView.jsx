@@ -12,6 +12,17 @@ export default function StaffRegisterView() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState(null);
+  useEffect(() => {
+    setRegistrationStatus(null);
+    if (!form.institutionId) return;
+    let active = true;
+    api.get('/auth/registration-status', { params: { institutionId: form.institutionId, type: 'staff' } })
+      .then(({ data }) => { if (active) setRegistrationStatus({ ...data, institutionId: String(form.institutionId) }); })
+      .catch(() => { if (active) setRegistrationStatus({ institutionId: String(form.institutionId), available: null, message: 'No pudimos comprobar la disponibilidad del registro. Podés intentarlo de nuevo.' }); });
+    return () => { active = false; };
+  }, [form.institutionId]);
+
   useEffect(() => { let active = true;
     api.get('/public/institutions').then(({ data }) => { if (active) setInstitutions(Array.isArray(data) ? data : []); })
       .catch(() => { if (active) setError('No se pudieron cargar las instituciones.'); });
@@ -46,6 +57,8 @@ export default function StaffRegisterView() {
             <select className={fieldClass} name="institutionId" required value={form.institutionId} onChange={field}>
               <option value="">Seleccioná</option>{institutions.map(i => <option key={i.id} value={i.id}>{i.nombre}</option>)}
             </select></label>
+          {registrationStatus?.institutionId === String(form.institutionId) && registrationStatus?.available === false && <p role="alert" className="rounded-xl border border-amber-400/35 bg-amber-500/10 p-3 text-sm text-amber-100">{registrationStatus.message}</p>}
+          {registrationStatus?.institutionId === String(form.institutionId) && registrationStatus?.available === true && <p role="status" className="text-sm text-emerald-300">Correo de verificación disponible para esta institución.</p>}
           <label className="block text-sm font-medium text-slate-200">Rol solicitado
             <select className={fieldClass} name="role" required value={form.role} onChange={field}>
               <option value="">Seleccioná</option>{roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -56,7 +69,8 @@ export default function StaffRegisterView() {
           <div className="grid gap-4 sm:grid-cols-2">{input('password', 'Contraseña (mín. 10 caracteres)', 'password')}{input('repeatPassword', 'Repetir contraseña', 'password')}</div>
           <p className="flex gap-2 rounded-xl border border-slate-600 bg-slate-800/60 p-3 text-xs text-slate-300"><ShieldCheck size={19} className="shrink-0"/> La aprobación depende del rol: directivos requieren superadministración; preceptores, dirección; docentes, dirección o preceptoría autorizada.</p>
           {error && <p role="alert" className="rounded-xl bg-red-500/15 p-3 text-sm text-red-200">{error}</p>}
-          <button disabled={busy} className="w-full rounded-xl bg-teal-600 px-5 py-3 font-semibold hover:bg-teal-500 disabled:opacity-50">{busy ? 'Enviando…' : 'Enviar solicitud y verificar correo'}</button>
+          {error.includes('cuenta se creó') && <Link className="text-sm font-semibold text-sky-300 underline" to="/verificar-correo">Reenviar correo de verificación (sin crear otra cuenta)</Link>}
+          <button disabled={busy || (registrationStatus?.institutionId === String(form.institutionId) && registrationStatus?.available === false)} className="w-full rounded-xl bg-teal-600 px-5 py-3 font-semibold hover:bg-teal-500 disabled:opacity-50">{busy ? 'Enviando…' : 'Enviar solicitud y verificar correo'}</button>
         </form>}
       </div>
     </div>

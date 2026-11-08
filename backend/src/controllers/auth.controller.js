@@ -1,7 +1,7 @@
 import { requestPasswordReset, resetPassword } from '../services/passwordReset.service.js';
 import { loginService, registerStudentService } from '../services/auth.service.js';
 import { handleServiceError } from '../utils/handleServiceError.js';
-import { registerStaffService, resendVerificationService, verifyEmailService } from '../services/publicRegistration.service.js';
+import { registerStaffService, resendVerificationService, verifyEmailService, getRegistrationAvailability } from '../services/publicRegistration.service.js';
 
 
 
@@ -48,4 +48,12 @@ export const forgotPassword = async (req, res) => {
 export const confirmPasswordReset = async (req, res) => {
   try { return res.status(200).json(await resetPassword(req.body)); }
   catch (error) { return handleServiceError(error, res); }
+};
+
+// Estado informativo por institución, sin exponer usuario ni clave SMTP.
+export const registrationStatus = async (req, res) => {
+  try {
+    const type = req.query.type === 'staff' ? 'staff' : 'student';
+    return res.json(await getRegistrationAvailability(req.query.institutionId, { type }));
+  } catch (error) { return handleServiceError(error, res); }
 };

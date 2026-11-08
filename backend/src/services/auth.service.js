@@ -118,7 +118,7 @@ export const registerStudentService = async (data) => {
         institutionId,
         courseId,
     } = data;
-    await ensureVerificationEmailConfigured(Number(institutionId));
+    await ensureVerificationEmailConfigured(Number(institutionId), { type: 'student' });
 
     if (
         !dni ||

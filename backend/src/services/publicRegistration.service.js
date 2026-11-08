@@ -3,7 +3,8 @@ import { getPrisma } from '../config/prisma.js';
 import { hashPassword } from '../utils/password.js';
 import { sendEmailVerificationEmail, sendStaffSignupDecisionEmail } from '../utils/mailer.js';
 import { canAnyRole } from '../config/permissions.js';
-import { mailConfigured } from './serviceConfig.service.js';
+import { getMailReadiness } from './serviceConfig.service.js';
+import { getFrontendBaseUrl } from '../utils/frontendBaseUrl.js';
 
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const bad = (message, status = 400) => { const e = new Error(message); e.status = status; throw e; };
@@ -12,17 +13,41 @@ const STAFF = ['DIRECTOR', 'PRECEPTOR', 'TEACHER'];
 const generic = 'Si existe una cuenta pendiente con ese correo, enviaremos un nuevo enlace de verificación.';
 const ttl = () => new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-export async function ensureVerificationEmailConfigured(institutionId) {
-  if (!process.env.FRONTEND_URL || !(await mailConfigured(institutionId))) {
-    bad('El registro no está disponible porque la institución aún no configuró el envío de correos.', 503);
-  }
+export async function getRegistrationAvailability(institutionId, { type = 'student' } = {}) {
+  const id = Number(institutionId);
+  if (!Number.isSafeInteger(id) || id <= 0) return {
+    available: false, reason: 'INVALID_INSTITUTION', message: 'Seleccioná una institución válida.',
+  };
+  const institution = await getPrisma().institution.findFirst({
+    where: { id, isActive: true }, select: { id: true },
+  });
+  if (!institution) return {
+    available: false, reason: 'INSTITUTION_INACTIVE',
+    message: 'La institución seleccionada no está habilitada para nuevas inscripciones.',
+  };
+  if (type === 'student' && process.env.NODE_ENV === 'production' &&
+      process.env.PUBLIC_STUDENT_ENROLLMENT_ENABLED !== 'true') return {
+    available: false, reason: 'STUDENT_REGISTRATION_DISABLED',
+    message: 'La inscripción pública de alumnos todavía no fue habilitada por la institución.',
+  };
+  if (!getFrontendBaseUrl()) return {
+    available: false, reason: 'FRONTEND_URL_MISSING',
+    message: 'No se pudo generar el enlace de verificación: el backend necesita FRONTEND_URL con la dirección de React. En producción también sirve un único CORS_ALLOWED_ORIGINS configurado.',
+  };
+  const mail = await getMailReadiness(id);
+  return { available: mail.ready, reason: mail.reason, message: mail.message };
+}
+
+export async function ensureVerificationEmailConfigured(institutionId, options = {}) {
+  const readiness = await getRegistrationAvailability(institutionId, options);
+  if (!readiness.available) bad(readiness.message, 503);
 }
 export function createVerificationChallenge() {
   const raw = randomBytes(32).toString('hex');
   return { raw, tokenHash: sha256(raw), expiresAt: ttl() };
 }
 export async function sendVerificationToUser(user, raw) {
-  await sendEmailVerificationEmail({ to: user.email, name: user.firstName, token: raw });
+  await sendEmailVerificationEmail({ institutionId: user.institutionId, to: user.email, name: user.firstName, token: raw });
 }
 
 export async function registerStaffService(data = {}) {
@@ -186,7 +211,7 @@ export async function reviewStaffService(requester, { id, decision, reason } = {
     }
     return user;
   });
-  if (await mailConfigured(approved.institutionId)) {
+  if ((await getMailReadiness(approved.institutionId)).ready) {
     try { await sendStaffSignupDecisionEmail({ to: approved.email, name: approved.firstName,
       status: choice, role: approved.requestedRole, reason: why }); }
     catch (e) { console.warn('[EduQuest] No se entregó la decisión de personal:', e?.message); }
