@@ -29,3 +29,20 @@ export function requireCurrentOrFutureDate(value, label = 'La fecha', now = new 
     throw Object.assign(new Error(`${label} no puede ser anterior a hoy (hora de Argentina)`), { status: 400 });
   }
 }
+
+// Horario civil de la institución. Evita aceptar una clase ya iniciada el mismo día.
+export function institutionTime(now = new Date()) {
+  const values = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: INSTITUTION_TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(now).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+  return `${values.hour}:${values.minute}`;
+}
+export function requireFutureClassStart(classDate, classStart, now = new Date()) {
+  requireCurrentOrFutureDate(classDate, 'La fecha de la clase', now);
+  if (typeof classStart !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(classStart)) {
+    throw Object.assign(new Error('El horario de inicio de la clase no es válido'), { status: 400 });
+  }
+  if (classDate === institutionToday(now) && classStart <= institutionTime(now)) {
+    throw Object.assign(new Error('No se puede publicar un aviso para una clase cuyo horario de inicio ya pasó'), { status: 400 });
+  }
+}

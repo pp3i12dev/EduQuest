@@ -73,13 +73,13 @@ export default function StudentRegisterView() {
         <div className="rounded-3xl border border-slate-700 bg-slate-900/95 p-5 shadow-2xl sm:p-9">
           <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
             <img src={logo} alt="EduQuest" className="h-16 w-16 object-contain" />
-            <div><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Registro de alumno</h1>
-              <p className="mt-1 text-sm text-slate-300">Completá tus datos académicos y personales. Los demás roles se crean mediante invitación institucional.</p></div>
+            <div><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Inscripción de alumno</h1>
+              <p className="mt-1 text-sm text-slate-300">Completá tus datos académicos y personales. Los alumnos se activan automáticamente al confirmar su correo. Los docentes, preceptores y directivos solicitan su alta por separado.</p></div>
           </div>
           {success ? <div role="status" className="mt-8 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-6 text-emerald-100">
-            <CheckCircle2 size={32} className="mb-3"/><h2 className="text-xl font-bold">Solicitud registrada</h2>
-            <p className="mt-2 text-sm leading-6">Tu cuenta quedó pendiente de aprobación de la institución. Cuando esté activa, podrás iniciar sesión y elegir si querés recibir notificaciones en este dispositivo.</p>
-            <Link to="/login" className="mt-5 inline-flex rounded-lg bg-blue-600 px-4 py-3 font-semibold">Volver a iniciar sesión</Link></div>
+            <CheckCircle2 size={32} className="mb-3"/><h2 className="text-xl font-bold">Revisá tu correo electrónico</h2>
+            <p className="mt-2 text-sm leading-6">Te enviamos un enlace de verificación válido durante 24 horas. Al confirmarlo, tu cuenta quedará activa automáticamente, sin aprobación manual. Luego podrás activar las notificaciones desde Mi perfil.</p>
+            <div className="mt-5 flex flex-wrap gap-3"><Link to="/verificar-correo" className="inline-flex rounded-lg bg-teal-600 px-4 py-3 font-semibold">Reenviar verificación</Link><Link to="/login" className="inline-flex rounded-lg border border-slate-600 px-4 py-3 font-semibold">Volver a iniciar sesión</Link></div></div>
           : <form className="mt-7 space-y-6" onSubmit={onSubmit}>
             <fieldset className="space-y-4"><legend className="mb-4 flex items-center gap-2 text-lg font-bold"><GraduationCap size={20}/> 1. Datos académicos</legend>
               <label className="block text-sm font-medium text-slate-200">Institución
@@ -115,11 +115,11 @@ export default function StudentRegisterView() {
             </fieldset>
             <div className="rounded-xl border border-sky-500/25 bg-sky-500/10 p-4 text-sm text-slate-200">
               <p className="font-bold">¿Y las notificaciones?</p>
-              <p className="mt-2 leading-6">No te pediremos permiso durante este formulario. Tras la aprobación e inicio de sesión, podrás activar voluntariamente las notificaciones en tu dispositivo, desde el panel o Mi perfil. Los avisos siempre quedarán disponibles dentro de EduQuest.</p>
+              <p className="mt-2 leading-6">No te pediremos permiso durante este formulario. Tras la verificación del correo e inicio de sesión, podrás activar voluntariamente las notificaciones en tu dispositivo, desde el panel o Mi perfil. Los avisos siempre quedarán disponibles dentro de EduQuest.</p>
               <p className="mt-2 text-xs text-slate-300">Si sos menor de edad, realizá este registro con la asistencia de una persona adulta responsable.</p>
             </div>
             {(error || loadError) && <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100"><AlertTriangle size={18}/>{error || loadError}</div>}
-            <button type="submit" disabled={working} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 font-bold text-white hover:bg-blue-500 disabled:opacity-50">{working && <LoaderCircle size={18} className="animate-spin"/>} Solicitar registro</button>
+            <button type="submit" disabled={working} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 font-bold text-white hover:bg-blue-500 disabled:opacity-50">{working && <LoaderCircle size={18} className="animate-spin"/>} Crear cuenta y verificar correo</button>
           </form>}
         </div>
       </div>

@@ -9,6 +9,7 @@ import {
     updateUserRolesService,
     getMyProfileService,
     updateMyProfileService,
+    updateMyLegajosService,
     changeMyPasswordService,
 } from '../services/users.service.js';
 
@@ -75,7 +76,8 @@ export const deleteUser = async (req, res) => {
         await deleteUserService(
             req.query.role,
             req.params.id,
-            req.user
+            req.user,
+            { mode: req.query.mode, confirm: req.body?.confirm }
         );
 
         return res.status(204).end();
@@ -151,6 +153,15 @@ export const updateMyProfile = async (req, res) => {
         );
 
         return res.status(200).json(updatedProfile);
+    } catch (error) {
+        return handleServiceError(error, res);
+    }
+};
+
+export const updateMyLegajos = async (req, res) => {
+    try {
+        const profile = await updateMyLegajosService(req.body, req.user);
+        return res.status(200).json(profile);
     } catch (error) {
         return handleServiceError(error, res);
     }

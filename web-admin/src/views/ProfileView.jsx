@@ -17,10 +17,20 @@ import {
 
 import { AuthContext } from '../context/AuthContext';
 import WebPushSettings from '../components/WebPushSettings';
+import { directoryService } from '../services/directory.service';
+import { displayLegajo } from '../utils/legajo';
 
 const API_BASE_URL = (
     import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 ).replace(/\/$/, '');
+
+const DIRECTORY_ROLE_OPTIONS = [
+    { role: 'SUPER_ADMIN', label: 'Superadministradores' },
+    { role: 'DIRECTOR', label: 'Directivos' },
+    { role: 'PRECEPTOR', label: 'Preceptores' },
+    { role: 'TEACHER', label: 'Docentes' },
+    { role: 'STUDENT', label: 'Alumnos' },
+];
 
 const ROLE_LABELS = {
     SUPER_ADMIN: 'Superadministrador',
@@ -203,6 +213,12 @@ export default function ProfileView() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
+    const [directorySaving, setDirectorySaving] = useState(false);
+    const [legajosSaving, setLegajosSaving] = useState(false);
+    const [legajosFeedback, setLegajosFeedback] = useState(null);
+    const [legajosForm, setLegajosForm] = useState({ legajoStudent: '', legajoTeacher: '', legajoPreceptor: '' });
+    const [directoryMessage, setDirectoryMessage] = useState(null);
+    const [directoryPrivacy, setDirectoryPrivacy] = useState({ directoryEmailRoles: [], directoryPhoneRoles: [] });
 
     const [form, setForm] = useState({
         firstName: '',
@@ -243,6 +259,15 @@ export default function ProfileView() {
                 if (cancelled) return;
 
                 setProfile(data);
+                setLegajosForm({
+                    legajoStudent: displayLegajo(data.profiles?.student?.legajoStudent),
+                    legajoTeacher: displayLegajo(data.profiles?.teacher?.legajoTeacher),
+                    legajoPreceptor: displayLegajo(data.profiles?.preceptor?.legajoPreceptor),
+                });
+                setDirectoryPrivacy({
+                    directoryEmailRoles: Array.isArray(data.directoryEmailRoles) ? data.directoryEmailRoles : [],
+                    directoryPhoneRoles: Array.isArray(data.directoryPhoneRoles) ? data.directoryPhoneRoles : [],
+                });
 
                 setForm({
                     firstName: data.firstName || '',
@@ -354,6 +379,69 @@ export default function ProfileView() {
         } finally {
             setSaving(false);
         }
+    };
+
+    const saveMyLegajos = async (event) => {
+        event.preventDefault();
+        setLegajosFeedback(null);
+        const fieldToProfile = { legajoStudent: 'student', legajoTeacher: 'teacher', legajoPreceptor: 'preceptor' };
+        const updates = {};
+        for (const [field, role] of Object.entries(fieldToProfile)) {
+            if (!profile?.profiles?.[role]) continue;
+            const provided = legajosForm[field].trim();
+            const previous = displayLegajo(profile.profiles[role][field]);
+            if (provided !== previous) {
+                if (!provided) {
+                    setLegajosFeedback({ type: 'error', message: 'Para conservar el legajo actual, dejalo sin modificar. No se puede borrar un legajo oficial desde este formulario.' });
+                    return;
+                }
+                updates[field] = provided;
+            }
+        }
+        if (!Object.keys(updates).length) {
+            setLegajosFeedback({ type: 'success', message: 'No hay legajos nuevos para guardar.' });
+            return;
+        }
+        setLegajosSaving(true);
+        try {
+            const result = await requestProfile('/users/me/legajos', token, {
+                method: 'PATCH', body: JSON.stringify(updates),
+            });
+            setProfile(result);
+            setLegajosForm({
+                legajoStudent: displayLegajo(result.profiles?.student?.legajoStudent),
+                legajoTeacher: displayLegajo(result.profiles?.teacher?.legajoTeacher),
+                legajoPreceptor: displayLegajo(result.profiles?.preceptor?.legajoPreceptor),
+            });
+            setLegajosFeedback({ type: 'success', message: 'Legajo institucional actualizado.' });
+        } catch (error) {
+            setLegajosFeedback({ type: 'error', message: getErrorMessage(error) });
+        } finally {
+            setLegajosSaving(false);
+        }
+    };
+
+    const toggleDirectoryRole = (field, role) => {
+        setDirectoryPrivacy(current => ({
+            ...current,
+            [field]: current[field].includes(role)
+                ? current[field].filter(existing => existing !== role)
+                : [...current[field], role],
+        }));
+        setDirectoryMessage(null);
+    };
+
+    const saveDirectoryPrivacy = async () => {
+        setDirectorySaving(true);
+        setDirectoryMessage(null);
+        try {
+            const result = await directoryService.updatePrivacy(directoryPrivacy);
+            setDirectoryPrivacy(result);
+            setProfile(current => ({ ...current, ...result }));
+            setDirectoryMessage({ type: 'success', message: 'Preferencias de privacidad guardadas.' });
+        } catch (error) {
+            setDirectoryMessage({ type: 'error', message: error.response?.data?.message || 'No se pudieron guardar las preferencias.' });
+        } finally { setDirectorySaving(false); }
     };
 
     const handlePasswordChange = (field, value) => {
@@ -508,6 +596,44 @@ export default function ProfileView() {
                 </div>
             </div>
 
+            <section className="mb-6 rounded-2xl border border-teal-500/25 bg-[#173149]/90 p-5 shadow-lg sm:p-6" aria-label="Privacidad del directorio">
+                <h2 className="flex items-center gap-2 text-lg font-bold text-white"><ShieldCheck size={22} className="text-teal-300"/> Privacidad de mi contacto</h2>
+                <p className="mt-2 max-w-3xl text-sm text-slate-300">Podés aparecer en el directorio de personal de tu institución sin compartir tus datos personales. Elegí quién podrá ver tu correo electrónico y teléfono. Por defecto permanecen privados.</p>
+                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                    {[
+                        { field: 'directoryEmailRoles', label: 'Correo electrónico', Icon: Mail },
+                        { field: 'directoryPhoneRoles', label: 'Teléfono', Icon: Phone },
+                    ].map(({ field, label, Icon }) => (
+                        <fieldset key={field} className="rounded-2xl border border-slate-600/70 bg-slate-900/60 p-4">
+                            <legend className="px-1 text-sm font-bold text-white">
+                                <span className="inline-flex items-center gap-2"><Icon size={17} className="text-teal-300" /> {label}</span>
+                            </legend>
+                            <p className="mb-3 mt-1 text-xs text-slate-400">Seleccioná exactamente qué roles pueden ver este dato.</p>
+                            <div className="space-y-2">
+                                {DIRECTORY_ROLE_OPTIONS.map(({ role, label: roleLabel }) => (
+                                    <label key={role} className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm text-slate-200 hover:bg-slate-800/70">
+                                        <input
+                                            type="checkbox"
+                                            checked={directoryPrivacy[field].includes(role)}
+                                            onChange={() => toggleDirectoryRole(field, role)}
+                                            className="h-4 w-4 accent-teal-500"
+                                        />
+                                        {roleLabel}
+                                    </label>
+                                ))}
+                            </div>
+                            {!directoryPrivacy[field].length && (
+                                <p className="mt-3 text-xs font-medium text-amber-300">Privado: nadie puede consultar este dato en el directorio.</p>
+                            )}
+                        </fieldset>
+                    ))}
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <button type="button" onClick={saveDirectoryPrivacy} disabled={directorySaving} className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-500 disabled:opacity-40">{directorySaving ? 'Guardando…' : 'Guardar privacidad'}</button>
+                    {directoryMessage && <span role="status" className={directoryMessage.type==='error'?'text-sm text-rose-300':'text-sm text-teal-200'}>{directoryMessage.message}</span>}
+                </div>
+            </section>
+
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
 
                 {/* DATOS PERSONALES */}
@@ -648,6 +774,23 @@ export default function ProfileView() {
                     </form>
                 </section>
 
+                {/* LEGAJOS INSTITUCIONALES - voluntarios y editables por cada persona */}
+                {(profiles.teacher || profiles.student || profiles.preceptor) && (
+                    <section className="rounded-2xl border border-slate-700 bg-slate-900/95 p-5 shadow-lg sm:p-7 lg:col-span-2">
+                        <h2 className="text-lg font-bold text-white">Legajos institucionales</h2>
+                        <p className="mt-2 text-sm text-slate-400">No son obligatorios para registrarse. Si tu institución te asignó un legajo oficial, podés incorporarlo acá más adelante. No se mostrará el identificador técnico provisional.</p>
+                        <form onSubmit={saveMyLegajos} className="mt-5 space-y-4">
+                            {profiles.student && <FormField label="Legajo de alumno (opcional)" value={legajosForm.legajoStudent} placeholder="Pendiente de completar" onChange={e => { setLegajosForm(f => ({...f, legajoStudent: e.target.value })); setLegajosFeedback(null); }} maxLength={70} />}
+                            {profiles.teacher && <FormField label="Legajo docente (opcional)" value={legajosForm.legajoTeacher} placeholder="Pendiente de completar" onChange={e => { setLegajosForm(f => ({...f, legajoTeacher: e.target.value })); setLegajosFeedback(null); }} maxLength={70} />}
+                            {profiles.preceptor && <FormField label="Legajo de preceptor (opcional)" value={legajosForm.legajoPreceptor} placeholder="Pendiente de completar" onChange={e => { setLegajosForm(f => ({...f, legajoPreceptor: e.target.value })); setLegajosFeedback(null); }} maxLength={70} />}
+                            <Feedback message={legajosFeedback?.message} type={legajosFeedback?.type} />
+                            <button type="submit" disabled={legajosSaving} className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-500 disabled:opacity-60">
+                                <Save size={17} />{legajosSaving ? 'Guardando…' : 'Guardar legajos'}
+                            </button>
+                        </form>
+                    </section>
+                )}
+
                 {/* INFORMACIÓN INSTITUCIONAL */}
                 <section className="rounded-2xl border border-slate-700 bg-slate-900/95 p-5 shadow-lg sm:p-7 lg:col-span-2">
                     <div className="mb-6 flex items-center gap-3">
@@ -671,7 +814,7 @@ export default function ProfileView() {
                             <>
                                 <ProfileInfo
                                     label="Legajo docente"
-                                    value={profiles.teacher.legajoTeacher}
+                                    value={displayLegajo(profiles.teacher.legajoTeacher)}
                                 />
 
                                 <ProfileInfo
@@ -684,7 +827,7 @@ export default function ProfileView() {
                         {profiles.student && (
                             <ProfileInfo
                                 label="Legajo de alumno"
-                                value={profiles.student.legajoStudent}
+                                value={displayLegajo(profiles.student.legajoStudent)}
                             />
                         )}
 
@@ -692,7 +835,7 @@ export default function ProfileView() {
                             <>
                                 <ProfileInfo
                                     label="Legajo de preceptor"
-                                    value={profiles.preceptor.legajoPreceptor}
+                                    value={displayLegajo(profiles.preceptor.legajoPreceptor)}
                                 />
 
                                 <ProfileInfo

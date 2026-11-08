@@ -208,7 +208,7 @@ export default function CareersListView() {
                 </p>
             )}
 
-            <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-900/90">
+            <div className="eq-glass-table overflow-x-auto rounded-xl border border-slate-700 bg-slate-900/90">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-slate-800 text-slate-300">
                         <tr>

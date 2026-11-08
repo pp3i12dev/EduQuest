@@ -2,7 +2,8 @@
 import { Router } from 'express';
 
 import { authenticate, requirePermission } from '../middlewares/auth.middleware.js';
-import { signupController } from '../controllers/studentSignup.controller.js';
+import { listStaffRequests, reviewStaff } from '../controllers/staffSignup.controller.js';
+import { listDirectory, listDirectoryOptions, listDirectoryInstitutions, setDirectoryPrivacy } from '../controllers/directory.controller.js';
 
 import {
     listUsers,
@@ -14,6 +15,7 @@ import {
     updateUserRoles,
     getMyProfile,
     updateMyProfile,
+    updateMyLegajos,
     changeMyPassword,
 } from '../controllers/users.controller.js';
 
@@ -32,9 +34,17 @@ router.get('/me', getMyProfile);
 
 // Actualizar mis datos personales.
 router.patch('/me', updateMyProfile);
+// Cada persona puede completar sus legajos oficiales luego del alta.
+router.patch('/me/legajos', updateMyLegajos);
 
 // Cambiar mi contraseña.
 router.patch('/me/password', changeMyPassword);
+router.patch('/me/directory-privacy', setDirectoryPrivacy);
+
+// Consulta segura de contactos institucionales (sin DNI, legajos ni alumnos).
+router.get('/directory/institutions', listDirectoryInstitutions);
+router.get('/directory/options', listDirectoryOptions);
+router.get('/directory', listDirectory);
 
 // ======================================================
 // ADMINISTRACIÓN DE USUARIOS
@@ -42,12 +52,10 @@ router.patch('/me/password', changeMyPassword);
 // Los permisos se verifican en los servicios.
 // ======================================================
 
-// Solicitudes de alta pública de alumnos, en Gestión de usuarios.
+// Solicitudes de alta pública de PERSONAL, en Gestión de usuarios.
 // Requiere permiso de dirección o preceptoría; no puede usarse desde cuentas docentes.
-router.get('/signup-requests', requirePermission('selfSignup:approve'), signupController.list);
-router.get('/signup-requests/groups', requirePermission('selfSignup:approve'), signupController.groups);
-router.post('/signup-requests/approve', requirePermission('selfSignup:approve'), signupController.approve);
-router.post('/signup-requests/reject', requirePermission('selfSignup:approve'), signupController.reject);
+router.get('/staff-signup-requests', requirePermission('selfSignup:approve'), listStaffRequests);
+router.post('/staff-signup-requests/review', requirePermission('selfSignup:approve'), reviewStaff);
 
 // Listar usuarios.
 router.get('/', listUsers);

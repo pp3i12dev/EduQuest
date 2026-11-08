@@ -46,7 +46,7 @@ export async function listSignupRequests(requester, query = {}) {
   const exists = await getPrisma().course.findFirst({ where: { id: courseId, ...inInstitution(requester) }, select: { id: true } });
   if (!exists) fail('Curso inexistente o fuera de tu institución.', 404);
   return getPrisma().user.findMany({
-    where: { ...inInstitution(requester), signupStatus: status,
+    where: { ...inInstitution(requester), signupStatus: status, requestedRole: null,
       studentProfile: { is: { courses: { some: { courseId } } } } },
     select: viewFields,
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -66,7 +66,7 @@ export async function listSignupCourseGroups(requester, query = {}) {
       institution: { select: { id: true, nombre: true } },
       career: { select: { id: true, nombre: true } },
       _count: { select: { students: { where: {
-        student: { user: { signupStatus: status } },
+        student: { user: { signupStatus: status, requestedRole: null } },
       } } } },
     },
     orderBy: [{ institution: { nombre: 'asc' } }, { nombre: 'asc' }],
@@ -102,7 +102,7 @@ export async function reviewSignupRequests(requester, body, decision) {
   const db = getPrisma();
   const affected = await db.$transaction(async (tx) => {
     const rows = await tx.user.findMany({
-      where: { id: { in: ids }, ...inInstitution(requester), signupStatus: 'PENDING',
+      where: { id: { in: ids }, ...inInstitution(requester), signupStatus: 'PENDING', requestedRole: null,
         isActive: false, studentProfile: { isNot: null } },
       select: { id: true, email: true, firstName: true, lastName: true, institutionId: true },
     });
@@ -110,7 +110,7 @@ export async function reviewSignupRequests(requester, body, decision) {
       fail('Una o más solicitudes ya fueron revisadas o no pertenecen a tu institución.', 409);
     }
     const result = await tx.user.updateMany({
-      where: { id: { in: ids }, ...inInstitution(requester), signupStatus: 'PENDING',
+      where: { id: { in: ids }, ...inInstitution(requester), signupStatus: 'PENDING', requestedRole: null,
         isActive: false, studentProfile: { isNot: null } },
       data: { signupStatus: decision, isActive: decision === 'APPROVED',
         signupReviewedAt: new Date(), signupReviewedById: requester.id,

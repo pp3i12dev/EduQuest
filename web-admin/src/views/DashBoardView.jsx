@@ -1,6 +1,6 @@
 
 import { useContext, useEffect, useState } from 'react';
-import { Link, useLocation, useOutletContext } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 
 import {
     ArrowRight,
@@ -85,6 +85,24 @@ const SECTIONS = {
         }],
     },
 
+    directory: {
+        label: 'Directorio de contactos',
+        eyebrow: 'Comunidad educativa',
+        description: 'Buscá personal de tu institución y consultá los contactos que cada persona haya autorizado.',
+        color: 'text-teal-300',
+        iconBackground: 'bg-teal-500/10',
+        iconBorder: 'border-teal-500/20',
+        hoverBorder: 'hover:border-teal-500/40',
+        gradient: 'from-teal-500/10 via-transparent to-transparent',
+        Icon: UsersRound,
+        directPath: '/dashboard/directory',
+        items: [{
+            key: 'directory', label: 'Abrir directorio', description: 'Contactos de personal',
+            color: 'text-teal-300', iconBackground: 'bg-teal-500/10', Icon: UsersRound,
+            path: '/dashboard/directory', publicToAuthenticated: true, hideCount: true,
+        }],
+    },
+
     users: {
         label: 'Gestión de usuarios',
         eyebrow: 'Administración de personas',
@@ -138,13 +156,13 @@ const SECTIONS = {
                 action: 'student:view',
             },
             {
-                key: 'studentSignupRequests',
-                label: 'Solicitudes de inscripción',
-                description: 'Aprobá o rechazá altas de alumnos, individualmente o en bloque.',
-                color: 'text-emerald-400',
-                iconBackground: 'bg-emerald-500/10',
-                Icon: UsersRound,
-                path: '/dashboard/students/requests',
+                key: 'staffSignupRequests',
+                label: 'Solicitudes de personal',
+                description: 'Validar las altas públicas de docentes, preceptores y directivos.',
+                color: 'text-teal-300',
+                iconBackground: 'bg-teal-500/10',
+                Icon: UserRoundCheck,
+                path: '/dashboard/staff/requests',
                 action: 'selfSignup:approve',
                 hideCount: true,
             },
@@ -300,7 +318,7 @@ function ModuleCard({
         </>
     );
 
-    const className = `group relative flex min-h-[245px] w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/90 p-6 text-left shadow-lg shadow-black/10 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900 hover:shadow-xl hover:shadow-black/20 ${section.hoverBorder}`;
+    const className = `eq-glass-card group relative flex min-h-[245px] w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/90 p-6 text-left shadow-lg shadow-black/10 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900 hover:shadow-xl hover:shadow-black/20 ${section.hoverBorder}`;
 
     // Avisos Tempranos navega directamente a su vista.
     if (section.directPath) {
@@ -344,7 +362,7 @@ function AccessCard({
         <Link
             to={item.path}
             state={{ section: /students|teachers|preceptors|directors|invitations/.test(item.path) ? 'users' : 'academic' }}
-            className="group relative flex min-h-[215px] cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/90 p-5 shadow-md shadow-black/10 transition-all duration-200 hover:-translate-y-1 hover:border-blue-500/40 hover:bg-slate-800/95 hover:shadow-xl hover:shadow-black/20 sm:p-6"
+            className="eq-glass-card group relative flex min-h-[215px] cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/90 p-5 shadow-md shadow-black/10 transition-all duration-200 hover:-translate-y-1 hover:border-blue-500/40 hover:bg-slate-800/95 hover:shadow-xl hover:shadow-black/20 sm:p-6"
         >
             <div className="flex items-start justify-between gap-3">
                 <div
@@ -408,15 +426,22 @@ export default function DashboardView() {
     const { user } = auth;
 
     const location = useLocation();
+    const navigate = useNavigate();
     const { updateDashboardHeader } = useOutletContext() ?? {};
-    const [activeSection, setActiveSection] = useState(() => {
-        if (location.state?.section) return location.state.section;
-        return sessionStorage.getItem('eduquest.dashboard.section') || null;
-    });
+    // Los accesos del sidebar usan ?section=; Panel principal sin query muestra siempre las cinco tarjetas.
+    const getRouteSection = () => new URLSearchParams(location.search).get('section') || location.state?.section || null;
+    const [activeSection, setActiveSection] = useState(getRouteSection);
     useEffect(() => {
-        if (activeSection) sessionStorage.setItem('eduquest.dashboard.section', activeSection);
-        else sessionStorage.removeItem('eduquest.dashboard.section');
-    }, [activeSection]);
+        setActiveSection(getRouteSection());
+    }, [location.search, location.state?.section]);
+    const openSection = key => {
+        navigate(`/dashboard?section=${encodeURIComponent(key)}`);
+        setActiveSection(key);
+    };
+    const openHome = () => {
+        navigate('/dashboard');
+        setActiveSection(null);
+    };
 
     useEffect(() => {
         if (updateDashboardHeader) {
@@ -513,7 +538,7 @@ export default function DashboardView() {
                     {isTeacher && (
                         <Link
                             to="/dashboard/my-subjects"
-                            className="group relative flex min-h-[245px] flex-col overflow-hidden rounded-2xl border border-emerald-500/25 bg-slate-900/90 p-6 shadow-lg shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/50 hover:bg-slate-900 hover:shadow-xl"
+                            className="eq-glass-card group relative flex min-h-[245px] flex-col overflow-hidden rounded-2xl border border-emerald-500/25 bg-slate-900/90 p-6 shadow-lg shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/50 hover:bg-slate-900 hover:shadow-xl"
                         >
                             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent" />
 
@@ -559,7 +584,7 @@ export default function DashboardView() {
                             key={key}
                             section={section}
                             count={getVisibleItems(section).length}
-                            onClick={() => setActiveSection(key)}
+                            onClick={() => openSection(key)}
                         />
                     ))}
                 </div>
@@ -576,7 +601,7 @@ export default function DashboardView() {
 
             <button
                 type="button"
-                onClick={() => setActiveSection(null)}
+                onClick={openHome}
                 className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border-2 border-amber-200 bg-amber-400 px-4 py-2.5 text-sm font-extrabold text-slate-950 shadow-lg shadow-amber-500/25 transition hover:scale-[1.03] hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
                 <ChevronLeft size={21} strokeWidth={3} />

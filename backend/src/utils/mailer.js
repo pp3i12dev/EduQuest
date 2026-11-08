@@ -170,3 +170,29 @@ export const sendStudentSignupDecisionEmail = ({ to, name, status, reason }) => 
     html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;color:#172554"><h2>${escapeHtml(title)}</h2><p>Hola, ${escapeHtml(name)}.</p><p>${escapeHtml(message)}</p>${approved ? `<p><a href="${escapeHtml(url)}">Ingresar a EduQuest</a></p>` : '<p>Consultá con tu institución.</p>'}</div>`,
   });
 };
+
+
+// Verificación por correo para alumnos y personal. El token crudo nunca se guarda
+// ni aparece en logs; solo existe en el enlace que se envía al interesado.
+export const sendEmailVerificationEmail = ({ to, name, token }) => {
+  const url = new URL('/verificar-correo', process.env.FRONTEND_URL);
+  url.searchParams.set('token', token);
+  const link = url.toString();
+  return getTransporter().sendMail({
+    from: process.env.MAIL_FROM, to,
+    subject: '[EduQuest] Confirmá tu correo electrónico',
+    text: `Hola ${name}. Para confirmar tu correo de EduQuest abrí este enlace (válido por 24 horas): ${link}\n\nSi no solicitaste el registro, ignorá este correo.`,
+    html: `<div style="font:16px Arial,sans-serif;color:#0f172a;max-width:600px;margin:auto;padding:26px"><h2>EduQuest · Verificación de correo</h2><p>Hola ${escapeHtml(name)}:</p><p>Confirmá tu dirección de correo para continuar con tu inscripción.</p><p><a href="${escapeHtml(link)}" style="background:#0d9488;color:#fff;text-decoration:none;border-radius:8px;padding:14px 20px;display:inline-block">Confirmar mi correo</a></p><p>El enlace caduca en 24 horas y puede utilizarse una sola vez.</p><p>Si no solicitaste esta inscripción, ignorá este mensaje.</p></div>`,
+  });
+};
+
+export const sendStaffSignupDecisionEmail = ({ to, name, role, status, reason }) => {
+  const approved = status === 'APPROVED';
+  const url = `${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')}/login`;
+  const content = approved ? `La institución autorizó tu alta como ${ROLE_LABELS[role] || role}. Ya podés ingresar.`
+    : `Tu solicitud no fue aprobada. Motivo: ${reason || 'Consultá con la institución.'}`;
+  return getTransporter().sendMail({ from: process.env.MAIL_FROM, to,
+    subject: approved ? '[EduQuest] Tu solicitud de personal fue aprobada' : '[EduQuest] Estado de tu solicitud de personal',
+    text: `Hola ${name}.\n\n${content}\n\n${approved ? url : ''}`,
+    html: `<div style="font:16px Arial,sans-serif;padding:24px;max-width:600px;color:#0f172a"><h2>EduQuest · Solicitud de personal</h2><p>Hola ${escapeHtml(name)}.</p><p>${escapeHtml(content)}</p>${approved ? `<a href="${escapeHtml(url)}">Ingresar a EduQuest</a>` : ''}</div>` });
+};

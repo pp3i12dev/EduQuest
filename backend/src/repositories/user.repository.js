@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 
 import { getPrisma } from '../config/prisma.js';
 
@@ -29,8 +30,21 @@ export const listUsersByProfile = ({ institutionId, profileField }) => {
       [profileField]: { isNot: null },
       deletedAt: null,
     },
+    // Solo datos académicos necesarios para filtrar listas: nunca actividades,
+    // respuestas, notas ni intentos de Unity.
     include: {
-      [profileField]: true,
+      institution: { select: { id: true, nombre: true } },
+      [profileField]: profileField === 'studentProfile' ? {
+        include: { courses: { include: { course: { select: { id: true, nombre: true,
+          academicYear: true, shift: true, careerId: true,
+          career: { select: { nombre: true } } } } } } },
+      } : profileField === 'teacherProfile' ? {
+        include: { teacherSubjects: { where: { isActive: true }, include: {
+          course: { select: { id: true, nombre: true, academicYear: true, shift: true, careerId: true,
+            career: { select: { nombre: true } } } },
+          subject: { select: { id: true, nombre: true } },
+        } } },
+      } : true,
     },
     orderBy: {
       lastName: 'asc',
@@ -58,7 +72,7 @@ export const createUserWithProfile = ({
   });
 };
 
-export const createStudentSelfSignup = ({ userData, courseId }) => {
+export const createStudentSelfSignup = ({ userData, courseId, tokenHash, expiresAt }) => {
   const prisma = getPrisma();
 
   return prisma.$transaction(async (tx) => {
@@ -67,9 +81,11 @@ export const createStudentSelfSignup = ({ userData, courseId }) => {
         ...userData,
         isActive: false,
         signupStatus: 'PENDING',
+        requestedRole: 'STUDENT',
+        emailVerificationTokens: { create: { tokenHash, expiresAt } },
         studentProfile: {
           create: {
-            legajoStudent: `ALU-${Date.now()}`,
+            legajoStudent: `ALU-${randomUUID()}`,
             avatarConfig: {
               create: {
                 configJson: {

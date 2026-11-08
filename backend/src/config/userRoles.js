@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 export const ROLE_CONFIG = {
     student: {
         profileField: 'studentProfile',
@@ -9,9 +11,12 @@ export const ROLE_CONFIG = {
             reactivate: 'student:reactivate',
             delete: 'student:delete',
         },
-        requiredCreateFields: ['legajoStudent'],
-        buildProfileCreate: (body) => ({ legajoStudent: body.legajoStudent }),
-        allowedProfileEdit: [],
+        requiredCreateFields: [],
+        buildProfileCreate: (body) => ({
+            // El legajo oficial no se exige para crear alumnos; se usa una clave interna única.
+            legajoStudent: String(body.legajoStudent ?? '').trim() || `ALU-${randomUUID()}`,
+        }),
+        allowedProfileEdit: ['legajoStudent'],
     },
     director: {
         profileField: 'directorProfile',
@@ -35,9 +40,13 @@ export const ROLE_CONFIG = {
             toggle: 'preceptor:deactivate',
             delete: 'preceptor:delete',
         },
-        requiredCreateFields: ['legajoPreceptor'],
-        buildProfileCreate: (body) => ({ legajoPreceptor: body.legajoPreceptor, shift: body.shift ?? null }),
-        allowedProfileEdit: ['shift'],
+        requiredCreateFields: [],
+        buildProfileCreate: (body) => ({
+            // Código técnico temporal: el legajo oficial puede informarse más adelante.
+            legajoPreceptor: String(body.legajoPreceptor ?? '').trim() || `PRE-${randomUUID()}`,
+            shift: body.shift ?? null,
+        }),
+        allowedProfileEdit: ['legajoPreceptor', 'shift'],
     },
     teacher: {
         profileField: 'teacherProfile',
@@ -48,9 +57,12 @@ export const ROLE_CONFIG = {
             toggle: 'teacher:deactivate',
             delete: 'teacher:delete',
         },
-        requiredCreateFields: ['legajoTeacher'],
-        buildProfileCreate: (body) => ({ legajoTeacher: body.legajoTeacher, specialty: body.specialty ?? null }),
-        allowedProfileEdit: ['specialty'],
+        requiredCreateFields: [],
+        buildProfileCreate: (body) => ({
+            legajoTeacher: String(body.legajoTeacher ?? '').trim() || `DOC-${randomUUID()}`,
+            specialty: body.specialty ?? null,
+        }),
+        allowedProfileEdit: ['legajoTeacher', 'specialty'],
     },
 };
 

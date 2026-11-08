@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useInstitutions, useMyInstitution } from '../hooks/useInstitution';
 import { useCoursesAdmin } from '../hooks/useCourseAdmin';
 import { useUserRoles, useUpdateUserRoles } from '../hooks/useUsers';
+import { displayLegajo } from '../utils/legajo';
 
 const baseEmpty = {
     dni: '',
@@ -21,9 +22,9 @@ const ROLE_EXTRA_FIELDS = {
 };
 
 const ROLE_REQUIRED_FIELDS = {
-    student: ['legajoStudent'],
-    teacher: ['legajoTeacher'],
-    preceptor: ['legajoPreceptor'],
+    student: [],
+    teacher: [],
+    preceptor: [],
     director: [],
 };
 
@@ -102,20 +103,20 @@ export default function UserFormModal({
                 institutionId: String(initialData.institutionId ?? currentUser?.institutionId ?? ''),
                 ...(role === 'student' && {
                     legajoStudent:
-                        initialData.profile?.legajoStudent ?? '',
+                        displayLegajo(initialData.profile?.legajoStudent),
                     courseId: '',
                 }),
 
                 ...(role === 'teacher' && {
                     legajoTeacher:
-                        initialData.profile?.legajoTeacher ?? '',
+                        displayLegajo(initialData.profile?.legajoTeacher),
                     specialty:
                         initialData.profile?.specialty ?? '',
                 }),
 
                 ...(role === 'preceptor' && {
                     legajoPreceptor:
-                        initialData.profile?.legajoPreceptor ?? '',
+                        displayLegajo(initialData.profile?.legajoPreceptor),
                     shift:
                         initialData.profile?.shift ?? '',
                 }),
@@ -210,6 +211,12 @@ export default function UserFormModal({
         }
         if (role !== 'student' || isEditing || !payload.courseId) delete payload.courseId;
         else payload.courseId = Number(payload.courseId);
+        // Al editar, un legajo vacío significa conservar el actual.
+        // En altas nuevas el backend asigna una clave interna si no se indica uno.
+        if (isEditing) {
+            const legajoKey = { student: 'legajoStudent', teacher: 'legajoTeacher', preceptor: 'legajoPreceptor' }[role];
+            if (legajoKey && !String(payload[legajoKey] ?? '').trim()) delete payload[legajoKey];
+        }
 
         /*
          * Al editar:
@@ -370,10 +377,13 @@ export default function UserFormModal({
                             name="legajoStudent"
                             value={form.legajoStudent}
                             onChange={handleChange}
-                            placeholder="Legajo"
-                            required
+                            placeholder="Legajo del alumno (opcional)"
+                            aria-label="Legajo del alumno (opcional)"
                             className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
                         />
+                        <p className="text-xs text-slate-400">{isEditing
+                            ? 'Si no cambiás el legajo, conservará su identificador actual.'
+                            : 'Si no lo completás, se generará un identificador interno provisional.'}</p>
 
                         {!isEditing && <label className="block space-y-1.5 text-sm text-slate-200">
                             <span className="font-semibold">Curso de matrícula (opcional)</span>
@@ -397,8 +407,7 @@ export default function UserFormModal({
                             name="legajoTeacher"
                             value={form.legajoTeacher}
                             onChange={handleChange}
-                            placeholder="Legajo"
-                            required
+                            placeholder="Legajo docente (opcional)"
                             className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
                         />
 
@@ -422,8 +431,7 @@ export default function UserFormModal({
                             name="legajoPreceptor"
                             value={form.legajoPreceptor}
                             onChange={handleChange}
-                            placeholder="Legajo"
-                            required
+                            placeholder="Legajo de preceptor (opcional)"
                             className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
                         />
 

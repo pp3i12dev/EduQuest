@@ -219,7 +219,7 @@ export default function InstitutionView() {
 
             {/* INDICADORES */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg shadow-black/5">
+                <div className="eq-glass-panel rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg shadow-black/5">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-slate-400">
                             Total de instituciones
@@ -237,7 +237,7 @@ export default function InstitutionView() {
                     </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg shadow-black/5">
+                <div className="eq-glass-panel rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg shadow-black/5">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-slate-400">
                             Instituciones activas
@@ -258,7 +258,7 @@ export default function InstitutionView() {
                     </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg shadow-black/5">
+                <div className="eq-glass-panel rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg shadow-black/5">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-slate-400">
                             Instituciones inactivas
@@ -281,7 +281,7 @@ export default function InstitutionView() {
             </div>
 
             {/* CONTENEDOR PRINCIPAL */}
-            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/95 shadow-xl shadow-black/10">
+            <div className="eq-glass-table overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/95 shadow-xl shadow-black/10">
                 {/* BARRA DE FILTROS */}
                 <div className="border-b border-slate-800 p-5 sm:p-6">
                     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">

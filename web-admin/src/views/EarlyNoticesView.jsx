@@ -915,7 +915,7 @@ export default function EarlyNoticesView({
             </div>
 
             {/* FILTROS */}
-            <div className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/95 p-5 md:flex-row">
+            <div className="eq-glass-panel flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/95 p-5 md:flex-row">
                 <div className="relative min-w-0 flex-1">
                     <Search
                         size={18}
@@ -976,7 +976,7 @@ export default function EarlyNoticesView({
             )}
 
             {/* LISTADO */}
-            <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/95 shadow-xl shadow-black/10">
+            <div className="eq-glass-table min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/95 shadow-xl shadow-black/10">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/30 px-5 py-5">
                     <div>
                         <h2 className="text-base font-semibold text-white">
@@ -1014,7 +1014,7 @@ export default function EarlyNoticesView({
                         filtered.map((notice) => (
                             <article
                                 key={notice.id}
-                                className="min-w-0 rounded-xl border border-slate-700/70 bg-slate-800/40 p-4"
+                                className="eq-glass-card min-w-0 rounded-xl border border-slate-700/70 bg-slate-800/40 p-4"
                             >
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div className="min-w-0 flex-1">

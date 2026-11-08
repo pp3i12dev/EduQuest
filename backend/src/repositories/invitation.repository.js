@@ -39,7 +39,7 @@ export const findInvitationById = (id) => {
 
 export const findInvitationByToken = (token) => {
     const prisma = getPrisma();
-    return prisma.invitation.findUnique({ where: { token } });
+    return prisma.invitation.findUnique({ where: { token }, include: { institution: { select: { nombre: true } }, course: { select: { id: true, nombre: true, institutionId: true } } } });
 };
 
 export const deleteInvitation = (id) => {
@@ -55,8 +55,15 @@ export const findUserById = (id) => {
 export const createUserFromInvitation = ({ invitationId, userCreateData }) => {
     const prisma = getPrisma();
     return prisma.$transaction(async (tx) => {
-        const user = await tx.user.create({ data: userCreateData });
-        await tx.invitation.update({ where: { id: invitationId }, data: { isUsed: true } });
-        return user;
+        // Se consume primero dentro de la MISMA transacción, de manera atómica.
+        // Dos solicitudes simultáneas nunca pueden crear dos cuentas con el mismo token.
+        const consumed = await tx.invitation.updateMany({
+            where: { id: invitationId, isUsed: false, expiresAt: { gt: new Date() } },
+            data: { isUsed: true },
+        });
+        if (consumed.count !== 1) {
+            throw Object.assign(new Error('La invitación fue utilizada o venció'), { status: 409 });
+        }
+        return tx.user.create({ data: userCreateData });
     });
 };

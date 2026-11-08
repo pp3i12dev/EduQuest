@@ -1,6 +1,5 @@
 
 import { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { hasAny } from '../config/permissions';
@@ -74,8 +73,8 @@ const getSearchableText = (user) => {
 
 export default function UsersListView({ role, title }) {
     const { user: currentUser } = useContext(AuthContext);
-    const canReviewSignups = role === 'student' && hasAny(currentUser?.roles, 'selfSignup:approve');
     const canManageRole = hasAny(currentUser?.roles, `${role}:manage`);
+    const canPermanentlyDelete = Boolean(currentUser?.isSuperAdmin || currentUser?.roles?.includes('SUPER_ADMIN') || currentUser?.roles?.includes('DIRECTOR'));
     const { data: users, isLoading } = useUsersByRole(role);
 
     const createMutation = useCreateUser(role);
@@ -86,13 +85,27 @@ export default function UsersListView({ role, title }) {
     const [formOpen, setFormOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
+    const [permanentId, setPermanentId] = useState(null);
+    const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
     // Estado independiente de búsqueda para esta vista.
     const [searchTerm, setSearchTerm] = useState('');
+    const [institutionFilter, setInstitutionFilter] = useState('');
+    const [courseFilter, setCourseFilter] = useState('');
+    const [careerFilter, setCareerFilter] = useState('');
+    const [subjectFilter, setSubjectFilter] = useState('');
+    const [shiftFilter, setShiftFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
 
     // Cuando cambia el rol, limpiamos la búsqueda anterior.
     useEffect(() => {
         setSearchTerm('');
+        setInstitutionFilter('');
+        setCourseFilter('');
+        setCareerFilter('');
+        setSubjectFilter('');
+        setShiftFilter('');
+        setStatusFilter('');
     }, [role]);
 
     // Los usuarios ya vienen filtrados por rol desde el hook.
@@ -104,26 +117,45 @@ export default function UsersListView({ role, title }) {
         return [];
     }, [users]);
 
+    const institutions = useMemo(() => [...new Map(roleUsers
+        .filter(u => u.institutionId != null)
+        .map(u => [String(u.institutionId), u.institutionName || `Institución ${u.institutionId}`]))]
+        .sort((a, b) => a[1].localeCompare(b[1], 'es')), [roleUsers]);
+    const courses = useMemo(() => [...new Map(roleUsers.flatMap(u => u.academicLinks || [])
+        .filter(c => c.courseId).map(c => [String(c.courseId), c.courseName || `Curso ${c.courseId}`]))]
+        .sort((a, b) => a[1].localeCompare(b[1], 'es')), [roleUsers]);
+    const careers = useMemo(() => [...new Map(roleUsers.flatMap(u => u.academicLinks || [])
+        .filter(c => c.careerId).map(c => [String(c.careerId), c.careerName || `Carrera ${c.careerId}`]))]
+        .sort((a, b) => a[1].localeCompare(b[1], 'es')), [roleUsers]);
+    const subjects = useMemo(() => [...new Map(roleUsers.flatMap(u => u.academicLinks || [])
+        .filter(c => c.subjectId).map(c => [String(c.subjectId), c.subjectName || `Materia ${c.subjectId}`]))]
+        .sort((a, b) => a[1].localeCompare(b[1], 'es')), [roleUsers]);
+    const shifts = [{ id: 'MANANA', label: 'Mañana' }, { id: 'TARDE', label: 'Tarde' }, { id: 'NOCHE', label: 'Noche' }];
+    const hasFilters = Boolean(searchTerm || institutionFilter || courseFilter || careerFilter || subjectFilter || shiftFilter || statusFilter);
+    const resetFilters = () => { setSearchTerm(''); setInstitutionFilter(''); setCourseFilter(''); setCareerFilter(''); setSubjectFilter(''); setShiftFilter(''); setStatusFilter(''); };
+
     // Filtrado en tiempo real de los usuarios del rol actual.
     const filteredUsers = useMemo(() => {
         const normalizedSearch = normalizeText(searchTerm);
-
-        if (!normalizedSearch) {
-            return roleUsers;
-        }
 
         // Permite buscar por varias palabras, por ejemplo:
         // "Juan Perez", "Perez Juan" o "Juan 12345678".
         const searchWords = normalizedSearch.split(/\s+/);
 
         return roleUsers.filter((user) => {
+            if (institutionFilter && String(user.institutionId) !== institutionFilter) return false;
+            if (courseFilter && !(user.academicLinks || []).some(c => String(c.courseId) === courseFilter)) return false;
+            if (careerFilter && !(user.academicLinks || []).some(c => String(c.careerId) === careerFilter)) return false;
+            if (subjectFilter && !(user.academicLinks || []).some(c => String(c.subjectId) === subjectFilter)) return false;
+            if (shiftFilter && user.profile?.shift !== shiftFilter &&
+                !(user.academicLinks || []).some(c => c.shift === shiftFilter)) return false;
+            if (statusFilter === 'ACTIVE' && !user.isActive) return false;
+            if (statusFilter === 'INACTIVE' && user.isActive) return false;
+            if (statusFilter === 'PENDING' && user.signupStatus !== 'PENDING') return false;
             const searchableText = getSearchableText(user);
-
-            return searchWords.every((word) =>
-                searchableText.includes(word)
-            );
+            return searchWords.every((word) => searchableText.includes(word));
         });
-    }, [roleUsers, searchTerm]);
+    }, [roleUsers, searchTerm, institutionFilter, courseFilter, careerFilter, subjectFilter, shiftFilter, statusFilter]);
 
     const openCreate = () => {
         setEditingUser(null);
@@ -149,12 +181,7 @@ export default function UsersListView({ role, title }) {
         <div>
             {/* Encabezado */}
             <div className="flex justify-between items-center mb-6 gap-4">
-                <div className="flex flex-wrap items-center gap-3">
-                    {canReviewSignups && <Link to="/dashboard/students/requests"
-                        className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20">
-                        Solicitudes de inscripción
-                    </Link>}
-                </div>
+<div className="flex flex-wrap items-center gap-3" />
 
                 {canManageRole && <button
                     onClick={openCreate}
@@ -229,7 +256,7 @@ export default function UsersListView({ role, title }) {
                     {/* Contador de resultados */}
                     {!isLoading && (
                         <div className="text-sm text-slate-400 whitespace-nowrap">
-                            {searchTerm.trim() ? (
+                            {hasFilters ? (
                                 <>
                                     <span className="font-semibold text-blue-400">
                                         {filteredUsers.length}
@@ -254,6 +281,42 @@ export default function UsersListView({ role, title }) {
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* Filtros institucionales independientes para cada rol */}
+            <div className="eq-glass-panel mb-5 grid gap-3 rounded-xl border border-slate-700/80 bg-slate-900/65 p-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+                <label className="text-xs text-slate-300">Institución
+                    <select value={institutionFilter} onChange={e => setInstitutionFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-sm text-white">
+                        <option value="">Todas</option>{institutions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+                    </select>
+                </label>
+                {(role === 'student' || role === 'teacher') && <label className="text-xs text-slate-300">Carrera / Nivel
+                    <select value={careerFilter} onChange={e => setCareerFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-sm text-white">
+                        <option value="">Todas</option>{careers.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+                    </select>
+                </label>}
+                {(role === 'student' || role === 'teacher') && <label className="text-xs text-slate-300">Curso
+                    <select value={courseFilter} onChange={e => setCourseFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-sm text-white">
+                        <option value="">Todos</option>{courses.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+                    </select>
+                </label>}
+                {role === 'teacher' && <label className="text-xs text-slate-300">Materia
+                    <select value={subjectFilter} onChange={e => setSubjectFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-sm text-white">
+                        <option value="">Todas</option>{subjects.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+                    </select>
+                </label>}
+                {['student', 'teacher', 'preceptor'].includes(role) && <label className="text-xs text-slate-300">Turno
+                    <select value={shiftFilter} onChange={e => setShiftFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-sm text-white">
+                        <option value="">Todos</option>{shifts.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                    </select>
+                </label>}
+                <label className="text-xs text-slate-300">Estado
+                    <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-sm text-white">
+                        <option value="">Todos</option><option value="ACTIVE">Activos</option><option value="INACTIVE">Inactivos</option><option value="PENDING">Pendientes</option>
+                    </select>
+                </label>
+                <div className="flex items-end"><button type="button" onClick={resetFilters} disabled={!hasFilters}
+                    className="w-full rounded-lg border border-slate-600 p-2 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-50">Limpiar filtros</button></div>
             </div>
 
             {/* Listado de usuarios */}
@@ -295,8 +358,8 @@ export default function UsersListView({ role, title }) {
                                                     : 'bg-slate-700 text-slate-400'
                                                 }`}
                                         >
-                                            {u.signupStatus === 'PENDING' ? 'Pendiente de aprobación'
-                                                : u.signupStatus === 'REJECTED' ? 'Solicitud rechazada'
+                                            {u.signupStatus === 'PENDING' ? (role === 'student' ? 'Correo sin verificar' : 'Pendiente de aprobación')
+                                                : u.signupStatus === 'REJECTED' ? 'Registro rechazado'
                                                 : u.isActive ? 'Activo' : 'Inactivo'}
                                         </span>
                                     </td>
@@ -309,13 +372,12 @@ export default function UsersListView({ role, title }) {
                                             Editar
                                         </button>}
 
-                                        {canManageRole && (u.signupStatus === 'PENDING' || u.signupStatus === 'REJECTED' ? (
-                                            canReviewSignups ? <Link to="/dashboard/students/requests"
-                                                className="text-emerald-300 hover:underline text-xs">Revisar</Link> : null
-                                        ) : <button
+                                        {canManageRole && <button
                                             onClick={() => toggleMutation.mutate({ id: u.id, isActive: !u.isActive })}
-                                            className="text-amber-400 hover:underline text-xs cursor-pointer"
-                                        >{u.isActive ? 'Desactivar' : 'Activar'}</button>)}
+                                            disabled={role === 'student' && !u.isActive && u.signupStatus === 'PENDING' && u.requestedRole === 'STUDENT'}
+                                            title={role === 'student' && !u.isActive && u.signupStatus === 'PENDING' ? 'Debe verificar su correo primero' : undefined}
+                                            className="text-amber-400 hover:underline text-xs disabled:opacity-30"
+                                        >{u.isActive ? 'Desactivar' : 'Activar'}</button>}
 
                                         {canManageRole && <button
                                             onClick={() =>
@@ -323,8 +385,13 @@ export default function UsersListView({ role, title }) {
                                             }
                                             className="text-red-400 hover:underline text-xs cursor-pointer"
                                         >
-                                            Eliminar
+                                            Dar de baja
                                         </button>}
+                                        {canManageRole && canPermanentlyDelete && <button
+                                            onClick={() => { setPermanentId(u.id); setDeleteConfirmation(''); }}
+                                            className="ml-2 text-rose-300 hover:underline text-xs"
+                                            title="Borrado irreversible: incluye actividades y resultados vinculados"
+                                        >Eliminar definitivamente</button>}
                                     </td>
                                 </tr>
                             ))}
@@ -419,12 +486,31 @@ export default function UsersListView({ role, title }) {
                 confirmLabel="Retirar usuario"
                 onCancel={() => setDeletingId(null)}
                 onConfirm={() =>
-                    deleteMutation.mutate(deletingId, {
+                    deleteMutation.mutate({ id: deletingId, mode: 'archive' }, {
                         onSuccess: () =>
                             setDeletingId(null)
                     })
                 }
             />
+            {Boolean(permanentId) && <div role="dialog" aria-modal="true" aria-label="Borrado definitivo" className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 p-4">
+                <div className="w-full max-w-lg rounded-2xl border border-rose-500/40 bg-[#17273d] p-6 text-slate-100 shadow-2xl">
+                    <h2 className="text-xl font-bold text-white">Eliminar definitivamente</h2>
+                    <p className="mt-3 text-sm text-slate-300">Se eliminarán esta cuenta y sus relaciones de forma irreversible. Si es docente, se borrarán también sus actividades y los resultados de TODOS los alumnos en esas actividades. Se eliminarán asistencias, asignaciones, avisos propios, invitaciones y progreso propio. No se eliminarán cursos ni materias compartidos. Usá «Dar de baja» si querés conservar el historial.</p>
+                    <label className="mt-5 block text-sm text-slate-200">Escribí <strong>ELIMINAR TODO</strong> para confirmar.
+                        <input value={deleteConfirmation} onChange={e => setDeleteConfirmation(e.target.value)} autoFocus
+                            className="mt-2 w-full rounded-xl border border-slate-500 bg-[#0f1f33] p-3 text-white" />
+                    </label>
+                    <div className="mt-5 flex flex-wrap justify-end gap-3">
+                        <button type="button" onClick={() => { setPermanentId(null); setDeleteConfirmation(''); }} className="rounded-xl border border-slate-600 px-4 py-2">Cancelar</button>
+                        <button type="button" disabled={deleteConfirmation !== 'ELIMINAR TODO' || deleteMutation.isPending}
+                            onClick={() => deleteMutation.mutate({ id: permanentId, mode: 'permanent', confirm: deleteConfirmation }, {
+                                onSuccess: () => { setPermanentId(null); setDeleteConfirmation(''); },
+                            })}
+                            className="rounded-xl bg-rose-600 px-4 py-2 font-semibold text-white disabled:opacity-40">Eliminar cuenta y relaciones</button>
+                    </div>
+                    {deleteMutation.isError && <p role="alert" className="mt-3 text-sm text-rose-300">{deleteMutation.error?.response?.data?.message || deleteMutation.error?.message}</p>}
+                </div>
+            </div>}
         </div>
     );
 }

@@ -356,7 +356,7 @@ export default function SubjectsListView() {
                 </button>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <div className="eq-glass-panel rounded-xl border border-slate-800 bg-slate-900/60 p-4">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-sm font-semibold text-white">Filtrar materias creadas</h3>
                     <span className="text-xs text-slate-400">{filteredSubjects.length} de {subjects.length} materias</span>
@@ -487,7 +487,7 @@ export default function SubjectsListView() {
                     Cargando materias...
                 </p>
             ) : !isError ? (
-                <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/40">
+                <div className="eq-glass-table overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/40">
                     <table className="w-full min-w-[900px] border-collapse text-sm">
                         <thead>
                             <tr className="border-b border-slate-800 bg-slate-900/70 text-left text-slate-400">

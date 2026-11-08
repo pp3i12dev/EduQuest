@@ -1,5 +1,5 @@
 import { notificationService } from './notification.service.js';
-import { requireCurrentOrFutureDate } from '../utils/institutionDate.js';
+import { requireCurrentOrFutureDate, requireFutureClassStart } from '../utils/institutionDate.js';
 
 import { earlyNoticeRepository as repo, createNoticeWithClasses } from '../repositories/earlyNotice.repository.js';
 
@@ -339,7 +339,7 @@ const validateAssignment = async (
 
     const date = parseDate(classDate);
     // También se aplica a avisos múltiples y al editor de clases afectadas.
-    requireCurrentOrFutureDate(classDate, 'La fecha de la clase');
+    requireFutureClassStart(classDate, schedule.startTime);
 
     if (DAYS[date.getUTCDay()] !== schedule.day) {
         fail(

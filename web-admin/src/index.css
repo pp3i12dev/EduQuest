@@ -19,3 +19,127 @@
     cursor: not-allowed;
   }
 }
+
+/* EduQuest Campus — identidad institucional (se aplica al dashboard únicamente).
+   Los componentes pedagógicos existentes conservan sus contrastes y utilidades. */
+:root {
+  --eq-navy: #14283f;
+  --eq-ink: #0b1c30;
+  --eq-surface: #182d45;
+  --eq-cobalt: #3777ef;
+  --eq-teal: #14b8a6;
+  --eq-amber: #f4b942;
+}
+.eduquest-campus { color-scheme: dark; }
+.eduquest-campus :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--eq-teal);
+  outline-offset: 2px;
+}
+.eduquest-campus ::selection { background: rgba(20,184,166,.30); color: white; }
+.eduquest-campus main :is(h1,h2,h3) { text-wrap: balance; }
+@media (prefers-reduced-motion: reduce) {
+  .eduquest-campus *, .eduquest-campus *::before, .eduquest-campus *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+
+/* EduQuest Campus · refinamiento visual final (noviembre 2026)
+   Sólo presentación. Sin cambios en autenticación, rutas, actividades ni Unity.
+   Usar las clases eq-... explícitas; no transparentar diálogos, tablas o inputs críticos. */
+.eduquest-campus {
+  --eq-sidebar-bg: #373b42; /* grafito neutro, sin dominante azul */
+  --eq-sidebar-border: rgba(232,235,240,.13);
+  --eq-glass-bg: rgba(32,46,64,.58);
+  --eq-glass-bg-hover: rgba(43,61,81,.69);
+  --eq-glass-border: rgba(207,224,243,.23);
+  --eq-glass-shadow: 0 14px 38px rgba(2,9,19,.22), inset 0 1px rgba(255,255,255,.075);
+  --eq-glass-blur: 17px;
+}
+/* Sidebar de navegación: mismo gris en escritorio y móvil. */
+.eduquest-campus .eq-campus-sidebar {
+  background-color: var(--eq-sidebar-bg) !important;
+  border-color: var(--eq-sidebar-border) !important;
+  box-shadow: 4px 0 24px rgba(2,8,15,.16);
+}
+.eduquest-campus .eq-campus-sidebar .eq-side-link {
+  color: #e0e3e9;
+  border-color: transparent;
+}
+.eduquest-campus .eq-campus-sidebar .eq-side-link:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,.15);
+  background: rgba(255,255,255,.09);
+}
+.eduquest-campus .eq-campus-sidebar .eq-side-link.eq-side-active {
+  color: #fff !important;
+  border-color: rgba(142,211,216,.38) !important;
+  background: linear-gradient(110deg, rgba(37,159,168,.22), rgba(255,255,255,.075)) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.08);
+}
+.eduquest-campus .eq-campus-sidebar .eq-side-active svg { color: #8fe4e5 !important; }
+.eduquest-campus .eq-campus-sidebar .eq-side-link:not(.eq-side-active) svg { color: #d1d5db !important; }
+.eduquest-campus .eq-campus-sidebar .eq-side-divider { border-color: rgba(255,255,255,.18) !important; }
+.eduquest-campus .eq-campus-header {
+  background: rgba(28,38,49,.96) !important;
+  border-color: rgba(223,231,241,.11) !important;
+  box-shadow: 0 6px 20px rgba(2,9,19,.13);
+}
+.eduquest-campus .eq-campus-footer {
+  background: rgba(29,38,48,.91) !important;
+  border-color: rgba(207,224,243,.12) !important;
+}
+.eduquest-campus .eq-campus-breadcrumb {
+  background: rgba(18,28,40,.45) !important;
+  border-color: rgba(207,224,243,.10) !important;
+}
+/* Glass sólo para tarjetas y paneles identificados. Se preserva la legibilidad. */
+.eduquest-campus .eq-glass-card,
+.eduquest-campus .eq-glass-panel {
+  background: linear-gradient(145deg, rgba(255,255,255,.09), rgba(255,255,255,.025) 36%, rgba(16,30,48,.08)), var(--eq-glass-bg) !important;
+  border: 1px solid var(--eq-glass-border) !important;
+  border-radius: 18px;
+  box-shadow: var(--eq-glass-shadow);
+  backdrop-filter: blur(var(--eq-glass-blur)) saturate(1.18);
+  -webkit-backdrop-filter: blur(var(--eq-glass-blur)) saturate(1.18);
+}
+.eduquest-campus .eq-glass-card {
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background-color .22s ease;
+}
+.eduquest-campus a.eq-glass-card:hover,
+.eduquest-campus button.eq-glass-card:hover {
+  transform: translateY(-3px);
+  background: linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.025) 55%), var(--eq-glass-bg-hover) !important;
+  border-color: rgba(120,224,225,.48) !important;
+  box-shadow: 0 19px 45px rgba(2,9,19,.28), inset 0 1px rgba(255,255,255,.13);
+}
+.eduquest-campus .eq-glass-panel {
+  --eq-glass-bg: rgba(29,43,61,.72);
+}
+.eduquest-campus .eq-glass-table {
+  background: rgba(20,33,49,.85) !important;
+  border-color: rgba(207,224,243,.19) !important;
+  box-shadow: 0 10px 30px rgba(2,9,19,.14);
+  border-radius: 16px;
+}
+.eduquest-campus .eq-glass-table thead {
+  background: rgba(43,59,76,.92);
+}
+.eduquest-campus .eq-campus-page :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus-visible {
+  border-color: #54bfc2 !important;
+  box-shadow: 0 0 0 3px rgba(84,191,194,.14);
+}
+.eduquest-campus .eq-campus-page :is(th, td) { vertical-align: middle; }
+.eduquest-campus .eq-campus-page tbody tr { transition: background-color .16s ease; }
+.eduquest-campus .eq-campus-page tbody tr:hover { background-color: rgba(138,174,210,.055); }
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .eduquest-campus .eq-glass-card,
+  .eduquest-campus .eq-glass-panel { background: #273a4f !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eduquest-campus .eq-glass-card { transition: none !important; }
+  .eduquest-campus a.eq-glass-card:hover,
+  .eduquest-campus button.eq-glass-card:hover { transform: none !important; }
+}

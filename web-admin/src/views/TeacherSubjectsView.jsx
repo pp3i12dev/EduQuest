@@ -60,7 +60,7 @@ export default function TeacherSubjectsView() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 pb-12 text-slate-100">
-      <header className="rounded-2xl border border-blue-500/20 bg-gradient-to-r from-slate-900 to-blue-950/70 p-6 sm:p-8">
+      <header className="eq-glass-panel rounded-2xl border border-blue-500/20 bg-gradient-to-r from-slate-900 to-blue-950/70 p-6 sm:p-8">
         <div className="flex items-start gap-4"><School className="shrink-0 text-blue-300" size={32} />
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-blue-300">Espacio docente</span>
@@ -76,7 +76,7 @@ export default function TeacherSubjectsView() {
       </div>
       {isLoading && <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 p-6"><LoaderCircle className="animate-spin text-blue-300"/> Cargando asignaciones...</div>}
       {isError && <div role="alert" className="rounded-xl border border-rose-500/40 bg-rose-950/30 p-5 text-rose-200"><AlertCircle className="mr-2 inline" size={18}/> No se pudieron cargar los cursos: {error?.response?.data?.message || error?.message || 'Error de conexión.'}<button className="ml-3 underline" onClick={() => refetch()}>Reintentar</button></div>}
-      {!isLoading && !isError && !selected && !careerFilter && <section className="rounded-2xl border border-slate-700 bg-slate-900/85 p-5 sm:p-7">
+      {!isLoading && !isError && !selected && !careerFilter && <section className="eq-glass-panel rounded-2xl border border-slate-700 bg-slate-900/85 p-5 sm:p-7">
         <h2 className="mb-1 text-xl font-bold">1. Seleccioná la carrera</h2>
         <p className="mb-5 text-sm text-slate-400">Al elegir una carrera aparecerán tus cursos y el turno de cada uno.</p>
         {careers.length > 0 ? <label className="block max-w-xl space-y-2 text-sm font-semibold text-slate-200">
@@ -89,14 +89,14 @@ export default function TeacherSubjectsView() {
         </label> : <p className="text-sm text-slate-400">No tenés asignaciones docentes vigentes.</p>}
       </section>}
       {!isLoading && !isError && !selected && Boolean(careerFilter) && <>
-        <section className="rounded-2xl border border-slate-700 bg-slate-900/85 p-5 sm:p-7">
+        <section className="eq-glass-panel rounded-2xl border border-slate-700 bg-slate-900/85 p-5 sm:p-7">
           <button type="button" className="mb-3 inline-flex items-center gap-2 text-sm text-indigo-300 hover:underline" onClick={() => { setCareerFilter(''); setShiftFilter(''); }}><ArrowLeft size={16}/> Cambiar carrera</button>
           <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-xl font-bold">2. Elegí el curso</h2><p className="mt-1 text-sm text-slate-400">{careerCourses.length} cursos en {careers.find(c => c.id === careerFilter)?.name}</p></div>
             {availableShifts.length > 1 && <label className="flex flex-col gap-1 text-xs text-slate-400">Turno (opcional)<select value={shiftFilter} onChange={e => setShiftFilter(e.target.value)} className="rounded-xl border border-slate-600 bg-slate-800 px-3 py-2.5 text-sm text-white"><option value="">Todos los turnos</option>{SHIFTS.filter(s => availableShifts.includes(s.value)).map(s => <option key={s.value} value={s.value}>{s.label}</option>)}{availableShifts.includes('') && <option value="legacy">Sin turno asignado</option>}</select></label>}
             <label className="flex flex-col gap-1 text-xs text-slate-400">Buscar curso<input className="rounded-xl border border-slate-600 bg-slate-800 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-400" value={filter} onChange={e => setFilter(e.target.value)} placeholder="Ej. 5to A" /></label>
           </div>
           {careerCourses.length === 0 && <p className="rounded-xl bg-slate-800 p-5 text-slate-300">Todavía no tenés cursos con materias asignadas. Solicitá la asignación al equipo directivo.</p>}
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{visible.map(course => <button type="button" key={course.id} onClick={() => setParams({ courseId: course.id })} className="group rounded-2xl border border-slate-700 bg-slate-800/65 p-5 text-left transition hover:border-blue-400 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{visible.map(course => <button type="button" key={course.id} onClick={() => setParams({ courseId: course.id })} className="eq-glass-card group rounded-2xl border border-slate-700 bg-slate-800/65 p-5 text-left transition hover:border-blue-400 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
             <div className="flex items-start justify-between gap-3"><GraduationCap className="text-blue-300" size={27}/><ArrowRight className="text-slate-400 group-hover:text-blue-300" size={20}/></div>
             <h3 className="mt-4 text-xl font-bold">{course.title}</h3><span className="mt-2 inline-flex rounded-full bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-200">Turno {shiftLabel(course.shift)}</span>
             <p className="mt-2 text-sm text-slate-400">Ciclo lectivo {course.year ?? '—'} · {course.subjects.length} {course.subjects.length === 1 ? 'asignación' : 'asignaciones'}</p>
@@ -109,7 +109,7 @@ export default function TeacherSubjectsView() {
           <button type="button" onClick={() => setParams({})} className="mb-3 inline-flex items-center gap-2 text-sm text-blue-300 hover:text-blue-200"><ArrowLeft size={16}/> Volver a cursos de {selected.careerName}</button>
           <h2 className="text-2xl font-bold">{selected.title} · Turno {shiftLabel(selected.shift)}</h2><p className="mt-1 text-sm text-slate-400">Elegí la materia que querés administrar. Año {selected.year ?? '—'}.</p>
         </div><span className="rounded-full bg-slate-800 px-3 py-1.5 text-sm text-slate-300">{selected.subjects.length} materias asignadas</span></div>
-        <div className="grid gap-4 lg:grid-cols-2">{selected.subjects.map(row => <article key={row.id} className="rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-6">
+        <div className="grid gap-4 lg:grid-cols-2">{selected.subjects.map(row => <article key={row.id} className="eq-glass-card rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-6">
           <div className="flex items-start gap-3"><BookOpen className="shrink-0 text-blue-300" size={27}/><div className="min-w-0 flex-1"><h3 className="text-lg font-bold">{row.subject?.nombre || 'Materia sin nombre'}</h3><p className="mt-1 text-xs text-slate-400">{(row.activities || []).length} actividades · {row.isActive ? 'Asignación vigente' : 'Asignación histórica'}</p></div></div>
           <p className="mt-4 text-sm leading-relaxed text-slate-400">Planificá unidades y temas. Dentro de cada tema, subí material de estudio o generá actividades con IA.</p>
           <div className="mt-5 flex flex-wrap gap-2">

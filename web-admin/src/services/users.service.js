@@ -1,20 +1,12 @@
 import api from '../api/axios';
 
 export const usersService = {
-    signupRequests: async (status = 'PENDING', courseId) => {
-        const { data } = await api.get('/users/signup-requests', { params: { status, courseId } });
+    staffSignupRequests: async (status = 'PENDING') => {
+        const { data } = await api.get('/users/staff-signup-requests', { params: { status } });
         return data;
     },
-    signupCourseGroups: async (status = 'PENDING') => {
-        const { data } = await api.get('/users/signup-requests/groups', { params: { status } });
-        return data;
-    },
-    approveSignups: async (ids) => {
-        const { data } = await api.post('/users/signup-requests/approve', { ids });
-        return data;
-    },
-    rejectSignups: async (ids, reason) => {
-        const { data } = await api.post('/users/signup-requests/reject', { ids, reason });
+    reviewStaffSignup: async ({ id, decision, reason }) => {
+        const { data } = await api.post('/users/staff-signup-requests/review', { id, decision, reason });
         return data;
     },
     list: async (role) => {
@@ -33,8 +25,8 @@ export const usersService = {
         const { data } = await api.patch(`/users/${id}/status`, { isActive }, { params: { role } });
         return data;
     },
-    remove: async (role, id) => {
-        await api.delete(`/users/${id}`, { params: { role } });
+    remove: async (role, id, mode = 'archive', confirm = '') => {
+        await api.delete(`/users/${id}`, { params: { role, mode }, data: { confirm } });
     },
 
     getRoles: async (id) => {

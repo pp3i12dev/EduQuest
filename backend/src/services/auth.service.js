@@ -4,8 +4,9 @@ import { generateToken } from '../utils/jwt.js';
 import { getRolesFromUser } from '../utils/rols.js';
 
 import * as userRepository from '../repositories/user.repository.js';
+import { getPrisma } from '../config/prisma.js';
 import * as academicRepository from '../repositories/academic.repository.js';
-import { safeQueueSignupForAuthorities } from './studentSignup.service.js';
+import { createVerificationChallenge, ensureVerificationEmailConfigured, sendVerificationToUser } from './publicRegistration.service.js';
 
 class ServiceError extends Error {
     constructor(message, status = 400) {
@@ -47,12 +48,19 @@ export const loginService = async ({ email, dni, password }) => {
         );
     }
 
+    // Defensa adicional: un alta pública incompleta nunca obtiene acceso,
+    // aunque una operación administrativa cambie isActive por error.
+    if (user.requestedRole && user.signupStatus !== 'APPROVED' && user.isActive) {
+        throw new ServiceError('La cuenta todavía no completó la verificación o autorización necesaria.', 403);
+    }
     if (!user.isActive) {
         const message = user.signupStatus === 'REJECTED'
             ? 'Tu solicitud fue rechazada. Contactá a tu institución para consultar.'
-            : user.signupStatus === 'PENDING'
-              ? 'Tu inscripción está pendiente de aprobación institucional.'
-              : 'Tu cuenta está desactivada. Contactá a tu institución.';
+            : user.signupStatus === 'PENDING' && user.requestedRole && !user.emailVerifiedAt
+              ? 'Primero verificá tu dirección de correo electrónico. Revisá el enlace que te enviamos.'
+              : user.signupStatus === 'PENDING'
+                ? user.requestedRole === 'STUDENT' ? 'Verificá tu correo para activar tu cuenta.' : 'Tu solicitud de personal está pendiente de aprobación institucional.'
+                : 'Tu cuenta está desactivada. Contactá a tu institución.';
         throw new ServiceError(message, 403);
     }
 
@@ -93,6 +101,13 @@ export const loginService = async ({ email, dni, password }) => {
 
 
 export const registerStudentService = async (data) => {
+    // Alta automática ≠ comprobar pertenencia real al curso. Bloqueada por
+    // defecto en producción hasta que la institución valide el procedimiento
+    // de matrícula (p. ej. código de inscripción por curso).
+    if (process.env.NODE_ENV === 'production' && process.env.PUBLIC_STUDENT_ENROLLMENT_ENABLED !== 'true') {
+        throw new ServiceError('La inscripción pública de alumnos todavía no está habilitada para esta institución.', 503);
+    }
+    ensureVerificationEmailConfigured();
     const {
         dni,
         email,
@@ -139,6 +154,10 @@ export const registerStudentService = async (data) => {
             400
         );
     }
+    const institution = await getPrisma().institution.findFirst({
+        where: { id: Number(institutionId), isActive: true }, select: { id: true },
+    });
+    if (!institution) throw new ServiceError('La institución no está disponible para nuevas inscripciones.', 400);
 
     if (careerId != null && course.careerId !== Number(careerId)) {
         throw new ServiceError('El curso no pertenece a la carrera seleccionada', 400);
@@ -151,9 +170,10 @@ export const registerStudentService = async (data) => {
         throw new ServiceError('Completá un correo electrónico y DNI válidos.', 400);
     }
 
-    const existingEmail = await userRepository.findUserByEmailOrDni({ email: normalizedEmail });
+    if (!/^\d{7,12}$/.test(normalizedDni)) throw new ServiceError('Ingresá un DNI válido.', 400);
+    const existingEmail = await getPrisma().user.findFirst({ where: { email: { equals: normalizedEmail, mode: 'insensitive' } } });
     if (existingEmail) {
-        throw new ServiceError('El correo electrónico ya está registrado. Iniciá sesión, recuperá tu contraseña o consultá la aprobación de tu cuenta con la institución.', 409);
+        throw new ServiceError('El correo electrónico ya está registrado. Iniciá sesión, recuperá tu contraseña o contactá a la institución.', 409);
     }
     const existingDni = await userRepository.findUserByEmailOrDni({ dni: normalizedDni });
     if (existingDni) {
@@ -161,6 +181,7 @@ export const registerStudentService = async (data) => {
     }
 
     const passwordHash = await hashPassword(password);
+    const challenge = createVerificationChallenge();
 
     let user;
     try {
@@ -175,6 +196,8 @@ export const registerStudentService = async (data) => {
                 institutionId: Number(institutionId),
             },
             courseId: Number(courseId),
+            tokenHash: challenge.tokenHash,
+            expiresAt: challenge.expiresAt,
         });
     } catch (error) {
         if (error?.code !== 'P2002') throw error;
@@ -191,13 +214,14 @@ export const registerStudentService = async (data) => {
         throw new ServiceError('Ya existe un registro con alguno de los datos ingresados. Revisá correo y DNI.', 409);
     }
 
-    await safeQueueSignupForAuthorities({
-        studentUserId: user.id,
-        institutionId: user.institutionId,
-    });
+    try {
+        await sendVerificationToUser(user, challenge.raw);
+    } catch (error) {
+        console.error('[EduQuest] Falló la verificación por correo del alumno:', error?.message);
+        throw new ServiceError('Tu cuenta se creó, pero no pudimos enviar el mensaje. Utilizá «Reenviar verificación».', 503);
+    }
     return {
-        message:
-            'Registro exitoso. Tu cuenta queda pendiente de aprobación por la institución.',
+        message: 'Registro completo. Revisá tu correo para verificarlo y activar tu cuenta automáticamente.',
         userId: user.id,
     };
 };

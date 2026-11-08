@@ -3,15 +3,26 @@ model User {
   dni String @unique
   email String @unique
   telefono String?
+  directoryEmailVisibility DirectoryVisibility @default(PRIVATE)
+  directoryPhoneVisibility DirectoryVisibility @default(PRIVATE)
+  // Permisos individuales por rol; estos arrays sustituyen la lectura de la configuración anterior.
+  // Siempre empiezan vacíos: ni alumnos ni personal ven datos sin consentimiento.
+  directoryEmailRoles String[] @default([])
+  directoryPhoneRoles String[] @default([])
   passwordHash String
   firstName String
   lastName String
   isActive Boolean @default(true)
   // Eliminacion administrativa: conserva evidencias historicas (notas y avisos).
   deletedAt DateTime?
-  // Solo las altas públicas de alumnos tienen este estado.
+  // Altas públicas: alumnos y solicitudes de personal.
   // null = cuenta anterior o creada directamente por una autoridad.
+  // Solo los alumnos nuevos se activan al validar su correo.
+  // El personal necesita además una aprobación de autoridad competente.
   signupStatus StudentSignupStatus?
+  requestedRole InvitedRole?
+  emailVerifiedAt DateTime?
+  emailVerificationTokens EmailVerificationToken[]
   signupReviewedAt DateTime?
   signupReviewedById Int?
   signupReviewReason String? @db.Text
@@ -22,6 +33,7 @@ model User {
   institutionId Int?
   institution Institution? @relation(fields: [institutionId], references: [id])
   @@index([institutionId, signupStatus])
+  @@index([requestedRole, signupStatus])
   @@index([deletedAt])
   studentProfile StudentProfile?
   teacherProfile TeacherProfile?
@@ -44,6 +56,18 @@ model User {
 }
 
 model PasswordResetToken {
+  id Int @id @default(autoincrement())
+  tokenHash String @unique
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+  userId Int
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, expiresAt])
+}
+
+// Verificación por enlace de un solo uso. Solo se almacena hash SHA-256 del token.
+model EmailVerificationToken {
   id Int @id @default(autoincrement())
   tokenHash String @unique
   expiresAt DateTime

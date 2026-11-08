@@ -70,7 +70,9 @@ const normalize = async (body, user, current) => {
   // comunicaciones con fecha anterior a hoy, aunque la fecha original no cambie.
   // Los eventos antiguos continúan disponibles en Historial (solo lectura).
   requireCurrentOrFutureDate(startsAt, 'La fecha de inicio');
-  if (startsAt > endsAt) fail('El fin no puede ser anterior al inicio');
+  // La fecha de hoy no basta: hay que comprobar también la hora real.
+  if (startsAt.getTime() <= Date.now()) fail('La fecha y hora de inicio deben ser posteriores al momento actual');
+  if (startsAt >= endsAt) fail('El fin debe ser posterior al inicio');
   const scope = body.scope;
   if (!['INSTITUTION', 'CAREERS', 'COURSES'].includes(scope)) fail('Alcance inválido');
   const roles = uniqueEnum(body.roles, allowedRoles, 'Roles', true);

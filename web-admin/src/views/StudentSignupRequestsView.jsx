@@ -106,6 +106,7 @@ export default function StudentSignupRequestsView() {
       <span className="inline-flex items-center gap-2 rounded-xl border border-indigo-400/25 bg-indigo-500/10 px-3 py-2 text-sm text-indigo-200"><ShieldCheck size={17}/> Dirección y preceptoría</span>
     </header>
 
+    <p className="rounded-xl border border-teal-500/30 bg-teal-500/10 px-4 py-3 text-sm text-teal-100">Las nuevas cuentas de alumnos se activan automáticamente al verificar su correo. Este módulo conserva la revisión de solicitudes pendientes anteriores a esa modalidad.</p>
     <div className={panel}>
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Estado de solicitudes">
         {tabs.map(t => <button key={t.value} type="button" role="tab" aria-selected={tab === t.value} onClick={() => setTab(t.value)}

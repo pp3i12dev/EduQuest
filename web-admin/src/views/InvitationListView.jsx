@@ -31,6 +31,7 @@ import {
 import {
     useCareers,
     useCoursesByCareer,
+    useInstitutions,
 } from '../hooks/useAcademic';
 
 import { AuthContext } from '../context/AuthContext';
@@ -102,16 +103,18 @@ function InviteForm({ onSubmit, onClose, isSaving, error }) {
     );
     const [careerId, setCareerId] = useState('');
     const [courseId, setCourseId] = useState('');
+    const isSuperAdmin = Boolean(user?.isSuperAdmin || user?.roles?.includes('SUPER_ADMIN'));
+    const [institutionId, setInstitutionId] = useState(String(user?.institutionId || ''));
+    const { data: institutions = [] } = useInstitutions();
 
-    const { data: careers } = useCareers(user?.institutionId);
+    const { data: careers } = useCareers(institutionId);
     const { data: courses } = useCoursesByCareer(careerId);
 
     const availableRoles = isOnlyTeacher
         ? ['STUDENT']
         : ['DIRECTOR', 'PRECEPTOR', 'TEACHER', 'STUDENT'];
 
-    const requiresCourse =
-        role === 'STUDENT' && isOnlyTeacher;
+    const requiresCourse = role === 'STUDENT';
 
     useEffect(() => {
         const handleEscape = (event) => {
@@ -131,11 +134,12 @@ function InviteForm({ onSubmit, onClose, isSaving, error }) {
         event.preventDefault();
 
         if (isSaving) return;
-        if (requiresCourse && !courseId) return;
+        if (!institutionId || (requiresCourse && !courseId)) return;
 
         onSubmit({
             email: email.trim(),
             role,
+            institutionId: Number(institutionId),
             ...(requiresCourse ? { courseId } : {}),
         });
     };
@@ -190,6 +194,15 @@ function InviteForm({ onSubmit, onClose, isSaving, error }) {
 
                 {/* CAMPOS */}
                 <div className="max-h-[65vh] space-y-5 overflow-y-auto px-6 py-6">
+                    {isSuperAdmin && <div>
+                        <label htmlFor="invite-institution" className={labelClass}>Institución de destino <span className="text-blue-400">*</span></label>
+                        <select id="invite-institution" value={institutionId} required disabled={isSaving}
+                            onChange={event => { setInstitutionId(event.target.value); setCareerId(''); setCourseId(''); }}
+                            className={`${inputClass} cursor-pointer`}>
+                            <option value="">Seleccioná una institución</option>
+                            {institutions.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}
+                        </select>
+                    </div>}
                     <div>
                         <label htmlFor="invite-role" className={labelClass}>
                             Rol de la persona
@@ -385,7 +398,7 @@ function InviteForm({ onSubmit, onClose, isSaving, error }) {
 
                     <button
                         type="submit"
-                        disabled={isSaving || (requiresCourse && !courseId)}
+                        disabled={isSaving || !institutionId || (requiresCourse && !courseId)}
                         className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {isSaving ? (
@@ -591,7 +604,7 @@ export default function InvitationsListView() {
                     return (
                         <div
                             key={stat.label}
-                            className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg shadow-black/5"
+                            className="eq-glass-card rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg shadow-black/5"
                         >
                             <div className="flex items-center justify-between gap-2">
                                 <span className="text-sm font-medium text-slate-400">
@@ -613,7 +626,7 @@ export default function InvitationsListView() {
             </div>
 
             {/* LISTADO */}
-            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/95 shadow-xl shadow-black/10">
+            <div className="eq-glass-table overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/95 shadow-xl shadow-black/10">
                 {/* FILTROS */}
                 <div className="border-b border-slate-800 p-5 sm:p-6">
                     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">

@@ -11,13 +11,16 @@ import { AuthContext } from '../context/AuthContext';
 
 import LoginView from '../views/LoginView';
 import StudentRegisterView from '../views/StudentRegisterView';
+import StaffRegisterView from '../views/StaffRegisterView';
+import VerifyEmailView from '../views/VerifyEmailView';
+import StaffSignupRequestsView from '../views/StaffSignupRequestsView';
+import InstitutionDirectoryView from '../views/InstitutionDirectoryView';
 import ForgotPasswordView from '../views/ForgotPasswordView';
 import ResetPasswordView from '../views/ResetPasswordView';
 import DashboardView from '../views/DashBoardView';
 import DashboardLayout from '../layouts/DashboardLayout';
 
 import UsersListView from '../views/UsersListView';
-import StudentSignupRequestsView from '../views/StudentSignupRequestsView';
 import InvitationsListView from '../views/InvitationListView';
 import AcceptInvitationView from '../views/AcceptInvitationView';
 import ProfileView from '../views/ProfileView';
@@ -72,6 +75,8 @@ export default function AppRoutes() {
         <BrowserRouter>
             <Routes>
                 <Route path="/registro-alumno" element={<StudentRegisterView />} />
+                <Route path="/registro-personal" element={<StaffRegisterView />} />
+                <Route path="/verificar-correo" element={<VerifyEmailView />} />
                 <Route path="/olvide-contrasena" element={<ForgotPasswordView />} />
                 <Route path="/restablecer-contrasena" element={<ResetPasswordView />} />
                 <Route
@@ -104,6 +109,7 @@ export default function AppRoutes() {
                     />
 
                     <Route path="institution-communications" element={<InstitutionCommunicationsView />} />
+                    <Route path="directory" element={<InstitutionDirectoryView />} />
 
                     <Route
                         path="early-notices"
@@ -122,10 +128,10 @@ export default function AppRoutes() {
                         }
                     />
 
-                    <Route
-                        path="students/requests"
-                        element={<RoleRoute action="selfSignup:approve"><StudentSignupRequestsView /></RoleRoute>}
-                    />
+                    <Route path="staff/requests" element={<RoleRoute action="selfSignup:approve"><StaffSignupRequestsView /></RoleRoute>} />
+
+                    {/* La aprobación manual de alumnos fue retirada: solo verificación de correo. */}
+                    <Route path="students/requests" element={<Navigate to="/dashboard/students" replace />} />
 
                     <Route
                         path="teachers"
