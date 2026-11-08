@@ -90,7 +90,9 @@ export const sendEarlyNoticeEmail = ({ to, title, message, notificationType, not
     course: item.teacherSubject?.course?.nombre || notice?.course?.nombre || 'Curso no especificado',
   }));
   const summary = `${kind} del docente ${teacher}. Período: ${period}. ${rows.length} clase${rows.length === 1 ? '' : 's'} afectada${rows.length === 1 ? '' : 's'}.`;
-  const caution = (status === 'ESPERANDO CONFIRMACIÓN DEL DOCENTE' || (status === 'ACTUALIZACIÓN' && notice?.status === 'PENDING'))
+  const wasPendingUpdate = notificationType === 'EARLY_NOTICE_UPDATED'
+    && String(message || '').includes('PENDIENTE DE CONFIRMACIÓN DOCENTE');
+  const caution = (status === 'ESPERANDO CONFIRMACIÓN DEL DOCENTE' || wasPendingUpdate)
     ? 'INFORMACIÓN PROVISORIA: el docente todavía no confirmó el aviso. Las clases continúan oficialmente programadas hasta su confirmación.'
     : status === 'RECHAZADO' ? 'El docente rechazó el aviso. Las clases continúan según el horario oficial.' : '';
   // El motivo puede contener datos médicos o personales. No se incluye en correos a estudiantes.

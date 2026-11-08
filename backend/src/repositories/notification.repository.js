@@ -57,15 +57,55 @@ export const notificationRepository = {
             return recipients.length;
         });
     },
+    // Una entrada visible por aviso temprano. Las notificaciones de cada revisión
+    // permanecen en la base para auditar entregas sin duplicarse en el listado.
+    // Para comunicaciones institucionales u otros eventos se conserva el comportamiento previo.
     listForUser(userId, { skip, take }) {
-        return prisma.notification.findMany({
-            where: { userId }, orderBy: { createdAt: 'desc' }, skip, take,
-            select: { id: true, type: true, title: true, message: true,
-                isRead: true, readAt: true, createdAt: true, earlyNoticeId: true, institutionEventId: true, revision: true },
-        });
+        return prisma.$queryRaw`
+            WITH ranked AS (
+                SELECT n."id", n."type", n."title", n."message", n."isRead",
+                       n."readAt", n."createdAt", n."earlyNoticeId",
+                       n."institutionEventId", n."revision",
+                       e."status"::text AS "noticeStatus",
+                       ROW_NUMBER() OVER (
+                         PARTITION BY CASE
+                           WHEN n."earlyNoticeId" IS NOT NULL
+                             THEN 'early:' || n."earlyNoticeId"::text
+                           ELSE 'event:' || n."id"::text
+                         END
+                         ORDER BY n."createdAt" DESC, n."id" DESC
+                       ) AS row_num
+                  FROM "Notification" n
+                  LEFT JOIN "EarlyNotice" e ON e."id" = n."earlyNoticeId"
+                 WHERE n."userId" = ${userId}
+            )
+            SELECT "id", "type"::text AS "type", "title", "message", "isRead",
+                   "readAt", "createdAt", "earlyNoticeId", "institutionEventId",
+                   "revision", "noticeStatus"
+              FROM ranked
+             WHERE row_num = 1
+             ORDER BY "createdAt" DESC, "id" DESC
+             LIMIT ${take} OFFSET ${skip}
+        `;
     },
-    countUnread(userId) {
-        return prisma.notification.count({ where: { userId, isRead: false } });
+    async countUnread(userId) {
+        const results = await prisma.$queryRaw`
+          WITH ranked AS (
+              SELECT n."isRead", ROW_NUMBER() OVER (
+                PARTITION BY CASE
+                  WHEN n."earlyNoticeId" IS NOT NULL
+                    THEN 'early:' || n."earlyNoticeId"::text
+                  ELSE 'event:' || n."id"::text
+                END
+                ORDER BY n."createdAt" DESC, n."id" DESC
+              ) AS row_num
+              FROM "Notification" n
+              WHERE n."userId" = ${userId}
+          )
+          SELECT COUNT(*)::integer AS count
+          FROM ranked WHERE row_num = 1 AND "isRead" = false
+        `;
+        return Number(results[0]?.count || 0);
     },
     markRead(userId, id) {
         return prisma.notification.updateMany({

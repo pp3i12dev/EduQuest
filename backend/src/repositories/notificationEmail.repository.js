@@ -49,13 +49,6 @@ export const notificationEmailRepository = {
     });
   },
 
-  cancelPendingForNotice(earlyNoticeId) {
-    return getPrisma().notificationDelivery.updateMany({
-      where: { channel: 'EMAIL', status: 'PENDING', notification: { earlyNoticeId, type: 'EARLY_NOTICE_PENDING' } },
-      data: { status: 'CANCELLED', lastError: 'Aviso resuelto antes del envío del correo provisional' },
-    });
-  },
-
   markSent(id, messageId) {
     return getPrisma().notificationDelivery.updateMany({
       where: { id, status: 'PROCESSING' },

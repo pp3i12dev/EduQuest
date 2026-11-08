@@ -126,6 +126,13 @@ export const earlyNoticeService = {
         return request(`/early-notices/${id}/history`, token, { method: 'DELETE' });
     },
 
+    deleteHistoryBatch(token, ids) {
+        return request('/early-notices/history/bulk', token, {
+            method: 'DELETE',
+            body: JSON.stringify({ ids }),
+        });
+    },
+
     getHistory(token, id) {
         return request(`/early-notices/${id}/history`, token);
     },

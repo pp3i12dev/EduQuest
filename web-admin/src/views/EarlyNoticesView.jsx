@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 
 import { useContext, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { earlyNoticeService } from '../services/earlyNotice.service';
 import {
     AlertCircle,
@@ -13,6 +14,7 @@ import {
     Eye,
     Pencil,
     Plus,
+    RefreshCw,
     Search,
     X,
     XCircle,
@@ -32,6 +34,7 @@ import {
 
 import EarlyNoticeFormModal from '../components/EarlyNoticeFormModal';
 import EarlyNoticeNotifications from '../components/EarlyNoticeNotifications';
+import NoticeConfirmModal from '../components/NoticeConfirmModal';
 
 const STATUS = {
     CONFIRMED: {
@@ -586,6 +589,7 @@ export default function EarlyNoticesView({
     currentUser: userProp,
 }) {
     const auth = useContext(AuthContext);
+    const queryClient = useQueryClient();
 
     const token = tokenProp ?? auth?.token;
     const currentUser = userProp ?? auth?.user;
@@ -594,6 +598,11 @@ export default function EarlyNoticesView({
     const [status, setStatus] = useState('');
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
+    const [selectedHistoryIds, setSelectedHistoryIds] = useState([]);
+    const [deletingHistory, setDeletingHistory] = useState(false);
+    const [pendingAction, setPendingAction] = useState(null);
+    const [pendingActionBusy, setPendingActionBusy] = useState(false);
+    const [pendingActionError, setPendingActionError] = useState('');
 
     const [selectedNotice, setSelectedNotice] = useState(null);
     const [editingNotice, setEditingNotice] = useState(null);
@@ -630,9 +639,11 @@ export default function EarlyNoticesView({
     const {
         data,
         isLoading,
+        isFetching,
+        refetch,
         error,
     } = useEarlyNotices(token, {
-        status: isStudentOnly ? 'CONFIRMED' : status,
+        status,
         mode,
         page,
         limit: 20,
@@ -683,7 +694,30 @@ export default function EarlyNoticesView({
             )
         );
 
-    const canDeleteHistory = (isSuperAdmin || roles.includes('DIRECTOR')) && mode === 'history';
+    const canDeleteHistory = isAuthority && mode === 'history';
+    const visibleHistoryIds = canDeleteHistory ? filtered.map(item => item.id) : [];
+    const allVisibleSelected = visibleHistoryIds.length > 0 && visibleHistoryIds.every(id => selectedHistoryIds.includes(id));
+    const toggleHistorySelection = (id) => setSelectedHistoryIds(old =>
+        old.includes(id) ? old.filter(value => value !== id) : [...old, id]
+    );
+    const toggleVisibleHistory = () => setSelectedHistoryIds(old => {
+        if (allVisibleSelected) return old.filter(id => !visibleHistoryIds.includes(id));
+        return [...new Set([...old, ...visibleHistoryIds])];
+    });
+
+    useEffect(() => {
+        setSelectedHistoryIds([]);
+    }, [mode, status, search, page]);
+
+    // Si se confirma el aviso mientras está abierto el detalle, actualizar el mismo registro.
+    useEffect(() => {
+        setSelectedNotice(current => {
+            if (!current) return current;
+            const latest = getNoticeList(data).find(item => item.id === current.id);
+            return latest && (latest.status !== current.status || latest.updatedAt !== current.updatedAt)
+                ? latest : current;
+        });
+    }, [data]);
 
     const canDeactivate = (notice) =>
         isAuthority && mode === 'active' &&
@@ -748,7 +782,13 @@ export default function EarlyNoticesView({
                     'El aviso se creó correctamente.'
                 );
 
+                // Aunque se haya abierto el formulario desde Historial o con
+                // filtro Confirmados, mostrar ahora el nuevo aviso PENDIENTE.
+                setMode('active');
+                setStatus('');
+                setSearch('');
                 setPage(1);
+                await queryClient.invalidateQueries({ queryKey: ['early-notices'], refetchType: 'all' });
             }
 
             setFormOpen(false);
@@ -798,43 +838,63 @@ export default function EarlyNoticesView({
         }
     };
 
-    const handleDeactivate = async (notice) => {
-        if (
-            !window.confirm(
-                '¿Desactivar este aviso? El registro se conservará.'
-            )
-        ) {
-            return;
-        }
-
-        try {
-            clearMessages();
-
-            await actions.deactivate.mutateAsync(notice.id);
-
-            setActionSuccess(
-                'El aviso fue desactivado correctamente.'
-            );
-        } catch (err) {
-            setActionError(
-                getErrorMessage(
-                    err,
-                    'No se pudo desactivar el aviso.'
-                )
-            );
-        }
+    const askNoticeAction = (action) => {
+        if (isBusy || deletingHistory || pendingActionBusy) return;
+        clearMessages();
+        setPendingActionError('');
+        setPendingAction(action);
     };
 
-    const handleDeleteHistory = async (notice) => {
-        if (!window.confirm('¿Eliminar este aviso del historial? No se podrá recuperar desde la interfaz.')) return;
+    const closeNoticeAction = () => {
+        if (pendingActionBusy) return;
+        setPendingAction(null);
+        setPendingActionError('');
+    };
+
+    const handleDeactivate = (notice) => {
+        askNoticeAction({ kind: 'deactivate', notice });
+    };
+
+    const handleDeleteHistory = (notice) => {
+        askNoticeAction({ kind: 'deleteOne', notice });
+    };
+
+    const handleDeleteHistorySelected = () => {
+        if (!canDeleteHistory || !selectedHistoryIds.length || deletingHistory) return;
+        const ids = selectedHistoryIds.filter(id => visibleHistoryIds.includes(id));
+        if (ids.length) askNoticeAction({ kind: 'deleteMany', ids });
+    };
+
+    const confirmNoticeAction = async () => {
+        if (!pendingAction || pendingActionBusy) return;
+        const action = pendingAction;
+        setPendingActionBusy(true);
+        setPendingActionError('');
+        const deleting = action.kind !== 'deactivate';
+        if (deleting) setDeletingHistory(true);
         try {
             clearMessages();
-            await earlyNoticeService.deleteHistory(token, notice.id);
-            setActionSuccess('Aviso eliminado del historial.');
-            // La lista se actualiza sin modificar las notificaciones antiguas.
-            window.location.reload();
+            if (action.kind === 'deactivate') {
+                await actions.deactivate.mutateAsync(action.notice.id);
+                setActionSuccess('El aviso fue desactivado correctamente.');
+            } else if (action.kind === 'deleteOne') {
+                await earlyNoticeService.deleteHistory(token, action.notice.id);
+                setSelectedHistoryIds(old => old.filter(id => id !== action.notice.id));
+                await queryClient.invalidateQueries({ queryKey: ['early-notices'] });
+                setActionSuccess('Aviso eliminado del historial.');
+            } else if (action.kind === 'deleteMany') {
+                const result = await earlyNoticeService.deleteHistoryBatch(token, action.ids);
+                setSelectedHistoryIds([]);
+                setPage(1);
+                await queryClient.invalidateQueries({ queryKey: ['early-notices'] });
+                setActionSuccess(`${result?.deletedCount ?? action.ids.length} avisos eliminados del historial.`);
+            }
+            setPendingAction(null);
         } catch (err) {
-            setActionError(getErrorMessage(err, 'No se pudo eliminar del historial.'));
+            setPendingActionError(getErrorMessage(err, 'No se pudo completar la operación.'));
+        } finally {
+            if (deleting) setDeletingHistory(false);
+            setPendingActionBusy(false);
         }
     };
 
@@ -898,16 +958,16 @@ export default function EarlyNoticesView({
                 />
 
                 <p className="text-sm leading-relaxed text-blue-100/90">
-                    Los avisos confirmados son los válidos para
-                    informar a los alumnos. Los avisos pendientes
-                    requieren confirmación del docente responsable.
+                    Los avisos pendientes se comunican como información provisoria:
+                    el docente todavía debe confirmarlos. El estado del mismo aviso
+                    se actualiza cuando el docente confirma o rechaza.
                 </p>
             </div>
 
             <div className="flex gap-2 rounded-xl border border-slate-800 bg-slate-900 p-2" role="tablist" aria-label="Vigencia de avisos">
                 {[['active', 'Vigentes'], ['history', 'Historial']].map(([value, label]) => (
                     <button key={value} type="button" role="tab" aria-selected={mode === value}
-                        onClick={() => { setMode(value); setPage(1); setSelectedNotice(null); }}
+                        onClick={() => { setMode(value); setPage(1); setSelectedNotice(null); setSelectedHistoryIds([]); }}
                         className={`cursor-pointer rounded-lg px-5 py-2 text-sm font-semibold ${mode === value ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>
                         {label}
                     </button>
@@ -988,9 +1048,31 @@ export default function EarlyNoticesView({
                         </p>
                     </div>
 
-                    <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300">
-                        {filtered.length} en esta página
-                    </span>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <button type="button" onClick={() => void refetch()}
+                            disabled={isFetching} aria-label="Actualizar listado de avisos"
+                            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:bg-slate-800 disabled:cursor-wait disabled:opacity-50">
+                            <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />
+                            {isFetching ? 'Actualizando…' : 'Actualizar'}
+                        </button>
+                        {canDeleteHistory && (
+                            <>
+                                <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-slate-300">
+                                    <input type="checkbox" checked={allVisibleSelected} disabled={!visibleHistoryIds.length || deletingHistory}
+                                        onChange={toggleVisibleHistory} className="h-4 w-4 accent-blue-500" />
+                                    Seleccionar todos en esta página
+                                </label>
+                                <button type="button" onClick={handleDeleteHistorySelected}
+                                    disabled={!selectedHistoryIds.length || deletingHistory}
+                                    className="cursor-pointer rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40">
+                                    {deletingHistory ? 'Eliminando…' : `Eliminar seleccionados (${selectedHistoryIds.length})`}
+                                </button>
+                            </>
+                        )}
+                        <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300">
+                            {filtered.length} en esta página
+                        </span>
+                    </div>
                 </div>
 
                 {/* MÓVIL */}
@@ -1016,6 +1098,14 @@ export default function EarlyNoticesView({
                                 key={notice.id}
                                 className="eq-glass-card min-w-0 rounded-xl border border-slate-700/70 bg-slate-800/40 p-4"
                             >
+                                {canDeleteHistory && (
+                                    <label className="mb-3 inline-flex cursor-pointer items-center gap-2 text-xs text-slate-300">
+                                        <input type="checkbox" checked={selectedHistoryIds.includes(notice.id)}
+                                            onChange={() => toggleHistorySelection(notice.id)}
+                                            className="h-4 w-4 accent-blue-500" />
+                                        Seleccionar aviso #{notice.id}
+                                    </label>
+                                )}
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div className="min-w-0 flex-1">
                                         <h3 className="break-words font-semibold text-white">
@@ -1098,15 +1188,17 @@ export default function EarlyNoticesView({
                 <div className="hidden min-w-0 overflow-x-auto md:block">
                     <table className="w-full min-w-[850px] table-fixed text-left text-sm">
                         <colgroup>
-                            <col className="w-[15%]" />
-                            <col className="w-[23%]" />
+                            {canDeleteHistory && <col className="w-[5%]" />}
+                            <col className="w-[14%]" />
+                            <col className="w-[22%]" />
                             <col className="w-[18%]" />
                             <col className="w-[15%]" />
-                            <col className="w-[29%]" />
+                            <col className={canDeleteHistory ? 'w-[26%]' : 'w-[31%]'} />
                         </colgroup>
 
                         <thead className="bg-slate-950/50">
                             <tr className="border-b border-slate-800">
+                                {canDeleteHistory && <th scope="col" className="px-3 py-4 text-xs text-slate-400">Sel.</th>}
                                 {[
                                     'Estado',
                                     'Docente / Materia',
@@ -1129,7 +1221,7 @@ export default function EarlyNoticesView({
                             {isLoading && (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={canDeleteHistory ? 6 : 5}
                                         className="px-6 py-14 text-center"
                                     >
                                         <Loader2
@@ -1147,7 +1239,7 @@ export default function EarlyNoticesView({
                                 filtered.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={5}
+                                            colSpan={canDeleteHistory ? 6 : 5}
                                             className="px-6 py-14 text-center text-slate-500"
                                         >
                                             No se encontraron avisos.
@@ -1161,6 +1253,14 @@ export default function EarlyNoticesView({
                                         key={notice.id}
                                         className="align-middle transition-colors hover:bg-slate-800/40"
                                     >
+                                        {canDeleteHistory && (
+                                            <td className="px-3 py-5">
+                                                <input type="checkbox" checked={selectedHistoryIds.includes(notice.id)}
+                                                    onChange={() => toggleHistorySelection(notice.id)}
+                                                    aria-label={`Seleccionar aviso ${notice.id}`}
+                                                    className="h-4 w-4 cursor-pointer accent-blue-500" />
+                                            </td>
+                                        )}
                                         <td className="px-3 py-5">
                                             <StatusBadge
                                                 status={notice.status}
@@ -1279,6 +1379,32 @@ export default function EarlyNoticesView({
                     </form>
                 </div>, document.body
             )}
+
+            {/* Confirmación con modal para desactivar, eliminar uno o varios avisos. */}
+            <NoticeConfirmModal
+                open={Boolean(pendingAction)}
+                title={pendingAction?.kind === 'deactivate'
+                    ? 'Desactivar aviso temprano'
+                    : pendingAction?.kind === 'deleteMany'
+                        ? `Eliminar ${pendingAction.ids.length} avisos del historial`
+                        : 'Eliminar aviso del historial'}
+                description={pendingAction?.kind === 'deactivate'
+                    ? '¿Querés desactivar este aviso? Dejará de estar vigente, pero el registro se conservará en el historial.'
+                    : 'Esta acción retirará los avisos seleccionados del historial visible. No se podrán recuperar desde la interfaz.'}
+                subject={pendingAction?.notice
+                    ? `Aviso #${pendingAction.notice.id} · ${TYPES[pendingAction.notice.type] || pendingAction.notice.type} · ${noticePeriod(pendingAction.notice)}`
+                    : pendingAction?.ids?.length
+                        ? `${pendingAction.ids.length} avisos seleccionados en esta página`
+                        : ''}
+                confirmLabel={pendingAction?.kind === 'deactivate'
+                    ? 'Desactivar aviso'
+                    : pendingAction?.kind === 'deleteMany' ? 'Eliminar seleccionados' : 'Eliminar aviso'}
+                tone={pendingAction?.kind === 'deactivate' ? 'warning' : 'danger'}
+                busy={pendingActionBusy}
+                error={pendingActionError}
+                onCancel={closeNoticeAction}
+                onConfirm={confirmNoticeAction}
+            />
 
             {/* MODALES */}
             <NoticeDetails

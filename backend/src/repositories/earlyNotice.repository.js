@@ -559,6 +559,34 @@ export const earlyNoticeRepository = {
         }).then(normalizeNotice);
     },
 
+    async bulkSoftDeleteHistory(ids, updatedById, institutionId, futureFilter) {
+        // Validar y actualizar en una sola transacción: o se borran todos o ninguno.
+        const where = {
+            id: { in: ids },
+            deletedAt: null,
+            ...(institutionId ? { institutionId } : {}),
+            OR: [{ isActive: false }, { NOT: futureFilter }],
+        };
+        return prisma.$transaction(async (tx) => {
+            const eligible = await tx.earlyNotice.count({ where });
+            if (eligible !== ids.length) {
+                const error = new Error('Hay avisos que no pertenecen a tu institución, están eliminados o siguen vigentes. No se eliminó ninguno.');
+                error.status = 409;
+                throw error;
+            }
+            const result = await tx.earlyNotice.updateMany({
+                where,
+                data: { deletedAt: new Date(), isActive: false, updatedById },
+            });
+            if (result.count !== ids.length) {
+                const error = new Error('El historial cambió durante la operación. No se eliminó ninguno.');
+                error.status = 409;
+                throw error;
+            }
+            return { deletedCount: result.count };
+        });
+    },
+
     count(where) {
         return prisma.earlyNotice.count({
             where,

@@ -624,17 +624,10 @@ export const earlyNoticeService = {
         }
 
         if (isStudentOnly(user)) {
-            if (
-                query.status &&
-                query.status !== 'CONFIRMED'
-            ) {
-                fail(
-                    403,
-                    'Los estudiantes solo pueden consultar avisos confirmados'
-                );
-            }
-
-            where.status = 'CONFIRMED';
+            // El alumnado ve los avisos de sus cursos en todas sus etapas.
+            // Los PENDING son provisorios y los REJECTED informan la rectificación.
+            // Se conserva estrictamente el filtro por matrícula, sin exponer
+            // avisos de cursos ajenos.
             where.OR = [
                 { course: { students: { some: { student: { userId: user.id } } } } },
                 { affectedClasses: { some: { teacherSubject: { course: { students: { some: { student: { userId: user.id } } } } } } } },
@@ -1071,8 +1064,8 @@ export const earlyNoticeService = {
      */
     async deleteHistory(jwtUser, id) {
         const user = await getContext(jwtUser);
-        if (!user.isSuperAdmin && !user.roles.includes('DIRECTOR')) {
-            fail(403, 'Solo un directivo o superusuario puede eliminar historial');
+        if (!isAuthority(user)) {
+            fail(403, 'Solo una autoridad puede eliminar historial');
         }
         const notice = await loadNotice(user, id);
         if (notice.deletedAt) fail(404, 'Aviso no encontrado');
@@ -1080,6 +1073,19 @@ export const earlyNoticeService = {
         const activeCount = await repo.count({ id: notice.id, isActive: true, ...future });
         if (activeCount) fail(409, 'El aviso todavía está vigente');
         return repo.softDeleteHistory(notice.id, user.id);
+    },
+
+    async deleteHistoryBatch(jwtUser, body) {
+        const user = await getContext(jwtUser);
+        if (!isAuthority(user)) fail(403, 'Solo una autoridad puede eliminar historial');
+        if (!Array.isArray(body?.ids) || !body.ids.length || body.ids.length > 100) {
+            fail(400, 'Seleccioná entre 1 y 100 avisos del historial');
+        }
+        const ids = body.ids.map((id) => integer(id, 'id'));
+        if (new Set(ids).size !== ids.length) fail(400, 'No repitas avisos');
+        return repo.bulkSoftDeleteHistory(
+            ids, user.id, user.isSuperAdmin ? null : user.institutionId, futureClassFilter()
+        );
     },
 
     async deactivate(jwtUser, id) {

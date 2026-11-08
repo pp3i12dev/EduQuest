@@ -3,6 +3,17 @@ import { Bell, Check, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { notificationApi } from '../services/notification.service';
 import { NOTIFICATIONS_CHANGED, notifyNotificationsChanged } from '../hooks/useNotifications';
 
+const noticeStatusText = {
+    PENDING: 'Pendiente de confirmación',
+    CONFIRMED: 'Confirmado',
+    REJECTED: 'Rechazado',
+};
+const noticeStatusStyle = {
+    PENDING: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+    CONFIRMED: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+    REJECTED: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
+};
+
 const dateFormatter = new Intl.DateTimeFormat('es-AR', {
     dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Argentina/Buenos_Aires',
 });
@@ -30,7 +41,7 @@ export default function EarlyNoticeNotifications({ enabled = true }) {
     useEffect(() => {
         if (!enabled) return;
         load();
-        const timer = window.setInterval(() => load(), 30000);
+        const timer = window.setInterval(() => load(), 10000);
         const refresh = () => load();
         window.addEventListener('focus', refresh);
         window.addEventListener(NOTIFICATIONS_CHANGED, refresh);
@@ -82,10 +93,23 @@ export default function EarlyNoticeNotifications({ enabled = true }) {
                         <article key={item.id} className={`flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start sm:justify-between ${!item.isRead ? 'bg-blue-500/5' : ''}`}>
                             <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <p className="text-sm font-semibold text-slate-100">{item.title}</p>
+                                    <p className="text-sm font-semibold text-slate-100">
+                                        {item.earlyNoticeId && item.noticeStatus
+                                            ? `Aviso temprano #${item.earlyNoticeId}`
+                                            : item.title}
+                                    </p>
+                                    {item.earlyNoticeId && noticeStatusText[item.noticeStatus] && (
+                                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${noticeStatusStyle[item.noticeStatus]}`}>
+                                            {noticeStatusText[item.noticeStatus]}
+                                        </span>
+                                    )}
                                     {!item.isRead && <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-semibold text-blue-300">Nueva</span>}
                                 </div>
-                                <p className="mt-1 whitespace-pre-wrap text-sm text-slate-300">{item.message}</p>
+                                <p className="mt-1 whitespace-pre-wrap text-sm text-slate-300">
+                                    {item.earlyNoticeId && item.noticeStatus === 'CONFIRMED' && item.message?.includes('PENDIENTE DE CONFIRMACIÓN DOCENTE.')
+                                        ? item.message.replace('PENDIENTE DE CONFIRMACIÓN DOCENTE. Las clases siguen programadas hasta confirmación.', 'Aviso confirmado por el docente responsable.')
+                                        : item.message}
+                                </p>
                                 <p className="mt-2 text-xs text-slate-500">{item.createdAt ? dateFormatter.format(new Date(item.createdAt)) : ''}</p>
                             </div>
                             {!item.isRead && (
