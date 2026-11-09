@@ -38,3 +38,38 @@ export function sharedDirectoryContact(user, viewerRoles = []) {
     telefono: allows(user.directoryPhoneRoles) ? (effective.phone || null) : null,
   };
 }
+
+
+/**
+ * Restringe el directorio a personas con al menos un contacto compartido
+ * expresamente con alguno de los roles del visitante. Se aplica en Prisma
+ * ANTES de count/skip/take: no revela presencia ni altera la paginación.
+ *
+ * Los campos NULL corresponden a cuentas antiguas y usan su dato de registro;
+ * una cadena vacía significa que el titular borró el dato a propósito.
+ * IMPORTANTE: ni siquiera SUPER_ADMIN puede ignorar estos permisos.
+ */
+export function visibleDirectoryContactWhere(viewerRoles = []) {
+  const allowedRoles = ['SUPER_ADMIN', 'DIRECTOR', 'PRECEPTOR', 'TEACHER', 'STUDENT'];
+  const roles = [...new Set((Array.isArray(viewerRoles) ? viewerRoles : [])
+    .filter(role => allowedRoles.includes(role)))];
+  if (!roles.length) return { id: { in: [] } };
+  return {
+    OR: [
+      {
+        directoryEmailRoles: { hasSome: roles },
+        OR: [
+          { directoryContactEmail: { notIn: [''] } },
+          { directoryContactEmail: null, email: { not: '' } },
+        ],
+      },
+      {
+        directoryPhoneRoles: { hasSome: roles },
+        OR: [
+          { directoryContactPhone: { notIn: [''] } },
+          { directoryContactPhone: null, telefono: { not: '' } },
+        ],
+      },
+    ],
+  };
+}

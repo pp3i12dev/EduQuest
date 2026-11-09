@@ -1,5 +1,5 @@
 import { getPrisma } from '../config/prisma.js';
-import { effectiveDirectoryContact, normalizeDirectoryEmail, normalizeDirectoryPhone, sharedDirectoryContact } from '../utils/directoryContact.js';
+import { effectiveDirectoryContact, normalizeDirectoryEmail, normalizeDirectoryPhone, sharedDirectoryContact, visibleDirectoryContactWhere } from '../utils/directoryContact.js';
 
 const STAFF = ['DIRECTOR', 'PRECEPTOR', 'TEACHER'];
 const PRIVACY_ROLES = new Set(['SUPER_ADMIN', 'DIRECTOR', 'PRECEPTOR', 'TEACHER', 'STUDENT']);
@@ -44,11 +44,25 @@ export async function getDirectoryService(requester, query = {}) {
     where[key] = { isNot: null };
   }
   if (search) {
-    // Nunca permitimos buscar por email ni teléfono ocultos.
+    // Nunca buscar por correo/teléfono: solo nombre o asignaciones académicas
+    // ACTIVAS de docentes de esta institución.
     const words = search.split(/\s+/).filter(Boolean).slice(0, 5);
+    const academicTerm = word => ({ contains: word, mode: 'insensitive' });
+    const activeAssignment = { isActive: true,
+      subject: { institutionId, isActive: true, deletedAt: null },
+      course: { institutionId } };
     where.AND = words.map(word => ({ OR: [
-      { firstName: { contains: word, mode: 'insensitive' } },
-      { lastName: { contains: word, mode: 'insensitive' } },
+      { firstName: academicTerm(word) },
+      { lastName: academicTerm(word) },
+      { teacherProfile: { is: { teacherSubjects: { some: {
+        ...activeAssignment, subject: { ...activeAssignment.subject, nombre: academicTerm(word) },
+      } } } } },
+      { teacherProfile: { is: { teacherSubjects: { some: {
+        ...activeAssignment, course: { ...activeAssignment.course, nombre: academicTerm(word) },
+      } } } } },
+      { teacherProfile: { is: { teacherSubjects: { some: {
+        ...activeAssignment, course: { ...activeAssignment.course, career: { is: { nombre: academicTerm(word) } } },
+      } } } } },
     ] }));
   }
   const courseWhere = {};
@@ -56,16 +70,23 @@ export async function getDirectoryService(requester, query = {}) {
   if (courseId) courseWhere.courseId = courseId;
   if (subjectId) courseWhere.subjectId = subjectId;
   if (shift) courseWhere.course = { ...courseWhere.course, shift };
+  const activeTeacherAssignment = { ...courseWhere, isActive: true,
+    subject: { institutionId, isActive: true, deletedAt: null },
+    course: { institutionId, ...(courseWhere.course || {}) } };
   if (careerId || courseId || subjectId) {
-    // Carrera/curso/materia están asociados a asignaciones docentes.
-    where.teacherProfile = { is: { teacherSubjects: { some: { ...courseWhere, isActive: true } } } };
+    // Todos los filtros académicos combinados deben corresponder a la misma asignación.
+    where.teacherProfile = { is: { teacherSubjects: { some: activeTeacherAssignment } } };
   } else if (shift) {
     // El turno sí existe también en el perfil de preceptor.
     where.AND = [...(where.AND || []), { OR: [
-      { teacherProfile: { is: { teacherSubjects: { some: { isActive: true, course: { shift } } } } } },
+      { teacherProfile: { is: { teacherSubjects: { some: activeTeacherAssignment } } } },
       { preceptorProfile: { is: { shift } } },
     ] }];
   }
+  // El consentimiento restringe la CONSULTA, no solo el JSON devuelto.
+  // Así los contactos invisibles tampoco ocupan lugares ni cuentan en el total.
+  const viewerRoles = requester?.roles || [];
+  where.AND = [...(where.AND || []), visibleDirectoryContactWhere(viewerRoles)];
   const db = getPrisma();
   const [rows, total] = await Promise.all([
     db.user.findMany({ where, orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }], skip: (page-1)*size, take: size,
@@ -73,17 +94,34 @@ export async function getDirectoryService(requester, query = {}) {
         directoryContactEmail: true, directoryContactPhone: true,
         directoryEmailRoles: true, directoryPhoneRoles: true,
         directorProfile: { select: { position: true } }, preceptorProfile: { select: { shift: true } },
-        teacherProfile: { select: { specialty: true } },
+        teacherProfile: { select: { specialty: true,
+          teacherSubjects: { where: { isActive: true,
+            subject: { institutionId, isActive: true, deletedAt: null }, course: { institutionId } },
+            select: { id: true, subject: { select: { id: true, nombre: true } },
+              course: { select: { id: true, nombre: true, academicYear: true, shift: true,
+                career: { select: { id: true, nombre: true } } } } },
+          },
+        } },
       } }), db.user.count({ where })
   ]);
   // La privacidad se verifica en el servidor, con roles obtenidos del token autenticado.
   // Ni SUPER_ADMIN bypass ni correo/telefono por búsqueda deben anular el consentimiento.
-  const viewerRoles = requester?.roles || [];
   return { total, page, pageSize: size, items: rows.map(row => ({
     id: row.id, firstName: row.firstName, lastName: row.lastName,
     roles: [row.directorProfile && 'DIRECTOR', row.preceptorProfile && 'PRECEPTOR', row.teacherProfile && 'TEACHER'].filter(Boolean),
     position: row.directorProfile?.position || null, shift: row.preceptorProfile?.shift || null,
     specialty: row.teacherProfile?.specialty || null,
+    academicAssignments: (row.teacherProfile?.teacherSubjects || []).map(assignment => ({
+      id: assignment.id,
+      careerId: assignment.course.career?.id ?? null,
+      careerName: assignment.course.career?.nombre ?? null,
+      courseId: assignment.course.id,
+      courseName: assignment.course.nombre,
+      academicYear: assignment.course.academicYear,
+      shift: assignment.course.shift,
+      subjectId: assignment.subject.id,
+      subjectName: assignment.subject.nombre,
+    })),
     ...sharedDirectoryContact(row, viewerRoles),
   })) };
 }
