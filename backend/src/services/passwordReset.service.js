@@ -19,7 +19,7 @@ export async function requestPasswordReset({ email } = {}) {
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
   await repo.createToken({ userId: user.id, tokenHash, expiresAt });
   try {
-    await sendPasswordResetEmail({ to: user.email, token, expiresAt });
+    await sendPasswordResetEmail({ institutionId: user.institutionId, to: user.email, token, expiresAt });
   } catch (error) {
     await repo.discardToken(tokenHash);
     console.error('[EduQuest reset] Falló el envío de correo:', error.message);

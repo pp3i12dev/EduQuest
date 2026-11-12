@@ -9,6 +9,17 @@ import { getPrisma } from '../config/prisma.js';
 import { getMailSettings } from '../services/serviceConfig.service.js';
 import { getFrontendBaseUrl } from './frontendBaseUrl.js';
 
+// Los enlaces se resuelven exclusivamente desde la URL pública de React (o un
+// origen CORS único), nunca desde headers del cliente ni localhost en producción.
+const frontendLink = (pathname, { required = false } = {}) => {
+  const base = getFrontendBaseUrl();
+  if (!base) {
+    if (required) throw Object.assign(new Error('Configurá FRONTEND_URL o un único CORS_ALLOWED_ORIGINS válido para generar enlaces de acceso.'), { status: 503 });
+    return null;
+  }
+  return new URL(pathname, base).toString();
+};
+
 // No se vuelve a usar SMTP global: cada correo sale por la institución correcta.
 // Para registros y recuperación, el usuario destinatario ya existe y permite resolver su institución.
 async function sendConfiguredMail({ institutionId, to, from: _ignored, ...message }) {
@@ -40,7 +51,7 @@ const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({
 }[c]));
 
 export const sendInvitationEmail = async ({ to, token, role, expiresAt, institutionId }) => {
-  const link = `${process.env.FRONTEND_URL}/aceptar-invitacion/${encodeURIComponent(token)}`;
+  const link = frontendLink(`/aceptar-invitacion/${encodeURIComponent(token)}`, { required: true });
   const roleLabel = ROLE_LABELS[role] ?? role;
   const expires = expiresAt.toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short' });
   return sendConfiguredMail({
@@ -64,7 +75,7 @@ const noticeDate = (value) => value
   : '—';
 
 export const sendEarlyNoticeEmail = ({ to, title, message, notificationType, notice }) => {
-  const url = `${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')}/dashboard/early-notices`;
+  const url = frontendLink('/dashboard/early-notices');
   const status = notificationType === 'EARLY_NOTICE_PENDING' ? 'ESPERANDO CONFIRMACIÓN DEL DOCENTE'
     : notificationType === 'EARLY_NOTICE_CONFIRMED' ? 'CONFIRMADO'
     : notificationType === 'EARLY_NOTICE_REJECTED' ? 'RECHAZADO' : 'ACTUALIZACIÓN';
@@ -98,9 +109,9 @@ export const sendEarlyNoticeEmail = ({ to, title, message, notificationType, not
   // El motivo puede contener datos médicos o personales. No se incluye en correos a estudiantes.
   const generated = notice ? `Generado por ${creatorRole} ${creator} el ${formatDate(notice.createdAt, { dateStyle: 'long', timeStyle: 'short' })}.` : '';
   const lines = rows.map((r) => `${r.date} | ${r.time} | ${r.subject} | ${r.course}`);
-  const text = `${status}\n\n${summary}\n\nClases afectadas:\n${lines.join('\n') || 'Consultar EduQuest'}\n\n${generated}\n${caution}\n\nConsultá EduQuest: ${url}`;
+  const text = `${status}\n\n${summary}\n\nClases afectadas:\n${lines.join('\n') || 'Consultar EduQuest'}\n\n${generated}\n${caution}\n\n${url ? `Consultá EduQuest: ${url}` : 'Consultá el aviso en EduQuest.'}`;
   const tableRows = rows.map((r) => `<tr><td style="padding:10px;border-bottom:1px solid #e2e8f0">${escapeHtml(r.date)}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0">${escapeHtml(r.time)}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0">${escapeHtml(r.subject)}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0">${escapeHtml(r.course)}</td></tr>`).join('');
-  const html = `<div style="background:#f1f5f9;padding:24px 12px;font-family:Arial,sans-serif;color:#0f172a"><div style="max-width:760px;margin:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden"><div style="background:#173c78;padding:22px;color:#fff"><b>EduQuest · Avisos Tempranos</b><h2 style="color:#fff;margin:10px 0 0">${escapeHtml(title)}</h2></div><div style="padding:24px"><div style="background:${background};color:${color};font-weight:bold;font-size:18px;padding:16px;border-radius:8px;text-align:center">${escapeHtml(status)}</div><p style="font-size:16px;line-height:1.7">${escapeHtml(summary)}</p><h3 style="font-size:16px">Clases afectadas (${rows.length})</h3><div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:13px"><thead><tr style="background:#e2e8f0"><th style="padding:10px;text-align:left">Fecha</th><th style="padding:10px;text-align:left">Horario</th><th style="padding:10px;text-align:left">Materia</th><th style="padding:10px;text-align:left">Curso</th></tr></thead><tbody>${tableRows}</tbody></table></div><p style="color:#475569;font-size:13px;line-height:1.6">${escapeHtml(generated)}</p>${caution ? `<p style="color:${color};font-weight:bold">${escapeHtml(caution)}</p>` : ''}<a href="${escapeHtml(url)}" style="display:inline-block;margin-top:14px;padding:12px 18px;background:#173c78;color:white;text-decoration:none;border-radius:7px">Ver aviso en EduQuest</a><p style="color:#64748b;font-size:12px;margin-top:28px">Correo automático de EduQuest.</p></div></div></div>`;
+  const html = `<div style="background:#f1f5f9;padding:24px 12px;font-family:Arial,sans-serif;color:#0f172a"><div style="max-width:760px;margin:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden"><div style="background:#173c78;padding:22px;color:#fff"><b>EduQuest · Avisos Tempranos</b><h2 style="color:#fff;margin:10px 0 0">${escapeHtml(title)}</h2></div><div style="padding:24px"><div style="background:${background};color:${color};font-weight:bold;font-size:18px;padding:16px;border-radius:8px;text-align:center">${escapeHtml(status)}</div><p style="font-size:16px;line-height:1.7">${escapeHtml(summary)}</p><h3 style="font-size:16px">Clases afectadas (${rows.length})</h3><div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:13px"><thead><tr style="background:#e2e8f0"><th style="padding:10px;text-align:left">Fecha</th><th style="padding:10px;text-align:left">Horario</th><th style="padding:10px;text-align:left">Materia</th><th style="padding:10px;text-align:left">Curso</th></tr></thead><tbody>${tableRows}</tbody></table></div><p style="color:#475569;font-size:13px;line-height:1.6">${escapeHtml(generated)}</p>${caution ? `<p style="color:${color};font-weight:bold">${escapeHtml(caution)}</p>` : ''}${url ? `<a href="${escapeHtml(url)}" style="display:inline-block;margin-top:14px;padding:12px 18px;background:#173c78;color:white;text-decoration:none;border-radius:7px">Ver aviso en EduQuest</a>` : ''}<p style="color:#64748b;font-size:12px;margin-top:28px">Correo automático de EduQuest.</p></div></div></div>`;
   const subjectName = rows.length === 1 ? rows[0].subject : `${rows.length} clases afectadas`;
   return sendConfiguredMail({ institutionId: notice?.institutionId, to, subject: `[EduQuest] ${status} — ${subjectName}`, text, html });
 };
@@ -147,22 +158,21 @@ export const sendInstitutionCommunicationEmail = ({ to, title, message, notifica
     `Versión: ${revision || 1}`,
     ...(notificationType === 'EVENT_CANCELLED' ? [`Aviso: ${message || ''}`] : []),
   ];
-  const url = `${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')}/dashboard/institution-communications`;
-  lines.push(`Consultá EduQuest: ${url}`);
+  const url = frontendLink('/dashboard/institution-communications');
+  if (url) lines.push(`Consultá EduQuest: ${url}`);
   const text = lines.join('\n\n');
-  const html = `<div style="background:#eef2f7;padding:24px;font-family:Arial,sans-serif;color:#17253b"><div style="max-width:720px;margin:auto;background:white;border-radius:12px;overflow:hidden;border:1px solid #dbe3ef"><div style="background:#173c78;color:white;padding:22px"><b>EduQuest · ${escapeHtml(institutionName)}</b><h2 style="color:white;margin:12px 0 0">${escapeHtml(action)} · ${escapeHtml(kind)}</h2></div><div style="padding:24px"><h2>${escapeHtml(event.title)}</h2>${lines.slice(3,-1).map(line => `<p style="white-space:pre-wrap;line-height:1.5">${escapeHtml(line)}</p>`).join('')}<p style="margin-top:24px"><a style="display:inline-block;padding:12px 18px;background:#173c78;color:white;border-radius:7px;text-decoration:none" href="${escapeHtml(url)}">Ver en EduQuest</a></p><p style="font-size:12px;color:#64748b">Correo automático institucional.</p></div></div></div>`;
+  const html = `<div style="background:#eef2f7;padding:24px;font-family:Arial,sans-serif;color:#17253b"><div style="max-width:720px;margin:auto;background:white;border-radius:12px;overflow:hidden;border:1px solid #dbe3ef"><div style="background:#173c78;color:white;padding:22px"><b>EduQuest · ${escapeHtml(institutionName)}</b><h2 style="color:white;margin:12px 0 0">${escapeHtml(action)} · ${escapeHtml(kind)}</h2></div><div style="padding:24px"><h2>${escapeHtml(event.title)}</h2>${lines.slice(3, url ? -1 : undefined).map(line => `<p style="white-space:pre-wrap;line-height:1.5">${escapeHtml(line)}</p>`).join('')}${url ? `<p style="margin-top:24px"><a style="display:inline-block;padding:12px 18px;background:#173c78;color:white;border-radius:7px;text-decoration:none" href="${escapeHtml(url)}">Ver en EduQuest</a></p>` : ''}<p style="font-size:12px;color:#64748b">Correo automático institucional.</p></div></div></div>`;
   return sendConfiguredMail({ institutionId: event?.institutionId, to,
     subject: `[EduQuest] ${action} — ${kind}: ${event.title}`, text, html });
 };
 
 // Nunca se envía la contraseña por correo: sólo un enlace de un uso, de 15 minutos.
-export const sendPasswordResetEmail = async ({ to, token, expiresAt }) => {
-  if (!process.env.FRONTEND_URL)
-    throw new Error('Configurá FRONTEND_URL.');
-  const url = new URL('/restablecer-contrasena', process.env.FRONTEND_URL);
+export const sendPasswordResetEmail = async ({ institutionId, to, token, expiresAt }) => {
+  const url = new URL(frontendLink('/restablecer-contrasena', { required: true }));
   url.searchParams.set('token', token);
   const link = url.toString();
   return sendConfiguredMail({
+    institutionId,
     to,
     subject: 'EduQuest: restablecer contraseña',
     text: `Recibimos una solicitud para restablecer tu contraseña.\n\nAbrí este enlace: ${link}\n\nVence en 15 minutos (${expiresAt.toLocaleString('es-AR')}). Si no lo solicitaste, ignorá este correo.`,
@@ -173,18 +183,19 @@ export const sendPasswordResetEmail = async ({ to, token, expiresAt }) => {
 
 // La aprobación/rechazo de una cuenta nueva es un correo informativo; no utiliza
 // plantillas WhatsApp ni incluye contraseñas, tokens o datos académicos sensibles.
-export const sendStudentSignupDecisionEmail = ({ to, name, status, reason }) => {
+export const sendStudentSignupDecisionEmail = ({ institutionId, to, name, status, reason }) => {
   const approved = status === 'APPROVED';
   const title = approved ? 'Tu inscripción fue aprobada' : 'Novedades sobre tu inscripción';
-  const url = `${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')}/login`;
+  const url = frontendLink('/login');
   const message = approved
     ? 'Tu institución aprobó tu solicitud. Ya podés iniciar sesión en EduQuest.'
     : `Tu institución no aprobó tu solicitud. Motivo: ${reason || 'Consultá con la institución'}`;
   return sendConfiguredMail({
+    institutionId,
     to,
     subject: `[EduQuest] ${title}`,
-    text: `Hola, ${name}.\n\n${message}\n\n${approved ? `Ingresá desde: ${url}` : 'Podés contactar a la institución para consultar.'}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;color:#172554"><h2>${escapeHtml(title)}</h2><p>Hola, ${escapeHtml(name)}.</p><p>${escapeHtml(message)}</p>${approved ? `<p><a href="${escapeHtml(url)}">Ingresar a EduQuest</a></p>` : '<p>Consultá con tu institución.</p>'}</div>`,
+    text: `Hola, ${name}.\n\n${message}\n\n${approved ? (url ? `Ingresá desde: ${url}` : 'Ingresá a EduQuest desde el sitio de tu institución.') : 'Podés contactar a la institución para consultar.'}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;color:#172554"><h2>${escapeHtml(title)}</h2><p>Hola, ${escapeHtml(name)}.</p><p>${escapeHtml(message)}</p>${approved ? (url ? `<p><a href="${escapeHtml(url)}">Ingresar a EduQuest</a></p>` : '<p>Ingresá desde el sitio de tu institución.</p>') : '<p>Consultá con tu institución.</p>'}</div>`,
   });
 };
 
@@ -206,13 +217,13 @@ export const sendEmailVerificationEmail = ({ institutionId, to, name, token }) =
   });
 };
 
-export const sendStaffSignupDecisionEmail = ({ to, name, role, status, reason }) => {
+export const sendStaffSignupDecisionEmail = ({ institutionId, to, name, role, status, reason }) => {
   const approved = status === 'APPROVED';
-  const url = `${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')}/login`;
+  const url = frontendLink('/login');
   const content = approved ? `La institución autorizó tu alta como ${ROLE_LABELS[role] || role}. Ya podés ingresar.`
     : `Tu solicitud no fue aprobada. Motivo: ${reason || 'Consultá con la institución.'}`;
-  return sendConfiguredMail({ to,
+  return sendConfiguredMail({ institutionId, to,
     subject: approved ? '[EduQuest] Tu solicitud de personal fue aprobada' : '[EduQuest] Estado de tu solicitud de personal',
-    text: `Hola ${name}.\n\n${content}\n\n${approved ? url : ''}`,
-    html: `<div style="font:16px Arial,sans-serif;padding:24px;max-width:600px;color:#0f172a"><h2>EduQuest · Solicitud de personal</h2><p>Hola ${escapeHtml(name)}.</p><p>${escapeHtml(content)}</p>${approved ? `<a href="${escapeHtml(url)}">Ingresar a EduQuest</a>` : ''}</div>` });
+    text: `Hola ${name}.\n\n${content}\n\n${approved && url ? url : ''}`,
+    html: `<div style="font:16px Arial,sans-serif;padding:24px;max-width:600px;color:#0f172a"><h2>EduQuest · Solicitud de personal</h2><p>Hola ${escapeHtml(name)}.</p><p>${escapeHtml(content)}</p>${approved && url ? `<a href="${escapeHtml(url)}">Ingresar a EduQuest</a>` : ''}</div>` });
 };

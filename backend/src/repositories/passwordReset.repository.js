@@ -2,7 +2,7 @@ import { getPrisma } from '../config/prisma.js';
 
 export const findByEmail = (email) => getPrisma().user.findFirst({
   where: { email: { equals: email, mode: 'insensitive' } },
-  select: { id: true, email: true },
+  select: { id: true, email: true, institutionId: true },
 });
 
 export const createToken = ({ userId, tokenHash, expiresAt }) => getPrisma().$transaction(async (tx) => {

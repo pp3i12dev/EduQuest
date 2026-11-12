@@ -212,7 +212,8 @@ export async function reviewStaffService(requester, { id, decision, reason } = {
     return user;
   });
   if ((await getMailReadiness(approved.institutionId)).ready) {
-    try { await sendStaffSignupDecisionEmail({ to: approved.email, name: approved.firstName,
+    try { await sendStaffSignupDecisionEmail({ institutionId: approved.institutionId,
+      to: approved.email, name: approved.firstName,
       status: choice, role: approved.requestedRole, reason: why }); }
     catch (e) { console.warn('[EduQuest] No se entregó la decisión de personal:', e?.message); }
   }

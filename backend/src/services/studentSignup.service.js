@@ -2,6 +2,7 @@ import { getPrisma } from '../config/prisma.js';
 import { canAnyRole } from '../config/permissions.js';
 import { enqueueWebPushForNotification } from './webPush.service.js';
 import { sendStudentSignupDecisionEmail } from '../utils/mailer.js';
+import { mailConfigured } from './serviceConfig.service.js';
 
 const fail = (message, status = 400) => {
   const error = new Error(message);
@@ -121,17 +122,28 @@ export async function reviewSignupRequests(requester, body, decision) {
   });
   // Correo best-effort: una caída del SMTP nunca revierte aprobaciones confirmadas en DB.
   // No crear suscripción Push para una persona que todavía no puede iniciar sesión.
-  if (process.env.SMTP_HOST && process.env.MAIL_FROM) {
-    for (let i = 0; i < affected.length; i += 5) {
-      const results = await Promise.allSettled(affected.slice(i, i + 5).map(user =>
-        sendStudentSignupDecisionEmail({ to: user.email, name: user.firstName,
-          status: decision, reason })
-      ));
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') console.warn('[EduQuest][Inscripciones] Correo no entregado para usuario',
-          affected[i + index].id, result.reason?.message);
-      });
+  // La decisión se guarda aunque el SMTP institucional esté inhabilitado.
+  // Los correos dependen únicamente de la configuración de cada institución en Neon,
+  // nunca de SMTP_HOST ni MAIL_FROM en el entorno del backend.
+  const mailReadiness = new Map();
+  for (const institutionId of new Set(affected.map(person => person.institutionId))) {
+    try {
+      mailReadiness.set(institutionId, await mailConfigured(institutionId));
+    } catch (error) {
+      mailReadiness.set(institutionId, false);
+      console.warn('[EduQuest][Inscripciones] No se pudo consultar el correo institucional:', institutionId, error?.message);
     }
+  }
+  const recipients = affected.filter(person => mailReadiness.get(person.institutionId));
+  for (let i = 0; i < recipients.length; i += 5) {
+    const results = await Promise.allSettled(recipients.slice(i, i + 5).map(user =>
+      sendStudentSignupDecisionEmail({ institutionId: user.institutionId,
+        to: user.email, name: user.firstName, status: decision, reason })
+    ));
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') console.warn('[EduQuest][Inscripciones] Correo no entregado para usuario',
+        recipients[i + index].id, result.reason?.message);
+    });
   }
   return { processed: affected.length, status: decision, ids };
 }
