@@ -71,4 +71,10 @@ export const notificationRepository = {
             where: { id, userId }, data: { isRead: true, readAt: new Date() },
         });
     },
+    async findTokensByUserIds(userIds) {
+        return prisma.userDevice.findMany({
+            where: { userId: { in: userIds } },
+            select: { token: true },
+        });
+    },
 };

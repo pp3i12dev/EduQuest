@@ -12,15 +12,14 @@ const userIdFromJwt = (jwt) => {
 
 export const notificationService = {
     // Función auxiliar interna para disparar FCM a una lista de usuarios
+    // Función auxiliar interna para disparar FCM a una lista de usuarios
     async _sendPushToUsers(users, title, body, dataPayload = {}) {
         try {
             const userIds = users.map(u => u.id).filter(Boolean);
             if (userIds.length === 0) return;
 
-            const devices = await repo.prisma.userDevice.findMany({
-                where: { userId: { in: userIds } },
-                select: { token: true },
-            });
+            // Llamamos al repositorio en lugar de repo.prisma
+            const devices = await repo.findTokensByUserIds(userIds);
 
             const tokens = devices.map(d => d.token);
             if (tokens.length === 0) return;

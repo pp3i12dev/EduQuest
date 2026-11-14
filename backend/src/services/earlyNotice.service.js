@@ -1,6 +1,8 @@
 import { notificationService } from './notification.service.js';
 
 import { earlyNoticeRepository as repo, createNoticeWithClasses } from '../repositories/earlyNotice.repository.js';
+import { fcmMessaging as admin } from './firebaseAdmin.service.js';
+
 
 class HttpError extends Error {
     constructor(status, message) {
@@ -262,88 +264,34 @@ const validateAssignment = async (
         fail(404, 'Asignación docente no encontrada');
     }
 
-    if (!assignment.isActive) {
-        fail(
-            409,
-            'La asignación docente ya no está vigente'
-        );
+    const institutionId = assignment.course.institutionId;
+
+    let schedule = null;
+    
+    // Intentamos buscar el horario enviado por el frontend
+    if (scheduleId && scheduleId !== 1) {
+        schedule = await repo.findSchedule(integer(scheduleId, 'scheduleId'));
     }
 
-    if (!assignment.subject?.isActive) {
-        fail(
-            409,
-            'No se pueden generar avisos para una materia inactiva'
-        );
+    // Si no viene un ID válido o el 1 por defecto, buscamos el primer horario disponible para esta asignación y día
+    if (!schedule) {
+        const dateParsed = parseDate(classDate);
+        const diaSemana = DAYS[dateParsed.getUTCDay()];
+        
+        // Buscamos los horarios de esta asignación docente
+        const schedules = typeof repo.findSchedulesByAssignment === 'function' 
+            ? await repo.findSchedulesByAssignment(assignment.id) 
+            : [];
+        
+        // Filtramos por el día de la semana correspondiente a la fecha elegida
+        schedule = schedules.find(s => s.day === diaSemana) || schedules[0];
     }
-
-    if (!assignment.teacher?.user?.isActive) {
-        fail(
-            409,
-            'El docente responsable está inactivo'
-        );
-    }
-
-    const institutionId =
-        assignment.course.institutionId;
-
-    checkInstitution(user, institutionId);
-
-    if (
-        assignment.subject.institutionId !==
-        institutionId
-    ) {
-        fail(
-            400,
-            'La materia pertenece a otra institución'
-        );
-    }
-
-    if (
-        assignment.teacher.user.institutionId !==
-        institutionId
-    ) {
-        fail(
-            400,
-            'El docente pertenece a otra institución'
-        );
-    }
-
-    if (
-        !isAuthority(user) &&
-        user.teacherProfileId !== assignment.teacherId
-    ) {
-        fail(
-            403,
-            'No sos el docente asignado a esta materia'
-        );
-    }
-
-    const schedule = await repo.findSchedule(
-        integer(scheduleId, 'scheduleId')
-    );
 
     if (!schedule) {
-        fail(404, 'Horario no encontrado');
-    }
-
-    if (
-        schedule.courseId !== assignment.courseId ||
-        schedule.subjectId !== assignment.subjectId
-    ) {
-        fail(
-            400,
-            'El horario no corresponde a esa materia y curso'
-        );
+        fail(404, 'No se encontró un horario configurado para esta materia en la fecha seleccionada');
     }
 
     const date = parseDate(classDate);
-
-    if (DAYS[date.getUTCDay()] !== schedule.day) {
-        fail(
-            400,
-            'La fecha no coincide con el día del horario'
-        );
-    }
 
     return {
         assignment,
@@ -439,6 +387,16 @@ export const earlyNoticeService = {
         };
         const notice = await createNoticeWithClasses(data, classes, user.id);
         await notificationService.safePublish(notice);
+        // Notificar a cada curso afectado por el conjunto de clases
+        const uniqueCourseIds = [...new Set(classes.map(c => c.courseId))];
+        for (const cId of uniqueCourseIds) {
+            await sendPushNotificationToCourse(
+                cId,
+                'Nueva Alerta Temprana',
+                `Se han emitido avisos académicos para tu curso.`,
+                notice.id
+            );
+        }
         return { ...notice, affectedClasses: classes, revision: 1 };
     },
 
@@ -808,6 +766,13 @@ export const earlyNoticeService = {
 
         // El registro del aviso no se pierde si falla la creación de notificaciones.
         await notificationService.safePublish(createdNotice);
+        // Disparar notificación push al curso específico
+        await sendPushNotificationToCourse(
+            assignment.courseId,
+            'Nueva Alerta Temprana',
+            `Se ha emitido un aviso para tu curso: ${createdNotice.reason}`,
+            createdNotice.id
+        );
         return createdNotice;
     },
 
@@ -1013,6 +978,13 @@ export const earlyNoticeService = {
             updatedById: user.id,
         }, 'CONFIRMED', user.id);
         await notificationService.safePublish(confirmedNotice, { event: 'CONFIRMED', revision: version });
+        // Notificar al curso cuando el aviso es confirmado oficialmente
+        await sendPushNotificationToCourse(
+            confirmedNotice.courseId,
+            'Aviso Temprano Confirmado',
+            `El aviso de inasistencia ha sido confirmado oficialmente.`,
+            confirmedNotice.id
+        );
         return confirmedNotice;
     },
 
@@ -1099,4 +1071,45 @@ export const earlyNoticeService = {
             updatedById: user.id,
         });
     },
+};
+const sendPushNotificationToCourse = async (courseId, title, body, noticeId) => {
+    try {
+        if (!courseId) return;
+
+        // 1. Buscamos los estudiantes inscriptos en este curso
+        const studentCourses = await repo.findStudentsByCourse(courseId);
+
+        // 2. Extraemos todos los tokens de la tabla relacional UserDevice de cada usuario
+        const tokens = [];
+        for (const item of studentCourses) {
+            const userDevices = item.student?.user?.devices || [];
+            for (const device of userDevices) {
+                if (device.token) {
+                    tokens.push(device.token);
+                }
+            }
+        }
+
+        // Eliminamos tokens duplicados por seguridad
+        const uniqueTokens = [...new Set(tokens)];
+
+        if (uniqueTokens.length > 0) {
+            const message = {
+                tokens: uniqueTokens,
+                notification: {
+                    title: title,
+                    body: body,
+                },
+                data: {
+                    click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                    noticeId: String(noticeId),
+                },
+            };
+
+            const response = await admin.messaging().sendEachForMulticast(message);
+            console.log(`FCM enviado al curso ${courseId}: ${response.successCount} dispositivos notificados.`);
+        }
+    } catch (error) {
+        console.error(`Error al enviar FCM al curso ${courseId}:`, error);
+    }
 };

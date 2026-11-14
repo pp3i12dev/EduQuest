@@ -1,5 +1,4 @@
 import { createPortal } from 'react-dom';
-
 import { useContext, useEffect, useState } from 'react';
 import { earlyNoticeService } from '../services/earlyNotice.service';
 import {
@@ -853,7 +852,6 @@ export default function EarlyNoticesView({
             clearMessages();
             await earlyNoticeService.deleteHistory(token, notice.id);
             setActionSuccess('Aviso eliminado del historial.');
-            // La lista se actualiza sin modificar las notificaciones antiguas.
             window.location.reload();
         } catch (err) {
             setActionError(getErrorMessage(err, 'No se pudo eliminar del historial.'));

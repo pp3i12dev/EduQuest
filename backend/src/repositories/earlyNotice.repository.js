@@ -498,20 +498,23 @@ export const earlyNoticeRepository = {
         };
     },
 
-    findStudentsByCourse(courseId) {
-        return prisma.studentCourse.findMany({
-            where: { courseId, student: { user: { isActive: true } } },
-            select: {
-                student: {
-                    select: {
-                        user: {
-                            select: { id: true, firstName: true, lastName: true, email: true, telefono: true },
-                        },
-                    },
-                },
-            },
-        });
-    },
+    // Dentro de tu repositorio (ej: earlyNotice.repository.js o user.repository.js)
+async findStudentsByCourse(courseId) {
+    return prisma.studentCourse.findMany({
+        where: { courseId: courseId },
+        include: {
+            student: {
+                include: {
+                    user: {
+                        include: {
+                            devices: true, // <--- Traemos la relación con UserDevice
+                        }
+                    }
+                }
+            }
+        }
+    });
+},
 
     isStudentEnrolled(courseId, userId) {
         return prisma.studentCourse.findFirst({
