@@ -54,6 +54,12 @@ public class PlayerController : MonoBehaviour
         if (movimientoAutomatico)
         {
             rb.linearVelocity = new Vector2(velocidadHorizontal, rb.linearVelocity.y);
+
+            if (movimientoAutomatico)
+            {
+                rb.linearVelocity = new Vector2(velocidadHorizontal, rb.linearVelocity.y);
+                Debug.Log($"VelX: {rb.linearVelocity.x} | PosX: {transform.position.x}");
+            }
         }
     }
 
