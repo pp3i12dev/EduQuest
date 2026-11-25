@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// Controla el movimiento del personaje: avance horizontal automático + salto por toque.
@@ -17,6 +18,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform puntoChequeoSuelo;
     [SerializeField] private float radioChequeoSuelo = 0.15f;
     [SerializeField] private LayerMask capaSuelo;
+
+    [Header("Bloqueo de salto en UI")]
+    [Tooltip("Panel de accesorios que pausa y bloquea el salto al abrirse")]
+    [SerializeField] private GameObject accessoryPanelRoot;
 
     [Header("Animación (opcional)")]
     [SerializeField] private Animator animator;
@@ -58,7 +63,7 @@ public class PlayerController : MonoBehaviour
             if (movimientoAutomatico)
             {
                 rb.linearVelocity = new Vector2(velocidadHorizontal, rb.linearVelocity.y);
-                Debug.Log($"VelX: {rb.linearVelocity.x} | PosX: {transform.position.x}");
+                //Debug.Log($"VelX: {rb.linearVelocity.x} | PosX: {transform.position.x}");
             }
         }
     }
@@ -71,6 +76,12 @@ public class PlayerController : MonoBehaviour
 
     private void LeerInputDeSalto()
     {
+        // Evita que el clic sobre la UI (o abrir el panel de accesorios) dispare un salto en el mismo frame
+        bool panelAccesoriosAbierto = accessoryPanelRoot != null && accessoryPanelRoot.activeSelf;
+        bool punteroSobreUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+        if (panelAccesoriosAbierto || punteroSobreUi)
+            return;
+
         bool sePresionoToque = false;
 
 #if ENABLE_INPUT_SYSTEM
@@ -93,13 +104,13 @@ public class PlayerController : MonoBehaviour
         }
 
         if (sePresionoToque && estaEnSuelo)
-{
-    rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
-    rb.AddForce(Vector2.up * fuerzaSalto, ForceMode2D.Impulse);
+        {
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
+            rb.AddForce(Vector2.up * fuerzaSalto, ForceMode2D.Impulse);
 
-    if (animator != null)
-        animator.SetTrigger(HashSaltando);
-}
+            if (animator != null)
+                animator.SetTrigger(HashSaltando);
+        }
     }
 
     private void ActualizarProgresoDeNivel()
@@ -126,5 +137,4 @@ public class PlayerController : MonoBehaviour
             Gizmos.DrawWireSphere(puntoChequeoSuelo.position, radioChequeoSuelo);
         }
     }
-
 }

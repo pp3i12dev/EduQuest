@@ -1,0 +1,1765 @@
+fileFormatVersion: 2
+guid: 165787532dbe2cf4483e401b8b29c4b1
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 4492184449753895982
+    second: Danilo_Spritesheet_Accesorios-cabeza_0
+  - first:
+      213: 2628839518113155034
+    second: Danilo_Spritesheet_Accesorios-cabeza_1
+  - first:
+      213: 6705325654941740559
+    second: Danilo_Spritesheet_Accesorios-cabeza_2
+  - first:
+      213: 4923205734747413352
+    second: Danilo_Spritesheet_Accesorios-cabeza_3
+  - first:
+      213: -4831455959517298033
+    second: Danilo_Spritesheet_Accesorios-cabeza_4
+  - first:
+      213: -2175716614572860813
+    second: Danilo_Spritesheet_Accesorios-cabeza_5
+  - first:
+      213: 1633077676955624050
+    second: Danilo_Spritesheet_Accesorios-cabeza_6
+  - first:
+      213: 1862875601062437545
+    second: Danilo_Spritesheet_Accesorios-cabeza_7
+  - first:
+      213: -3883742411799542614
+    second: Danilo_Spritesheet_Accesorios-cabeza_8
+  - first:
+      213: -2671221238750424453
+    second: Danilo_Spritesheet_Accesorios-cabeza_9
+  - first:
+      213: -5189611206131549081
+    second: Danilo_Spritesheet_Accesorios-cabeza_10
+  - first:
+      213: 4576909165783653789
+    second: Danilo_Spritesheet_Accesorios-cabeza_11
+  - first:
+      213: 3358291168281785005
+    second: Danilo_Spritesheet_Accesorios-cabeza_12
+  - first:
+      213: 3867596729860491766
+    second: Danilo_Spritesheet_Accesorios-cabeza_13
+  - first:
+      213: -3310814457616354687
+    second: Danilo_Spritesheet_Accesorios-cabeza_14
+  - first:
+      213: 3973032225605100145
+    second: Danilo_Spritesheet_Accesorios-cabeza_15
+  - first:
+      213: -2945154655629255801
+    second: Danilo_Spritesheet_Accesorios-cabeza_16
+  - first:
+      213: -8335249253780259311
+    second: Danilo_Spritesheet_Accesorios-cabeza_17
+  - first:
+      213: 6733432644224410937
+    second: Danilo_Spritesheet_Accesorios-cabeza_18
+  - first:
+      213: -6707506991440086074
+    second: Danilo_Spritesheet_Accesorios-cabeza_19
+  - first:
+      213: -4448061756678710968
+    second: Danilo_Spritesheet_Accesorios-cabeza_20
+  - first:
+      213: 5928269085407793456
+    second: Danilo_Spritesheet_Accesorios-cabeza_21
+  - first:
+      213: -1383461379921525706
+    second: Danilo_Spritesheet_Accesorios-cabeza_22
+  - first:
+      213: 4340839982980355991
+    second: Danilo_Spritesheet_Accesorios-cabeza_23
+  - first:
+      213: -6243600016115370712
+    second: Danilo_Spritesheet_Accesorios-cabeza_24
+  - first:
+      213: -9013276462345623740
+    second: Danilo_Spritesheet_Accesorios-cabeza_25
+  - first:
+      213: -5839581351815736915
+    second: Danilo_Spritesheet_Accesorios-cabeza_26
+  - first:
+      213: -5266849969397104327
+    second: Danilo_Spritesheet_Accesorios-cabeza_27
+  - first:
+      213: 7512971066681997192
+    second: Danilo_Spritesheet_Accesorios-cabeza_28
+  - first:
+      213: 9145309476636215351
+    second: Danilo_Spritesheet_Accesorios-cabeza_29
+  - first:
+      213: -6416943388353910522
+    second: Danilo_Spritesheet_Accesorios-cabeza_30
+  - first:
+      213: 1780190818093463808
+    second: Danilo_Spritesheet_Accesorios-cabeza_31
+  - first:
+      213: 3517567709452712237
+    second: Danilo_Spritesheet_Accesorios-cabeza_32
+  - first:
+      213: -8329338008269855459
+    second: Danilo_Spritesheet_Accesorios-cabeza_33
+  - first:
+      213: -8079919067097730775
+    second: Danilo_Spritesheet_Accesorios-cabeza_34
+  - first:
+      213: -2964125052930483840
+    second: Danilo_Spritesheet_Accesorios-cabeza_35
+  - first:
+      213: -3766473257715511340
+    second: Danilo_Spritesheet_Accesorios-cabeza_36
+  - first:
+      213: 5553268154178841593
+    second: Danilo_Spritesheet_Accesorios-cabeza_37
+  - first:
+      213: -2199827536270823184
+    second: Danilo_Spritesheet_Accesorios-cabeza_38
+  - first:
+      213: 1107943474242018219
+    second: Danilo_Spritesheet_Accesorios-cabeza_39
+  - first:
+      213: -3569499072158081854
+    second: Danilo_Spritesheet_Accesorios-cabeza_40
+  - first:
+      213: 2596396573164575860
+    second: Danilo_Spritesheet_Accesorios-cabeza_41
+  - first:
+      213: 1678945004160775667
+    second: Danilo_Spritesheet_Accesorios-cabeza_42
+  - first:
+      213: 7858477202158892919
+    second: Danilo_Spritesheet_Accesorios-cabeza_43
+  - first:
+      213: 7666806744878892636
+    second: Danilo_Spritesheet_Accesorios-cabeza_44
+  - first:
+      213: -1588518051860434652
+    second: Danilo_Spritesheet_Accesorios-cabeza_45
+  - first:
+      213: -7062109048507477908
+    second: Danilo_Spritesheet_Accesorios-cabeza_46
+  - first:
+      213: -7872810489361908253
+    second: Danilo_Spritesheet_Accesorios-cabeza_47
+  - first:
+      213: 7224556323308868891
+    second: Danilo_Spritesheet_Accesorios-cabeza_48
+  - first:
+      213: -2381137181327598923
+    second: Danilo_Spritesheet_Accesorios-cabeza_49
+  - first:
+      213: 6191742614133030387
+    second: Danilo_Spritesheet_Accesorios-cabeza_50
+  - first:
+      213: -5758488274688065403
+    second: Danilo_Spritesheet_Accesorios-cabeza_51
+  - first:
+      213: 8045014538625778116
+    second: Danilo_Spritesheet_Accesorios-cabeza_52
+  - first:
+      213: 1393842109292104409
+    second: Danilo_Spritesheet_Accesorios-cabeza_53
+  - first:
+      213: 7853213622057508498
+    second: Danilo_Spritesheet_Accesorios-cabeza_54
+  - first:
+      213: -2057063765670949405
+    second: Danilo_Spritesheet_Accesorios-cabeza_55
+  - first:
+      213: -3321279599699254301
+    second: Danilo_Spritesheet_Accesorios-cabeza_56
+  - first:
+      213: -403148738348389818
+    second: Danilo_Spritesheet_Accesorios-cabeza_57
+  - first:
+      213: 360673388566734086
+    second: Danilo_Spritesheet_Accesorios-cabeza_58
+  - first:
+      213: 7470350848490188703
+    second: Danilo_Spritesheet_Accesorios-cabeza_59
+  - first:
+      213: 4040575143132426605
+    second: Danilo_Spritesheet_Accesorios-cabeza_60
+  - first:
+      213: 7072436011247399518
+    second: Danilo_Spritesheet_Accesorios-cabeza_61
+  - first:
+      213: -8655738345446543808
+    second: Danilo_Spritesheet_Accesorios-cabeza_62
+  - first:
+      213: -3819323388457647445
+    second: Danilo_Spritesheet_Accesorios-cabeza_63
+  - first:
+      213: -1884526958580197286
+    second: Danilo_Spritesheet_Accesorios-cabeza_64
+  - first:
+      213: -1642100304321774532
+    second: Danilo_Spritesheet_Accesorios-cabeza_65
+  - first:
+      213: -217472738414198431
+    second: Danilo_Spritesheet_Accesorios-cabeza_66
+  - first:
+      213: 4921145926841434109
+    second: Danilo_Spritesheet_Accesorios-cabeza_67
+  - first:
+      213: 6189192708041182785
+    second: Danilo_Spritesheet_Accesorios-cabeza_68
+  - first:
+      213: -4839366955216759762
+    second: Danilo_Spritesheet_Accesorios-cabeza_69
+  - first:
+      213: -608497447142566194
+    second: Danilo_Spritesheet_Accesorios-cabeza_70
+  - first:
+      213: 7982347148916905278
+    second: Danilo_Spritesheet_Accesorios-cabeza_71
+  - first:
+      213: -2219769144971176492
+    second: Danilo_Spritesheet_Accesorios-cabeza_72
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_0
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 1274
+        width: 166
+        height: 104
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e245d19d4f1775e30800000000000000
+      internalID: 4492184449753895982
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_1
+      rect:
+        serializedVersion: 2
+        x: 198
+        y: 1270
+        width: 162
+        height: 107
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad7c4a01d938b7420800000000000000
+      internalID: 2628839518113155034
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_2
+      rect:
+        serializedVersion: 2
+        x: 380
+        y: 1272
+        width: 160
+        height: 106
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f0ead16282a1e0d50800000000000000
+      internalID: 6705325654941740559
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_3
+      rect:
+        serializedVersion: 2
+        x: 561
+        y: 1272
+        width: 156
+        height: 106
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 86b19cf088db25440800000000000000
+      internalID: 4923205734747413352
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_4
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 1126
+        width: 151
+        height: 93
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f820709276833fcb0800000000000000
+      internalID: -4831455959517298033
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_5
+      rect:
+        serializedVersion: 2
+        x: 739
+        y: 1274
+        width: 162
+        height: 103
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37a1878344d4ec1e0800000000000000
+      internalID: -2175716614572860813
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_6
+      rect:
+        serializedVersion: 2
+        x: 919
+        y: 1270
+        width: 162
+        height: 107
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2726f89ae7bd9a610800000000000000
+      internalID: 1633077676955624050
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_7
+      rect:
+        serializedVersion: 2
+        x: 1103
+        y: 1270
+        width: 157
+        height: 107
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9a2a11e3d734ad910800000000000000
+      internalID: 1862875601062437545
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_8
+      rect:
+        serializedVersion: 2
+        x: 158
+        y: 1124
+        width: 145
+        height: 95
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa4c1997adc2a1ac0800000000000000
+      internalID: -3883742411799542614
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_9
+      rect:
+        serializedVersion: 2
+        x: 310
+        y: 1126
+        width: 152
+        height: 95
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b725dc3af6aedead0800000000000000
+      internalID: -2671221238750424453
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_10
+      rect:
+        serializedVersion: 2
+        x: 467
+        y: 1125
+        width: 146
+        height: 96
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 76c74209a1ccaf7b0800000000000000
+      internalID: -5189611206131549081
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_11
+      rect:
+        serializedVersion: 2
+        x: 785
+        y: 1125
+        width: 148
+        height: 97
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9d93c303a2748f30800000000000000
+      internalID: 4576909165783653789
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_12
+      rect:
+        serializedVersion: 2
+        x: 938
+        y: 1126
+        width: 140
+        height: 92
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da274c9460c0b9e20800000000000000
+      internalID: 3358291168281785005
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_13
+      rect:
+        serializedVersion: 2
+        x: 1231
+        y: 1126
+        width: 139
+        height: 88
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6f90cc10cb67ca530800000000000000
+      internalID: 3867596729860491766
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_14
+      rect:
+        serializedVersion: 2
+        x: 472
+        y: 990
+        width: 145
+        height: 88
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 182bc80dacf9d02d0800000000000000
+      internalID: -3310814457616354687
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_15
+      rect:
+        serializedVersion: 2
+        x: 619
+        y: 1128
+        width: 150
+        height: 93
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1722f5852cb032730800000000000000
+      internalID: 3973032225605100145
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_16
+      rect:
+        serializedVersion: 2
+        x: 629
+        y: 993
+        width: 146
+        height: 91
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 78b51aed175b027d0800000000000000
+      internalID: -2945154655629255801
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_17
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 988
+        width: 146
+        height: 91
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11e761a37fe335c80800000000000000
+      internalID: -8335249253780259311
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_18
+      rect:
+        serializedVersion: 2
+        x: 169
+        y: 991
+        width: 145
+        height: 88
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 935e30e8055f17d50800000000000000
+      internalID: 6733432644224410937
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_19
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 990
+        width: 150
+        height: 89
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6cbb3cedde52ae2a0800000000000000
+      internalID: -6707506991440086074
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_20
+      rect:
+        serializedVersion: 2
+        x: 27
+        y: 789
+        width: 135
+        height: 118
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8495a2e266f4542c0800000000000000
+      internalID: -4448061756678710968
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_21
+      rect:
+        serializedVersion: 2
+        x: 197
+        y: 789
+        width: 140
+        height: 118
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 03159a8e251754250800000000000000
+      internalID: 5928269085407793456
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_22
+      rect:
+        serializedVersion: 2
+        x: 379
+        y: 790
+        width: 139
+        height: 118
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6344e417435fccce0800000000000000
+      internalID: -1383461379921525706
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_23
+      rect:
+        serializedVersion: 2
+        x: 1059
+        y: 790
+        width: 145
+        height: 114
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7975b5c37f2cd3c30800000000000000
+      internalID: 4340839982980355991
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_24
+      rect:
+        serializedVersion: 2
+        x: 573
+        y: 787
+        width: 135
+        height: 133
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 825f1d78dd64a59a0800000000000000
+      internalID: -6243600016115370712
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_25
+      rect:
+        serializedVersion: 2
+        x: 739
+        y: 792
+        width: 134
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 447ef77dfc86ae280800000000000000
+      internalID: -9013276462345623740
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_26
+      rect:
+        serializedVersion: 2
+        x: 896
+        y: 788
+        width: 140
+        height: 117
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da1170033b3a5fea0800000000000000
+      internalID: -5839581351815736915
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_28
+      rect:
+        serializedVersion: 2
+        x: 1219
+        y: 789
+        width: 138
+        height: 116
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8873e55316f634860800000000000000
+      internalID: 7512971066681997192
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_29
+      rect:
+        serializedVersion: 2
+        x: 1383
+        y: 789
+        width: 119
+        height: 108
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7384aebd38aaaee70800000000000000
+      internalID: 9145309476636215351
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_30
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 643
+        width: 170
+        height: 108
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 609af599cff62f6a0800000000000000
+      internalID: -6416943388353910522
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_33
+      rect:
+        serializedVersion: 2
+        x: 406
+        y: 666
+        width: 150
+        height: 78
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d156ae2563f386c80800000000000000
+      internalID: -8329338008269855459
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_34
+      rect:
+        serializedVersion: 2
+        x: 583
+        y: 657
+        width: 143
+        height: 98
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 921fbbfea6c5edf80800000000000000
+      internalID: -8079919067097730775
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_35
+      rect:
+        serializedVersion: 2
+        x: 758
+        y: 665
+        width: 173
+        height: 88
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0891e3e08ff4dd6d0800000000000000
+      internalID: -2964125052930483840
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_36
+      rect:
+        serializedVersion: 2
+        x: 216
+        y: 657
+        width: 155
+        height: 87
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4dfcbd9178ccabbc0800000000000000
+      internalID: -3766473257715511340
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_39
+      rect:
+        serializedVersion: 2
+        x: 23
+        y: 480
+        width: 133
+        height: 117
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bab586d38b4306f00800000000000000
+      internalID: 1107943474242018219
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_40
+      rect:
+        serializedVersion: 2
+        x: 169
+        y: 498
+        width: 153
+        height: 90
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2cc5ee18187967ec0800000000000000
+      internalID: -3569499072158081854
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_41
+      rect:
+        serializedVersion: 2
+        x: 350
+        y: 491
+        width: 149
+        height: 98
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 47c148f4de0480420800000000000000
+      internalID: 2596396573164575860
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_42
+      rect:
+        serializedVersion: 2
+        x: 527
+        y: 500
+        width: 138
+        height: 91
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f57b6af59fcc4710800000000000000
+      internalID: 1678945004160775667
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_43
+      rect:
+        serializedVersion: 2
+        x: 702
+        y: 476
+        width: 151
+        height: 97
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 777bf2e116bee0d60800000000000000
+      internalID: 7858477202158892919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_44
+      rect:
+        serializedVersion: 2
+        x: 892
+        y: 475
+        width: 87
+        height: 101
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c56431e2d18f56a60800000000000000
+      internalID: 7666806744878892636
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_46
+      rect:
+        serializedVersion: 2
+        x: 1009
+        y: 487
+        width: 136
+        height: 84
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c60d3aeac395efd90800000000000000
+      internalID: -7062109048507477908
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_47
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 315
+        width: 132
+        height: 104
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ed3d9562982eb290800000000000000
+      internalID: -7872810489361908253
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_48
+      rect:
+        serializedVersion: 2
+        x: 182
+        y: 319
+        width: 148
+        height: 103
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b1590aed2b7c24460800000000000000
+      internalID: 7224556323308868891
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_49
+      rect:
+        serializedVersion: 2
+        x: 367
+        y: 314
+        width: 146
+        height: 101
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ba5e71795084fed0800000000000000
+      internalID: -2381137181327598923
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_50
+      rect:
+        serializedVersion: 2
+        x: 545
+        y: 297
+        width: 135
+        height: 104
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3fd3c003a1d7de550800000000000000
+      internalID: 6191742614133030387
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_51
+      rect:
+        serializedVersion: 2
+        x: 709
+        y: 292
+        width: 149
+        height: 109
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 58047f78c6db510b0800000000000000
+      internalID: -5758488274688065403
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_52
+      rect:
+        serializedVersion: 2
+        x: 894
+        y: 278
+        width: 127
+        height: 123
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4c184ab3912a5af60800000000000000
+      internalID: 8045014538625778116
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_53
+      rect:
+        serializedVersion: 2
+        x: 1049
+        y: 278
+        width: 122
+        height: 116
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9da4655730ce75310800000000000000
+      internalID: 1393842109292104409
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_55
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 175
+        width: 104
+        height: 106
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ed0bd66767d373e0800000000000000
+      internalID: -2057063765670949405
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_56
+      rect:
+        serializedVersion: 2
+        x: 178
+        y: 164
+        width: 113
+        height: 109
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3e3ac2c0dc178e1d0800000000000000
+      internalID: -3321279599699254301
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_57
+      rect:
+        serializedVersion: 2
+        x: 338
+        y: 197
+        width: 159
+        height: 44
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 64ae813cb5ab76af0800000000000000
+      internalID: -403148738348389818
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_58
+      rect:
+        serializedVersion: 2
+        x: 554
+        y: 192
+        width: 142
+        height: 42
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 605e475398e510500800000000000000
+      internalID: 360673388566734086
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_59
+      rect:
+        serializedVersion: 2
+        x: 755
+        y: 198
+        width: 125
+        height: 37
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f9fabcf54840ca760800000000000000
+      internalID: 7470350848490188703
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_60
+      rect:
+        serializedVersion: 2
+        x: 923
+        y: 196
+        width: 129
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d617eae4fa1031830800000000000000
+      internalID: 4040575143132426605
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_61
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 24
+        width: 135
+        height: 91
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e52f413b417562260800000000000000
+      internalID: 7072436011247399518
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_62
+      rect:
+        serializedVersion: 2
+        x: 159
+        y: 28
+        width: 137
+        height: 88
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 04e6eeab5d3a0e780800000000000000
+      internalID: -8655738345446543808
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_63
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 26
+        width: 153
+        height: 94
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ba204a42d990ffac0800000000000000
+      internalID: -3819323388457647445
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_64
+      rect:
+        serializedVersion: 2
+        x: 474
+        y: 30
+        width: 136
+        height: 86
+      alignment: 9
+      pivot: {x: 0.6004607, y: 0.44146773}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a581e2047b0d8d5e0800000000000000
+      internalID: -1884526958580197286
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_65
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 23
+        width: 128
+        height: 95
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c3cf65339761639e0800000000000000
+      internalID: -1642100304321774532
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_66
+      rect:
+        serializedVersion: 2
+        x: 774
+        y: 20
+        width: 139
+        height: 100
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1618d7652b16bfcf0800000000000000
+      internalID: -217472738414198431
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Danilo_Spritesheet_Accesorios-cabeza_73
+      rect:
+        serializedVersion: 2
+        x: 1083
+        y: 1128
+        width: 139
+        height: 90
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6d8c28e942b623c48b6b9137ad930140
+      internalID: 128450904
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: a0e8cd0a01f09b34ca392bc97196aa0a
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Danilo_Spritesheet_Accesorios-cabeza_0: 4492184449753895982
+      Danilo_Spritesheet_Accesorios-cabeza_1: 2628839518113155034
+      Danilo_Spritesheet_Accesorios-cabeza_10: -5189611206131549081
+      Danilo_Spritesheet_Accesorios-cabeza_11: 4576909165783653789
+      Danilo_Spritesheet_Accesorios-cabeza_12: 3358291168281785005
+      Danilo_Spritesheet_Accesorios-cabeza_13: 3867596729860491766
+      Danilo_Spritesheet_Accesorios-cabeza_14: -3310814457616354687
+      Danilo_Spritesheet_Accesorios-cabeza_15: 3973032225605100145
+      Danilo_Spritesheet_Accesorios-cabeza_16: -2945154655629255801
+      Danilo_Spritesheet_Accesorios-cabeza_17: -8335249253780259311
+      Danilo_Spritesheet_Accesorios-cabeza_18: 6733432644224410937
+      Danilo_Spritesheet_Accesorios-cabeza_19: -6707506991440086074
+      Danilo_Spritesheet_Accesorios-cabeza_2: 6705325654941740559
+      Danilo_Spritesheet_Accesorios-cabeza_20: -4448061756678710968
+      Danilo_Spritesheet_Accesorios-cabeza_21: 5928269085407793456
+      Danilo_Spritesheet_Accesorios-cabeza_22: -1383461379921525706
+      Danilo_Spritesheet_Accesorios-cabeza_23: 4340839982980355991
+      Danilo_Spritesheet_Accesorios-cabeza_24: -6243600016115370712
+      Danilo_Spritesheet_Accesorios-cabeza_25: -9013276462345623740
+      Danilo_Spritesheet_Accesorios-cabeza_26: -5839581351815736915
+      Danilo_Spritesheet_Accesorios-cabeza_27: -5266849969397104327
+      Danilo_Spritesheet_Accesorios-cabeza_28: 7512971066681997192
+      Danilo_Spritesheet_Accesorios-cabeza_29: 9145309476636215351
+      Danilo_Spritesheet_Accesorios-cabeza_3: 4923205734747413352
+      Danilo_Spritesheet_Accesorios-cabeza_30: -6416943388353910522
+      Danilo_Spritesheet_Accesorios-cabeza_31: 1780190818093463808
+      Danilo_Spritesheet_Accesorios-cabeza_32: 3517567709452712237
+      Danilo_Spritesheet_Accesorios-cabeza_33: -8329338008269855459
+      Danilo_Spritesheet_Accesorios-cabeza_34: -8079919067097730775
+      Danilo_Spritesheet_Accesorios-cabeza_35: -2964125052930483840
+      Danilo_Spritesheet_Accesorios-cabeza_36: -3766473257715511340
+      Danilo_Spritesheet_Accesorios-cabeza_37: 5553268154178841593
+      Danilo_Spritesheet_Accesorios-cabeza_38: -2199827536270823184
+      Danilo_Spritesheet_Accesorios-cabeza_39: 1107943474242018219
+      Danilo_Spritesheet_Accesorios-cabeza_4: -4831455959517298033
+      Danilo_Spritesheet_Accesorios-cabeza_40: -3569499072158081854
+      Danilo_Spritesheet_Accesorios-cabeza_41: 2596396573164575860
+      Danilo_Spritesheet_Accesorios-cabeza_42: 1678945004160775667
+      Danilo_Spritesheet_Accesorios-cabeza_43: 7858477202158892919
+      Danilo_Spritesheet_Accesorios-cabeza_44: 7666806744878892636
+      Danilo_Spritesheet_Accesorios-cabeza_45: -1588518051860434652
+      Danilo_Spritesheet_Accesorios-cabeza_46: -7062109048507477908
+      Danilo_Spritesheet_Accesorios-cabeza_47: -7872810489361908253
+      Danilo_Spritesheet_Accesorios-cabeza_48: 7224556323308868891
+      Danilo_Spritesheet_Accesorios-cabeza_49: -2381137181327598923
+      Danilo_Spritesheet_Accesorios-cabeza_5: -2175716614572860813
+      Danilo_Spritesheet_Accesorios-cabeza_50: 6191742614133030387
+      Danilo_Spritesheet_Accesorios-cabeza_51: -5758488274688065403
+      Danilo_Spritesheet_Accesorios-cabeza_52: 8045014538625778116
+      Danilo_Spritesheet_Accesorios-cabeza_53: 1393842109292104409
+      Danilo_Spritesheet_Accesorios-cabeza_54: 7853213622057508498
+      Danilo_Spritesheet_Accesorios-cabeza_55: -2057063765670949405
+      Danilo_Spritesheet_Accesorios-cabeza_56: -3321279599699254301
+      Danilo_Spritesheet_Accesorios-cabeza_57: -403148738348389818
+      Danilo_Spritesheet_Accesorios-cabeza_58: 360673388566734086
+      Danilo_Spritesheet_Accesorios-cabeza_59: 7470350848490188703
+      Danilo_Spritesheet_Accesorios-cabeza_6: 1633077676955624050
+      Danilo_Spritesheet_Accesorios-cabeza_60: 4040575143132426605
+      Danilo_Spritesheet_Accesorios-cabeza_61: 7072436011247399518
+      Danilo_Spritesheet_Accesorios-cabeza_62: -8655738345446543808
+      Danilo_Spritesheet_Accesorios-cabeza_63: -3819323388457647445
+      Danilo_Spritesheet_Accesorios-cabeza_64: -1884526958580197286
+      Danilo_Spritesheet_Accesorios-cabeza_65: -1642100304321774532
+      Danilo_Spritesheet_Accesorios-cabeza_66: -217472738414198431
+      Danilo_Spritesheet_Accesorios-cabeza_67: 4921145926841434109
+      Danilo_Spritesheet_Accesorios-cabeza_68: 6189192708041182785
+      Danilo_Spritesheet_Accesorios-cabeza_69: -4839366955216759762
+      Danilo_Spritesheet_Accesorios-cabeza_7: 1862875601062437545
+      Danilo_Spritesheet_Accesorios-cabeza_70: -608497447142566194
+      Danilo_Spritesheet_Accesorios-cabeza_71: 7982347148916905278
+      Danilo_Spritesheet_Accesorios-cabeza_72: -2219769144971176492
+      Danilo_Spritesheet_Accesorios-cabeza_73: 128450904
+      Danilo_Spritesheet_Accesorios-cabeza_8: -3883742411799542614
+      Danilo_Spritesheet_Accesorios-cabeza_9: -2671221238750424453
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
