@@ -1,0 +1,7 @@
+// Cada contacto decide por separado qué dato personal compartir.
+// Por defecto ningún dato de contacto es público dentro de EduQuest.
+enum DirectoryVisibility {
+  PRIVATE
+  STAFF
+  INSTITUTION
+}

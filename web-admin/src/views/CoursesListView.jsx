@@ -25,6 +25,7 @@ import CourseFormModal from '../components/CourseFormModal';
 import CourseStudentsManager from '../components/CourseStudentsManager';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SearchInput from '../components/SearchInput';
+import { SHIFTS, shiftLabel } from '../utils/courseShift';
 
 function getErrorMessage(error) {
     return (
@@ -37,7 +38,7 @@ function getErrorMessage(error) {
 export default function CoursesListView() {
     const { user } = useContext(AuthContext);
 
-    const isSuperAdmin = user?.roles?.includes('SUPER_ADMIN');
+    const isSuperAdmin = user?.isSuperAdmin === true || user?.roles?.includes('SUPER_ADMIN');
 
     const {
         data: courses = [],
@@ -53,6 +54,7 @@ export default function CoursesListView() {
 
     const [search, setSearch] = useState('');
     const [selectedInstitution, setSelectedInstitution] = useState('');
+    const [selectedShift, setSelectedShift] = useState('');
 
     const [formOpen, setFormOpen] = useState(false);
     const [editingCourse, setEditingCourse] = useState(null);
@@ -77,7 +79,9 @@ export default function CoursesListView() {
                 !selectedInstitution ||
                 String(course.institutionId) === selectedInstitution;
 
+            const matchesShift = !selectedShift || course.shift === selectedShift;
             const searchable = [
+                shiftLabel(course.shift),
                 course.nombre,
                 course.academicYear,
                 course.career?.nombre,
@@ -90,12 +94,13 @@ export default function CoursesListView() {
                 .join(' ')
                 .toLocaleLowerCase('es');
 
-            return matchesInstitution && searchable.includes(term);
+            return matchesInstitution && matchesShift && searchable.includes(term);
         });
     }, [
         courses,
         search,
         selectedInstitution,
+        selectedShift,
         isSuperAdmin,
         institutionMap,
     ]);
@@ -169,18 +174,7 @@ export default function CoursesListView() {
 
     return (
         <div className="space-y-6 text-white">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h2 className="flex items-center gap-3 text-2xl font-bold">
-                        <BookOpen className="text-blue-400" />
-                        Gestión de cursos
-                    </h2>
-
-                    <p className="mt-1 text-sm text-slate-300">
-                        Administrá los cursos y sus alumnos.
-                    </p>
-                </div>
-
+            <div className="flex flex-wrap items-center justify-end gap-4">
                 <button
                     type="button"
                     onClick={openCreate}
@@ -216,6 +210,10 @@ export default function CoursesListView() {
                         ))}
                     </select>
                 )}
+                <select aria-label="Filtrar cursos por turno" value={selectedShift} onChange={e => { setSelectedShift(e.target.value); setSelectedCourseId(null); }} className="cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm">
+                    <option value="">Todos los turnos</option>
+                    {SHIFTS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
+                </select>
             </div>
 
             {actionError && (
@@ -230,12 +228,13 @@ export default function CoursesListView() {
                 </p>
             )}
 
-            <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-900/90">
+            <div className="eq-glass-table overflow-x-auto rounded-xl border border-slate-700 bg-slate-900/90">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-slate-800 text-slate-300">
                         <tr>
                             <th className="px-4 py-3">Curso</th>
                             <th className="px-4 py-3">Carrera / Nivel</th>
+                            <th className="px-4 py-3">Turno</th>
                             <th className="px-4 py-3">Año lectivo</th>
 
                             {isSuperAdmin && (
@@ -250,7 +249,7 @@ export default function CoursesListView() {
                         {isLoading ? (
                             <tr>
                                 <td
-                                    colSpan={isSuperAdmin ? 5 : 4}
+                                    colSpan={isSuperAdmin ? 6 : 5}
                                     className="px-4 py-8 text-center text-slate-400"
                                 >
                                     Cargando cursos...
@@ -259,7 +258,7 @@ export default function CoursesListView() {
                         ) : filteredCourses.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={isSuperAdmin ? 5 : 4}
+                                    colSpan={isSuperAdmin ? 6 : 5}
                                     className="px-4 py-8 text-center text-slate-400"
                                 >
                                     No se encontraron cursos.
@@ -291,6 +290,7 @@ export default function CoursesListView() {
                                             )}
                                         </td>
 
+                                        <td className="px-4 py-3"><span className="rounded-full bg-violet-500/15 px-3 py-1 text-violet-200">{shiftLabel(course.shift)}</span></td>
                                         <td className="px-4 py-3">
                                             {course.academicYear}
                                         </td>
@@ -366,6 +366,7 @@ export default function CoursesListView() {
                 isSaving={
                     createMutation.isPending || updateMutation.isPending
                 }
+                isSuperAdmin={isSuperAdmin}
                 institutionId={
                     isSuperAdmin
                         ? selectedInstitution || editingCourse?.institutionId || null

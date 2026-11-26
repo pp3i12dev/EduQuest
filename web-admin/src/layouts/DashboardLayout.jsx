@@ -1,5 +1,4 @@
-
-import { useContext, useState } from 'react';
+import { useContext, useState, useCallback } from 'react';
 import { useUnreadNotifications } from '../hooks/useNotifications';
 
 import {
@@ -7,6 +6,7 @@ import {
     NavLink,
     Outlet,
     useLocation,
+    useNavigate,
 } from 'react-router-dom';
 
 import {
@@ -25,12 +25,24 @@ import {
     ShieldCheck,
     PanelLeftClose,
     PanelLeftOpen,
-    Sparkles,
+    Settings2,
+    ContactRound,
+    UsersRound,
+    Presentation,
+    Building2,
+    MailCheck,
+    School,
+    Layers3,
+    UserCog,
 } from 'lucide-react';
 
 import { AuthContext } from '../context/AuthContext';
+import WebPushSettings from '../components/WebPushSettings';
+import InstallPwaButton from '../components/InstallPwaButton';
+import { revokePushOnLogout } from '../services/webPush';
 import BackgroundLayout from './BackgroundLayout';
 import logo from '../assets/images/logo2.png';
+import { hasAny } from '../config/permissions';
 
 function getRoles(user) {
     if (!Array.isArray(user?.roles)) return [];
@@ -56,34 +68,28 @@ const ROLE_LABELS = {
     STUDENT: 'Alumno',
 };
 
-const NAVIGATION = [
-    {
-        to: '/dashboard',
-        label: 'Panel principal',
-        Icon: LayoutDashboard,
-        end: true,
-    },
-    {
-        to: '/dashboard/my-subjects',
-        label: 'Mis materias',
-        Icon: BookOpen,
-        teacherOnly: true,
-    },
-    {
-        to: '/dashboard/early-notices',
-        label: 'Avisos Tempranos',
-        Icon: ClipboardList,
-    },
-    {
-        to: '/dashboard/institution-communications',
-        label: 'Comunicaciones',
-        Icon: Megaphone,
-    },
-    {
-        to: '/dashboard/profile',
-        label: 'Mi perfil',
-        Icon: UserRound,
-    },
+// Sidebar institucional: cinco grupos, cuatro separadores, sin submenús.
+// Las pantallas internas de gestión siguen accesibles DESDE el Panel principal.
+const NAVIGATION_GROUPS = [
+    { label: 'Inicio', items: [
+        { to: '/dashboard', label: 'Panel principal', Icon: LayoutDashboard, end: true },
+    ] },
+    { label: 'Avisos', items: [
+        { to: '/dashboard/early-notices', label: 'Avisos tempranos', Icon: ClipboardList },
+        { to: '/dashboard/institution-communications', label: 'Avisos institucionales', Icon: Megaphone },
+    ] },
+    { label: 'Administración', items: [
+        { to: '/dashboard?section=academic', label: 'Gestión académica', Icon: GraduationCap,
+          administratorOnly: true, actionAny: ['institution:manage', 'career:manage', 'course:manage', 'subject:manage'] , section: 'academic'},
+        { to: '/dashboard?section=users', label: 'Gestión de usuarios', Icon: UsersRound,
+          administratorOnly: true, actionAny: ['teacher:manage', 'student:view', 'preceptor:manage', 'selfSignup:approve', 'invitation:manage'], section: 'users' },
+    ] },
+    { label: 'Comunidad', items: [
+        { to: '/dashboard/directory', label: 'Directorio de contactos', Icon: ContactRound },
+    ] },
+    { label: 'Cuenta', items: [
+        { to: '/dashboard/profile', label: 'Perfil', Icon: UserRound },
+    ] },
 ];
 
 function getInitials(user) {
@@ -101,30 +107,44 @@ function SidebarLink({
     collapsed = false,
     onNavigate,
     unreadCount = 0,
+    section,
 }) {
+    const routeLocation = useLocation();
+    const dashboardRoot = /^\/dashboard\/?$/.test(routeLocation.pathname);
+    const selectedSection = new URLSearchParams(routeLocation.search).get('section') || routeLocation.state?.section;
+    const nestedSection = /^\/dashboard\/(students|teachers|preceptors|directors|invitations|staff)(\/|$)/.test(routeLocation.pathname)
+        ? 'users'
+        : /^\/dashboard\/(careers|courses|subjects|institution|assignments|subject-schedules)(\/|$)/.test(routeLocation.pathname)
+            ? 'academic'
+            : null;
+    const pageActive = section
+        ? (dashboardRoot && selectedSection === section) || nestedSection === section
+        : to === '/dashboard'
+            ? dashboardRoot && !selectedSection
+            : routeLocation.pathname === to || routeLocation.pathname.startsWith(`${to}/`);
     return (
         <NavLink
             to={to}
             end={end}
             onClick={onNavigate}
             title={collapsed ? label : undefined}
-            className={({ isActive }) =>
-                `group relative flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-sm font-medium transition-all duration-200 ${isActive
+            className={() =>
+                `eq-side-link ${pageActive ? "eq-side-active" : ""} group relative flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-sm font-medium transition-all duration-200 ${pageActive
                     ? 'border-blue-500/25 bg-blue-500/15 text-blue-300 shadow-sm shadow-blue-950/10'
                     : 'border-transparent text-slate-400 hover:border-slate-700/70 hover:bg-slate-800/70 hover:text-white'
                 } ${collapsed ? 'justify-center' : ''}`
             }
         >
-            {({ isActive }) => (
+            {() => (
                 <>
-                    {isActive && (
+                    {pageActive && (
                         <span className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r-full bg-blue-400" />
                     )}
 
                     <Icon
                         size={19}
-                        strokeWidth={isActive ? 2.3 : 1.9}
-                        className={`shrink-0 ${isActive
+                        strokeWidth={pageActive ? 2.3 : 1.9}
+                        className={`shrink-0 ${pageActive
                                 ? 'text-blue-400'
                                 : 'text-slate-400 group-hover:text-blue-300'
                             }`}
@@ -148,7 +168,7 @@ function SidebarLink({
                                 </span>
                             )}
 
-                            {isActive && (
+                            {pageActive && (
                                 <ChevronRight
                                     size={15}
                                     className="text-blue-400"
@@ -176,13 +196,16 @@ function UserAvatar({ user, size = 'normal' }) {
 }
 
 export default function DashboardLayout() {
-    const { user, logoutContext } = useContext(AuthContext);
+    const { user, token, logoutContext } = useContext(AuthContext);
     const location = useLocation();
+    const navigate = useNavigate();
     const unreadCount = useUnreadNotifications(Boolean(user));
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+    const [dashboardHeader, setDashboardHeader] = useState(null);
+    const updateDashboardHeader = useCallback(value => setDashboardHeader(value), []);
 
     const isRoot =
         location.pathname === '/dashboard' ||
@@ -193,6 +216,7 @@ export default function DashboardLayout() {
     const isTeacher =
         roles.includes('TEACHER') ||
         Boolean(user?.teacherProfile);
+    const isAdministrator = roles.some(role => ['SUPER_ADMIN', 'DIRECTOR', 'PRECEPTOR'].includes(role)) || user?.isSuperAdmin === true;
 
     const displayRoles = [...roles];
 
@@ -202,15 +226,21 @@ export default function DashboardLayout() {
     ) {
         displayRoles.unshift('SUPER_ADMIN');
     }
+    const canViewConfiguration = displayRoles.some(role => ['SUPER_ADMIN', 'DIRECTOR', 'PRECEPTOR'].includes(role));
 
     const fullName =
         [user?.firstName, user?.lastName]
             .filter(Boolean)
             .join(' ') || 'Usuario';
 
-    const visibleNavigation = NAVIGATION.filter(
-        (item) => !item.teacherOnly || isTeacher
-    );
+    const visibleGroups = NAVIGATION_GROUPS.map(group => ({
+        ...group,
+        items: group.items.filter(item =>
+            (!item.administratorOnly || isAdministrator) &&
+            (!item.actionAny || item.actionAny.some(action => hasAny(displayRoles, action)))
+        ),
+    })).filter(group => group.items.length > 0);
+    const visibleNavigation = visibleGroups.flatMap(group => group.items);
 
     const currentPage =
         [...visibleNavigation]
@@ -221,15 +251,61 @@ export default function DashboardLayout() {
                     : location.pathname === item.to ||
                     location.pathname.startsWith(`${item.to}/`)
             )?.label ||
-        (isRoot ? 'Panel principal' : 'Gestión académica');
+        (isRoot ? 'Panel principal' : location.pathname === '/dashboard/service-config' ? 'Configuración' : 'Gestión académica');
+
+    const todayLabel = new Intl.DateTimeFormat('es-AR', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    }).format(new Date());
+    const routeNames = {
+        directors: 'Directivos', preceptors: 'Preceptores', teachers: 'Docentes',
+        students: 'Alumnos', invitations: 'Invitaciones', careers: 'Carreras',
+        courses: 'Cursos', subjects: 'Materias', institution: 'Institución',
+        'subject-schedules': 'Horarios de materias', 'my-subjects': 'Mis cursos',
+        'early-notices': 'Avisos tempranos',
+        'institution-communications': 'Comunicaciones institucionales',
+        staff: 'Solicitudes de personal', directory: 'Directorio institucional',
+        profile: 'Mi perfil',
+        'service-config': 'Configuración',
+    };
+    const routePart = location.pathname.split('/')[2];
+    const assignmentRouteTitles = {
+        students: 'Matrículas de alumnos', teachers: 'Asignación de docentes', schedules: 'Horarios y turnos',
+    };
+    const headerTitle = isRoot
+        ? (dashboardHeader?.title || `¡Hola, ${user?.firstName || 'Usuario'}!`)
+        : (routePart === 'assignments'
+            ? (assignmentRouteTitles[location.pathname.split('/')[3]] || 'Asignaciones')
+            : routeNames[routePart] || currentPage);
+    const headerEyebrow = isRoot
+        ? (dashboardHeader?.eyebrow || todayLabel)
+        : (['students', 'teachers', 'preceptors', 'directors', 'invitations'].includes(routePart)
+            ? 'Gestión de usuarios'
+            : ['careers', 'courses', 'subjects', 'subject-schedules', 'institution', 'assignments'].includes(routePart)
+                ? 'Gestión académica' : 'EduQuest');
+
+    // Respeta el historial del usuario. Si llegó por enlace directo, utiliza un destino seguro.
+    const previousView = () => {
+        if (location.pathname.startsWith('/dashboard/staff/requests')) navigate('/dashboard', { state: { section: 'users' } });
+        else if (location.pathname.startsWith('/dashboard/assignments/')) navigate('/dashboard', { state: { section: 'academic' } });
+        else if (location.pathname.startsWith('/dashboard/my-subjects/')) navigate('/dashboard/my-subjects');
+        else if (/^\/dashboard\/(students|teachers|preceptors|directors|invitations|careers|courses|subjects)(\/.*)?$/.test(location.pathname)) {
+            navigate('/dashboard', { state: { section: /students|teachers|preceptors|directors|invitations/.test(location.pathname) ? 'users' : 'academic' } });
+        } else {
+            const idx = window.history.state?.idx;
+            if (typeof idx === 'number' && idx > 0) navigate(-1);
+            else navigate('/dashboard');
+        }
+    };
 
     const closeMobileMenu = () => {
         setMobileMenuOpen(false);
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         setMobileMenuOpen(false);
         setProfileMenuOpen(false);
+        try { await revokePushOnLogout(token); }
+        catch (error) { console.warn('[EduQuest] No se pudo desvincular Push de este dispositivo:', error); }
         logoutContext();
     };
 
@@ -238,14 +314,14 @@ export default function DashboardLayout() {
         : 'lg:w-[260px]';
 
     return (
-        <BackgroundLayout>
-            <div className="relative min-h-screen text-white">
+        <BackgroundLayout variant="campus">
+            <div className="eduquest-campus relative min-h-screen text-white">
 
                 {/* CAPA OSCURA GENERAL */}
-                <div className="pointer-events-none fixed inset-0 z-0 bg-slate-950/35" />
+                <div className="pointer-events-none fixed inset-0 z-0 bg-[#071629]/20" />
 
                 {/* HEADER SUPERIOR */}
-                <header className="sticky top-0 z-40 h-[76px] border-b border-slate-700/60 bg-slate-950/90 shadow-lg shadow-black/10 backdrop-blur-xl">
+                <header className="eq-campus-header sticky top-0 z-40 h-[76px] border-b border-[#35506c]/50 bg-[#14283F]/95 shadow-lg shadow-black/10 backdrop-blur-xl">
                     <div className="flex h-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
 
                         {/* IZQUIERDA */}
@@ -265,7 +341,7 @@ export default function DashboardLayout() {
                             <Link
                                 to="/dashboard"
                                 onClick={closeMobileMenu}
-                                className="flex shrink-0 cursor-pointer items-center gap-3"
+                                className="hidden shrink-0 cursor-pointer items-center gap-3 sm:flex"
                                 aria-label="Ir al panel principal"
                             >
                                 <img
@@ -277,21 +353,21 @@ export default function DashboardLayout() {
 
                             <div className="hidden h-8 w-px bg-slate-700/80 sm:block" />
 
-                            <div className="hidden min-w-0 sm:block">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-400">
-                                    Plataforma educativa
+                            <div className="min-w-0">
+                                <p className="max-w-[200px] truncate text-[9px] font-semibold uppercase tracking-[0.09em] text-sky-400 sm:max-w-[400px] sm:text-[10px] sm:tracking-[0.14em]">
+                                    {headerEyebrow}
                                 </p>
-
-                                <p className="mt-0.5 truncate text-sm font-semibold text-slate-200">
-                                    {currentPage}
-                                </p>
+                                <h1 className="mt-0.5 max-w-[165px] truncate text-xs font-bold text-white sm:max-w-[420px] sm:text-base" title={headerTitle}>
+                                    {headerTitle}
+                                </h1>
                             </div>
                         </div>
 
                         {/* DERECHA */}
-                        <div className="flex items-center gap-3">
-
-                            <div className="hidden items-center gap-2 rounded-full border border-emerald-500/15 bg-emerald-500/5 px-3 py-1.5 text-xs text-emerald-300 md:flex">
+                        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                            <InstallPwaButton compact />
+                            <WebPushSettings compact />
+                            <div className="hidden items-center gap-2 rounded-full border border-emerald-500/15 bg-emerald-500/5 px-3 py-1.5 text-xs text-emerald-300 xl:flex">
                                 <ShieldCheck size={14} />
                                 Sesión activa
                             </div>
@@ -386,6 +462,15 @@ export default function DashboardLayout() {
                                                     Mi perfil
                                                 </Link>
 
+                                                {canViewConfiguration && <Link
+                                                    to="/dashboard/service-config"
+                                                    onClick={() => setProfileMenuOpen(false)}
+                                                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+                                                >
+                                                    <Settings2 size={18} />
+                                                    Configuración
+                                                </Link>}
+
                                                 <button
                                                     type="button"
                                                     onClick={handleLogout}
@@ -408,9 +493,9 @@ export default function DashboardLayout() {
 
                     {/* SIDEBAR ESCRITORIO */}
                     <aside
-                        className={`sticky top-[76px] hidden h-[calc(100vh-76px)] shrink-0 flex-col border-r border-slate-700/60 bg-slate-950/85 backdrop-blur-xl transition-[width] duration-300 lg:flex ${sidebarWidth}`}
+                        className={`eq-campus-sidebar sticky top-[76px] hidden h-[calc(100vh-76px)] shrink-0 flex-col border-r border-[#3e5b77]/40 bg-[#14283F]/95 backdrop-blur-xl transition-[width] duration-300 lg:flex ${sidebarWidth}`}
                     >
-                        <div className="flex min-h-0 flex-1 flex-col p-3">
+                        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">
 
                             {/* ENCABEZADO SIDEBAR */}
                             <div
@@ -455,34 +540,25 @@ export default function DashboardLayout() {
                                 aria-label="Navegación principal"
                                 className="space-y-1.5"
                             >
-                                {visibleNavigation.map((item) => (
-                                    <SidebarLink
-                                        key={item.to}
-                                        {...item}
-                                        unreadCount={item.to === '/dashboard/early-notices' ? unreadCount : 0}
-                                        collapsed={sidebarCollapsed}
-                                    />
+                                {visibleGroups.map((group, index) => (
+                                    <div key={group.label} className={index === 0 ? '' : 'eq-side-divider mt-4 border-t border-slate-600/40 pt-4'}>
+                                        {group.items.map(item => <SidebarLink key={item.to} {...item}
+                                            unreadCount={item.to === '/dashboard/early-notices' ? unreadCount : 0}
+                                            collapsed={sidebarCollapsed} />)}
+                                    </div>
                                 ))}
                             </nav>
 
                             <div className="mt-auto pt-6">
 
-                                {!sidebarCollapsed && (
-                                    <div className="mb-4 rounded-xl border border-blue-500/15 bg-gradient-to-br from-blue-500/10 to-slate-900/30 p-4">
-                                        <Sparkles
-                                            size={19}
-                                            className="mb-3 text-blue-400"
-                                        />
-
-                                        <p className="text-sm font-semibold text-slate-200">
-                                            Seguí avanzando
-                                        </p>
-
-                                        <p className="mt-2 text-xs leading-relaxed text-slate-400">
-                                            Cada desafío es una oportunidad para aprender.
-                                        </p>
-                                    </div>
-                                )}
+                                {canViewConfiguration && <div className="mb-2">
+                                    <SidebarLink
+                                        to="/dashboard/service-config"
+                                        label="Configuración"
+                                        Icon={Settings2}
+                                        collapsed={sidebarCollapsed}
+                                    />
+                                </div>}
 
                                 <button
                                     type="button"
@@ -508,12 +584,17 @@ export default function DashboardLayout() {
                     </aside>
 
                     {/* CONTENIDO */}
-                    <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-1 flex-col">
 
                         {/* BARRA DE UBICACIÓN */}
                         {!isRoot && (
-                            <div className="border-b border-slate-700/40 bg-slate-950/30 px-4 py-3 backdrop-blur-sm sm:px-6 lg:px-8">
+                            <div className="eq-campus-breadcrumb border-b border-slate-700/40 bg-slate-950/30 px-4 py-3 backdrop-blur-sm sm:px-6 lg:px-8">
                                 <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                                    <button type="button" onClick={previousView}
+                                        className="mr-3 inline-flex items-center gap-2 rounded-xl border-2 border-amber-200 bg-amber-400 px-4 py-2.5 text-sm font-extrabold text-slate-950 shadow-lg shadow-amber-500/25 transition hover:bg-amber-300 hover:scale-[1.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                        aria-label="Volver a la vista anterior">
+                                        <ArrowLeft size={20} strokeWidth={3} /> Volver atrás
+                                    </button>
                                     <Link
                                         to="/dashboard"
                                         className="inline-flex cursor-pointer items-center gap-2 text-slate-400 transition-colors hover:text-blue-300"
@@ -534,9 +615,15 @@ export default function DashboardLayout() {
                             </div>
                         )}
 
-                        <main className="mx-auto w-full max-w-[1700px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-                            <Outlet />
+                        <main className="eq-campus-page mx-auto w-full max-w-[1700px] flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+                            <Outlet context={{ updateDashboardHeader }} />
                         </main>
+                        <footer className="eq-campus-footer mt-auto border-t border-[#4a647c]/40 bg-[#13283e]/80 px-5 py-5 text-xs text-slate-300 sm:px-8" aria-label="Pie de página de EduQuest">
+                            <div className="mx-auto flex w-full max-w-[1700px] flex-wrap items-center justify-between gap-3">
+                                <p><strong className="text-teal-300">EduQuest</strong> <span className="mx-2 text-slate-600">|</span> Plataforma educativa y actividades interactivas</p>
+                                <p>© {new Date().getFullYear()} EduQuest · Entorno académico</p>
+                            </div>
+                        </footer>
                     </div>
                 </div>
 
@@ -551,7 +638,7 @@ export default function DashboardLayout() {
                             className="absolute inset-0 cursor-pointer bg-black/70 backdrop-blur-sm"
                         />
 
-                        <aside className="absolute inset-y-0 left-0 flex w-[min(320px,88vw)] flex-col border-r border-slate-700 bg-slate-950 shadow-2xl">
+                        <aside className="eq-campus-sidebar absolute inset-y-0 left-0 flex w-[min(320px,88vw)] flex-col border-r border-slate-700 bg-slate-950 shadow-2xl">
 
                             <div className="flex items-center justify-between border-b border-slate-800 px-5 py-5">
                                 <img
@@ -592,18 +679,21 @@ export default function DashboardLayout() {
                                 </p>
 
                                 <nav className="space-y-1.5">
-                                    {visibleNavigation.map((item) => (
-                                        <SidebarLink
-                                            key={item.to}
-                                            {...item}
+                                    {visibleGroups.map((group, index) => <div key={group.label} className={index ? 'eq-side-divider mt-5 border-t border-slate-700 pt-4' : ''}>
+                                        {group.items.map(item => <SidebarLink key={item.to} {...item}
                                             unreadCount={item.to === '/dashboard/early-notices' ? unreadCount : 0}
-                                            onNavigate={closeMobileMenu}
-                                        />
-                                    ))}
+                                            onNavigate={closeMobileMenu} />)}
+                                    </div>)}
                                 </nav>
                             </div>
 
                             <div className="border-t border-slate-800 p-4">
+                                {canViewConfiguration && <SidebarLink
+                                    to="/dashboard/service-config"
+                                    label="Configuración"
+                                    Icon={Settings2}
+                                    onNavigate={closeMobileMenu}
+                                />}
                                 <button
                                     type="button"
                                     onClick={handleLogout}

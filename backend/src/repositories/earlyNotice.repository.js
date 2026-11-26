@@ -86,6 +86,7 @@ export const createNoticeWithClasses = (data, classes, creatorId) =>
                 classDate: item.classDate,
                 day: item.day,
                 shift: item.shift,
+                modality: item.modality,
                 startTime: item.startTime,
                 endTime: item.endTime,
             })),
@@ -110,6 +111,7 @@ export const createNoticeWithClasses = (data, classes, creatorId) =>
                         classDate: c.classDate.toISOString().slice(0, 10),
                         day: c.day,
                         shift: c.shift,
+                        modality: c.modality,
                         startTime: c.startTime,
                         endTime: c.endTime,
                     })),
@@ -262,6 +264,7 @@ export const earlyNoticeRepository = {
                         id: true,
                         nombre: true,
                         institutionId: true,
+                        shift: true,
 
                         career: {
                             select: {
@@ -357,6 +360,7 @@ export const earlyNoticeRepository = {
                         shift: true,
                         startTime: true,
                         endTime: true,
+                        modality: true,
                     },
 
                     orderBy: [
@@ -555,6 +559,34 @@ export const earlyNoticeRepository = {
         }).then(normalizeNotice);
     },
 
+    async bulkSoftDeleteHistory(ids, updatedById, institutionId, futureFilter) {
+        // Validar y actualizar en una sola transacción: o se borran todos o ninguno.
+        const where = {
+            id: { in: ids },
+            deletedAt: null,
+            ...(institutionId ? { institutionId } : {}),
+            OR: [{ isActive: false }, { NOT: futureFilter }],
+        };
+        return prisma.$transaction(async (tx) => {
+            const eligible = await tx.earlyNotice.count({ where });
+            if (eligible !== ids.length) {
+                const error = new Error('Hay avisos que no pertenecen a tu institución, están eliminados o siguen vigentes. No se eliminó ninguno.');
+                error.status = 409;
+                throw error;
+            }
+            const result = await tx.earlyNotice.updateMany({
+                where,
+                data: { deletedAt: new Date(), isActive: false, updatedById },
+            });
+            if (result.count !== ids.length) {
+                const error = new Error('El historial cambió durante la operación. No se eliminó ninguno.');
+                error.status = 409;
+                throw error;
+            }
+            return { deletedCount: result.count };
+        });
+    },
+
     count(where) {
         return prisma.earlyNotice.count({
             where,
@@ -612,7 +644,7 @@ export const earlyNoticeRepository = {
                             teacherSubjectId: c.teacherSubjectId,
                             scheduleId: c.scheduleId,
                             classDate: c.classDate.toISOString().slice(0, 10),
-                            day: c.day, shift: c.shift, startTime: c.startTime, endTime: c.endTime,
+                            day: c.day, shift: c.shift, modality: c.modality, startTime: c.startTime, endTime: c.endTime,
                         })),
                     },
                 },
@@ -647,7 +679,7 @@ export const earlyNoticeRepository = {
                         classes: updated.affectedClasses.map(c => ({
                             teacherSubjectId: c.teacherSubjectId, scheduleId: c.scheduleId,
                             classDate: c.classDate.toISOString().slice(0, 10), day: c.day,
-                            shift: c.shift, startTime: c.startTime, endTime: c.endTime,
+                            shift: c.shift, modality: c.modality, startTime: c.startTime, endTime: c.endTime,
                         })),
                     },
                 },

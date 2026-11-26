@@ -3,67 +3,74 @@ using System.Threading.Tasks;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
 
+// Cliente HTTP compartido por AuthService, AcademicService y StudentGateway.
 public class ApiClient
 {
     private readonly string baseUrl;
     private readonly SessionManager sessionManager;
-
     public ApiClient(string baseUrl, SessionManager sessionManager)
     {
-        this.baseUrl = baseUrl;
+        this.baseUrl = baseUrl.TrimEnd('/');
         this.sessionManager = sessionManager;
     }
-
-    public async Task<TResponse> GetAsync<TResponse>(string endpoint)
+    public Task<T> GetAsync<T>(string endpoint) => Request<T>("GET", endpoint);
+    public Task<TResponse> PostAsync<TRequest, TResponse>(string endpoint, TRequest body) => Request<TResponse>("POST", endpoint, body);
+    public Task<TResponse> PatchAsync<TRequest, TResponse>(string endpoint, TRequest body) => Request<TResponse>("PATCH", endpoint, body);
+    // Descarga binaria autenticada. No se expone el JWT en URLs externas.
+    public async Task<byte[]> GetBytesAsync(string endpoint)
     {
-        using var request = UnityWebRequest.Get(baseUrl + endpoint);
-        ApplyAuthHeader(request);
-
-        var operation = request.SendWebRequest();
-        while (!operation.isDone) await Task.Yield();
-
-        if (request.result != UnityWebRequest.Result.Success)
-            throw new ApiException(ExtractErrorMessage(request.downloadHandler.text));
-
-        return JsonConvert.DeserializeObject<TResponse>(request.downloadHandler.text);
-    }
-
-    public async Task<TResponse> PostAsync<TRequest, TResponse>(string endpoint, TRequest body)
-    {
-        string json = JsonConvert.SerializeObject(body);
-        byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
-
-        using var request = new UnityWebRequest(baseUrl + endpoint, "POST");
-        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-        request.downloadHandler = new DownloadHandlerBuffer();
-        request.SetRequestHeader("Content-Type", "application/json");
-        ApplyAuthHeader(request);
-
-        var operation = request.SendWebRequest();
-        while (!operation.isDone) await Task.Yield();
-
-        if (request.result != UnityWebRequest.Result.Success)
-            throw new ApiException(ExtractErrorMessage(request.downloadHandler.text));
-
-        return JsonConvert.DeserializeObject<TResponse>(request.downloadHandler.text);
-    }
-
-    private void ApplyAuthHeader(UnityWebRequest request)
-    {
-        if (sessionManager.IsLoggedIn)
-            request.SetRequestHeader("Authorization", $"Bearer {sessionManager.Token}");
-    }
-
-    private string ExtractErrorMessage(string rawJson)
-    {
-        try
+        if (!sessionManager.IsLoggedIn) throw new ApiException("Iniciá sesión para descargar el material.");
+        using (var request = UnityWebRequest.Get(baseUrl + endpoint))
         {
-            var error = JsonConvert.DeserializeObject<ErrorResponseDTO>(rawJson);
-            return error?.message ?? "Error de conexión";
+            request.timeout = 60;
+            request.SetRequestHeader("Authorization", "Bearer " + sessionManager.Token);
+            var operation = request.SendWebRequest();
+            while (!operation.isDone) await Task.Yield();
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                string msg = "No se pudo descargar el material";
+                try
+                {
+                    var error = JsonConvert.DeserializeObject<ErrorResponseDTO>(request.downloadHandler.text);
+                    if (!string.IsNullOrWhiteSpace(error?.message)) msg = error.message;
+                }
+                catch (JsonException) { }
+                throw new ApiException($"{msg} (HTTP {request.responseCode})");
+            }
+            var data = request.downloadHandler.data;
+            if (data == null || data.Length == 0) throw new ApiException("El archivo descargado está vacío.");
+            return data;
         }
-        catch
+    }
+
+    public async Task<T> Request<T>(string method, string endpoint, object body = null)
+    {
+        using (var request = new UnityWebRequest(baseUrl + endpoint, method))
         {
-            return "Error de conexión";
+            request.timeout = 25;
+            request.downloadHandler = new DownloadHandlerBuffer();
+            if (body != null)
+            {
+                request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(body)));
+                request.SetRequestHeader("Content-Type", "application/json");
+            }
+            if (sessionManager.IsLoggedIn)
+                request.SetRequestHeader("Authorization", "Bearer " + sessionManager.Token);
+            var operation = request.SendWebRequest();
+            while (!operation.isDone) await Task.Yield();
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                string msg = request.responseCode == 0 ? "No se pudo conectar con la API. Verificá el servidor y la URL." : "La operación falló";
+                try
+                {
+                    var error = JsonConvert.DeserializeObject<ErrorResponseDTO>(request.downloadHandler.text);
+                    if (!string.IsNullOrWhiteSpace(error?.message)) msg = error.message;
+                }
+                catch (JsonException) { }
+                throw new ApiException($"{msg} (HTTP {request.responseCode})");
+            }
+            if (string.IsNullOrWhiteSpace(request.downloadHandler.text)) return default(T);
+            return JsonConvert.DeserializeObject<T>(request.downloadHandler.text);
         }
     }
 }

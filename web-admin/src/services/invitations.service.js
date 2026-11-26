@@ -9,7 +9,6 @@ export const invitationsService = {
         const { data } = await api.post('/invitations', payload);
         return data;
     },
-    cancel: async (id) => {
-        await api.delete(`/invitations/${id}`);
-    },
+    cancel: async id => { await api.delete(`/invitations/${id}`); },
+    cleanup: async ids => (await api.post('/invitations/cleanup', { ids })).data,
 };

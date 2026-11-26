@@ -67,10 +67,10 @@ export const listSubjects = (institutionId = null) => {
     const prisma = getPrisma();
 
     return prisma.subject.findMany({
-        where:
-            institutionId == null
-                ? {}
-                : { institutionId },
+        where: {
+            deletedAt: null,
+            ...(institutionId != null ? { institutionId } : {}),
+        },
         include: subjectInclude,
         orderBy: { nombre: 'asc' },
     });
@@ -82,6 +82,7 @@ export const findSubject = (id, institutionId = null) => {
     return prisma.subject.findFirst({
         where: {
             id,
+            deletedAt: null,
             ...(institutionId != null
                 ? { institutionId }
                 : {}),
@@ -94,6 +95,7 @@ export const createSubject = ({
     nombre,
     institutionId,
     teacherId,
+    careerId,
     courseId,
     schedules = [],
 }) => {
@@ -115,6 +117,8 @@ export const createSubject = ({
                 where: {
                     id: courseId,
                     institutionId,
+                    careerId,
+                    career: { institutionId },
                 },
                 select: { id: true },
             }),
@@ -147,6 +151,7 @@ export const createSubject = ({
                     courseId,
                     day: schedule.day,
                     shift: schedule.shift,
+                    modality: schedule.modality,
                     startTime: schedule.startTime,
                     endTime: schedule.endTime,
                 })),
@@ -167,6 +172,7 @@ export const updateSubject = (
         nombre,
         isActive,
         teacherId,
+        careerId,
         courseId,
         schedules,
     }
@@ -177,6 +183,7 @@ export const updateSubject = (
         const subject = await tx.subject.findFirst({
             where: {
                 id,
+                deletedAt: null,
                 ...(institutionId != null
                     ? { institutionId }
                     : {}),
@@ -210,6 +217,21 @@ export const updateSubject = (
                 ? activeAssignments[0].courseId
                 : null);
 
+        // Si viene la carrera seleccionada, validar también su relación con el curso
+        // aunque el docente responsable permanezca igual.
+        if (careerId !== undefined && selectedCourseId != null) {
+            const selectedCourse = await tx.course.findFirst({
+                where: {
+                    id: selectedCourseId,
+                    institutionId: subject.institutionId,
+                    careerId,
+                    career: { institutionId: subject.institutionId },
+                },
+                select: { id: true },
+            });
+            if (!selectedCourse) throw badRequest('La carrera no corresponde al curso y la institución seleccionados.');
+        }
+
         // Si solo se modifica el nombre o estado de la materia,
         // no se toca ninguna asignación docente.
         const shouldUpdateTeacher = teacherId != null;
@@ -236,6 +258,10 @@ export const updateSubject = (
                     where: {
                         id: selectedCourseId,
                         institutionId: subject.institutionId,
+                        ...(careerId !== undefined ? {
+                            careerId,
+                            career: { institutionId: subject.institutionId },
+                        } : {}),
                     },
                     select: { id: true },
                 }),
@@ -247,41 +273,123 @@ export const updateSubject = (
                 );
             }
 
-            // Se desactivan las asignaciones anteriores
-            // únicamente de esta materia y este curso.
-            // No se borran actividades, contenidos ni avisos.
-            await tx.teacherSubject.updateMany({
+            // Serializa los cambios de docente frente a nuevas asignaciones
+            // desde «Docentes y materias». El índice único parcial conserva
+            // la garantía incluso bajo concurrencia en PostgreSQL.
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock(${id}::integer, ${selectedCourseId}::integer)`;
+
+            const currentActiveAssignment = await tx.teacherSubject.findFirst({
                 where: {
                     subjectId: id,
                     courseId: selectedCourseId,
                     isActive: true,
-                    teacherId: { not: teacherId },
                 },
-                data: {
-                    isActive: false,
+                select: {
+                    id: true,
+                    teacherId: true,
                 },
             });
 
-            // Si el docente ya había estado asignado, recuperamos
-            // su registro histórico. Si es nuevo, lo creamos.
-            await tx.teacherSubject.upsert({
-                where: {
-                    teacherId_subjectId_courseId: {
-                        teacherId,
+            // Si ya está asignado el mismo docente, no hay nada que migrar.
+            if (currentActiveAssignment?.teacherId !== teacherId) {
+                const historicalAssignmentForNewTeacher = await tx.teacherSubject.findFirst({
+                    where: {
                         subjectId: id,
                         courseId: selectedCourseId,
+                        teacherId,
                     },
-                },
-                create: {
-                    teacherId,
-                    subjectId: id,
-                    courseId: selectedCourseId,
-                    isActive: true,
-                },
-                update: {
-                    isActive: true,
-                },
-            });
+                    select: {
+                        id: true,
+                        isActive: true,
+                    },
+                });
+
+                if (currentActiveAssignment) {
+                    if (historicalAssignmentForNewTeacher) {
+                        const previousAssignmentId = currentActiveAssignment.id;
+                        const nextAssignmentId = historicalAssignmentForNewTeacher.id;
+
+                        // Desactivar primero el responsable anterior: el índice único
+                        // parcial de PostgreSQL impide dos docentes activos por curso/materia
+                        // incluso temporalmente dentro de esta transacción.
+                        await tx.teacherSubject.update({
+                            where: { id: previousAssignmentId },
+                            data: { isActive: false },
+                        });
+
+                        // Reactivar el registro histórico del nuevo docente y moverle
+                        // todo el contenido y seguimiento pedagógico del docente anterior.
+                        await tx.teacherSubject.update({
+                            where: { id: nextAssignmentId },
+                            data: { isActive: true },
+                        });
+
+                        await tx.earlyNoticeClass.updateMany({
+                            where: { teacherSubjectId: previousAssignmentId },
+                            data: { teacherSubjectId: nextAssignmentId },
+                        });
+                        await tx.activity.updateMany({
+                            where: { teacherSubjectId: previousAssignmentId },
+                            data: { teacherSubjectId: nextAssignmentId },
+                        });
+                        await tx.unit.updateMany({
+                            where: { teacherSubjectId: previousAssignmentId },
+                            data: { teacherSubjectId: nextAssignmentId },
+                        });
+                        await tx.studyMaterial.updateMany({
+                            where: { teacherSubjectId: previousAssignmentId },
+                            data: { teacherSubjectId: nextAssignmentId },
+                        });
+                        await tx.teacherSubjectContent.updateMany({
+                            where: { teacherSubjectId: previousAssignmentId },
+                            data: { teacherSubjectId: nextAssignmentId },
+                        });
+
+                    } else {
+                        // Ruta ideal: conservar exactamente el mismo registro activo.
+                        // De esta forma, actividades, unidades, materiales, historial,
+                        // rankings y resultados siguen apuntando al mismo teacherSubjectId.
+                        await tx.teacherSubject.update({
+                            where: { id: currentActiveAssignment.id },
+                            data: { teacherId, isActive: true },
+                        });
+                    }
+                } else {
+                    // No había responsable activo: se crea o reactiva uno para este curso.
+                    await tx.teacherSubject.upsert({
+                        where: {
+                            teacherId_subjectId_courseId: {
+                                teacherId,
+                                subjectId: id,
+                                courseId: selectedCourseId,
+                            },
+                        },
+                        create: {
+                            teacherId,
+                            subjectId: id,
+                            courseId: selectedCourseId,
+                            isActive: true,
+                        },
+                        update: {
+                            isActive: true,
+                        },
+                    });
+                }
+
+                // Garantía de unicidad lógica: no puede quedar otra asignación activa
+                // distinta a la elegida para esta materia y curso.
+                await tx.teacherSubject.updateMany({
+                    where: {
+                        subjectId: id,
+                        courseId: selectedCourseId,
+                        isActive: true,
+                        teacherId: { not: teacherId },
+                    },
+                    data: {
+                        isActive: false,
+                    },
+                });
+            }
         }
 
         if (schedules !== undefined) {
@@ -323,6 +431,7 @@ export const updateSubject = (
                 const data = {
                     day: schedule.day,
                     shift: schedule.shift,
+                    modality: schedule.modality,
                     startTime: schedule.startTime,
                     endTime: schedule.endTime,
                 };
@@ -371,6 +480,48 @@ export const updateSubject = (
         });
     });
 };
+
+// Eliminar del catálogo sin destruir la evidencia histórica de actividades.
+// Todas las asignaciones vigentes quedan desvinculadas de la docencia operativa.
+export const archiveSubjectWithAssignments = (id, institutionId) => getPrisma().$transaction(async (tx) => {
+    const subject = await tx.subject.findFirst({
+        where: { id, deletedAt: null, ...(institutionId != null ? { institutionId } : {}) },
+        select: { id: true },
+    });
+    if (!subject) throw Object.assign(new Error('Materia inexistente'), { status: 404 });
+    const assignments = await tx.teacherSubject.findMany({
+        where: { subjectId: id }, select: { id: true },
+    });
+    const assignmentIds = assignments.map(a => a.id);
+    // Sin contenido ni historial, borramos físicamente materia y asignaciones.
+    // Si existe evidencia académica, la archivamos para que siga siendo consultable.
+    const [notices, affectedClasses, activities, units, materials, contents, evaluations] = await Promise.all([
+        tx.earlyNotice.count({ where: { subjectId: id } }),
+        tx.earlyNoticeClass.count({ where: { teacherSubjectId: { in: assignmentIds } } }),
+        tx.activity.count({ where: { teacherSubjectId: { in: assignmentIds } } }),
+        tx.unit.count({ where: { teacherSubjectId: { in: assignmentIds } } }),
+        tx.studyMaterial.count({ where: { teacherSubjectId: { in: assignmentIds } } }),
+        tx.teacherSubjectContent.count({ where: { teacherSubjectId: { in: assignmentIds } } }),
+        tx.manualEvaluation.count({ where: { teacherSubjectId: { in: assignmentIds } } }),
+    ]);
+    if (![notices, affectedClasses, activities, units, materials, contents, evaluations].some(Boolean)) {
+        // Los horarios tienen onDelete Cascade y no hay avisos vinculados.
+        await tx.teacherSubject.deleteMany({ where: { subjectId: id } });
+        await tx.subject.delete({ where: { id } });
+        return { id, permanentlyDeleted: true };
+    }
+    if (assignmentIds.length) {
+        await tx.teacherSubject.updateMany({ where: { id: { in: assignmentIds } }, data: { isActive: false } });
+        await tx.activity.updateMany({
+            where: { teacherSubjectId: { in: assignmentIds } },
+            data: { isPublished: false, status: 'INACTIVE' },
+        });
+        await tx.studyMaterial.updateMany({
+            where: { teacherSubjectId: { in: assignmentIds } }, data: { isPublished: false },
+        });
+    }
+    return tx.subject.update({ where: { id }, data: { isActive: false, deletedAt: new Date() } });
+});
 
 export const deleteSubject = (id, institutionId) => {
     const prisma = getPrisma();

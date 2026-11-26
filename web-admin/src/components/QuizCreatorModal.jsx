@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Check, Plus, Trash2, X } from 'lucide-react';
 
 import api from '../api/axios';
@@ -9,10 +9,7 @@ const createEmptyOption = (id) => ({
     isCorrect: false,
 });
 
-const DEFAULT_OPTIONS = [
-    createEmptyOption(1),
-    createEmptyOption(2),
-];
+const emptyOptions = () => [createEmptyOption(1), createEmptyOption(2)];
 
 const MAX_OPTIONS = 4;
 const MIN_OPTIONS = 2;
@@ -22,7 +19,7 @@ const normalizeQuizData = (quiz) => {
         return {
             title: '',
             question: '',
-            options: DEFAULT_OPTIONS,
+            options: emptyOptions(),
         };
     }
 
@@ -35,7 +32,7 @@ const normalizeQuizData = (quiz) => {
             text: option?.text ?? '',
             isCorrect: Boolean(option?.isCorrect),
         }))
-        : DEFAULT_OPTIONS;
+        : emptyOptions();
 
     return {
         title: quiz.title ?? '',
@@ -53,18 +50,17 @@ export default function QuizCreatorModal({
     isOpen,
     onClose,
     mode = 'create',
-    teacherSubjectId,
-    teacherId,
     activityId,
     initialQuiz,
+    onSaved,
 }) {
-    const [title, setTitle] = useState('');
-    const [question, setQuestion] = useState('');
-    const [options, setOptions] = useState(DEFAULT_OPTIONS);
+    const initialData = normalizeQuizData(initialQuiz);
+    const [title, setTitle] = useState(initialData.title);
+    const [question, setQuestion] = useState(initialData.question);
+    const [options, setOptions] = useState(initialData.options);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [isSaving, setIsSaving] = useState(false);
-    const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
 
     const isEditMode = mode === 'edit';
 
@@ -93,47 +89,6 @@ export default function QuizCreatorModal({
         return { isValid: true, message: '' };
     }, [title, question, options]);
 
-    useEffect(() => {
-        if (!isOpen) {
-            return;
-        }
-
-        if (initialQuiz) {
-            const normalized = normalizeQuizData(initialQuiz);
-            setTitle(normalized.title);
-            setQuestion(normalized.question);
-            setOptions(normalized.options);
-            return;
-        }
-
-        if (isEditMode && activityId) {
-            const loadQuiz = async () => {
-                setIsLoadingQuiz(true);
-                try {
-                    const { data } = await api.get(`/activities/${activityId}`);
-                    const normalized = normalizeQuizData(data);
-                    setTitle(normalized.title);
-                    setQuestion(normalized.question);
-                    setOptions(normalized.options);
-                } catch (requestError) {
-                    const backendMessage = requestError?.response?.data?.message || 'No se pudo cargar el cuestionario.';
-                    setError(backendMessage);
-                } finally {
-                    setIsLoadingQuiz(false);
-                }
-            };
-
-            loadQuiz();
-            return;
-        }
-
-        setTitle('');
-        setQuestion('');
-        setOptions(DEFAULT_OPTIONS);
-        setError('');
-        setSuccessMessage('');
-    }, [isOpen, activityId, initialQuiz, isEditMode]);
-
     const addOption = () => {
         if (options.length >= MAX_OPTIONS) {
             return;
@@ -154,11 +109,10 @@ export default function QuizCreatorModal({
             const updated = prev.filter(option => option.id !== id);
             const correctOptions = updated.filter(option => option.isCorrect).length;
 
-            if (correctOptions === 0 && updated.length > 0) {
-                updated[0].isCorrect = true;
-            }
-
-            return updated;
+            return updated.map((option, index) => ({
+                ...option,
+                isCorrect: correctOptions === 0 && index === 0 ? true : option.isCorrect,
+            }));
         });
     };
 
@@ -177,16 +131,7 @@ export default function QuizCreatorModal({
         })));
     };
 
-    const resetForm = () => {
-        setTitle('');
-        setQuestion('');
-        setOptions(DEFAULT_OPTIONS);
-        setError('');
-        setSuccessMessage('');
-    };
-
     const closeModal = () => {
-        resetForm();
         onClose();
     };
 
@@ -201,8 +146,6 @@ export default function QuizCreatorModal({
         setSuccessMessage('');
 
         const payload = {
-            teacherId: teacherId ?? null,
-            teacherSubjectId: teacherSubjectId ?? null,
             title: title.trim(),
             activityType: 'TRIVIA',
             questions: [
@@ -217,17 +160,16 @@ export default function QuizCreatorModal({
         };
 
         try {
+            let savedActivity;
             if (isEditMode && activityId) {
-                await api.put(`/activities/${activityId}`, payload);
-                setSuccessMessage('Cuestionario actualizado correctamente.');
+                const { data } = await api.put(`/activities/${activityId}`, payload);
+                savedActivity = data;
             } else {
-                await api.post('/activities/quiz', payload);
-                setSuccessMessage('Cuestionario creado correctamente.');
+                const { data } = await api.post('/activities/quiz', payload);
+                savedActivity = data;
             }
-
-            setTimeout(() => {
-                closeModal();
-            }, 900);
+            setSuccessMessage(isEditMode ? 'Borrador actualizado correctamente.' : 'Borrador guardado correctamente.');
+            onSaved?.(savedActivity);
         } catch (requestError) {
             const backendMessage = requestError?.response?.data?.message
                 || requestError?.message
@@ -262,12 +204,7 @@ export default function QuizCreatorModal({
                 </div>
 
                 <div className="space-y-5 p-6">
-                    {isLoadingQuiz ? (
-                        <div className="rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-5 text-slate-300">
-                            Cargando cuestionario...
-                        </div>
-                    ) : (
-                        <>
+                    <>
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-slate-300">
                                     Título del cuestionario
@@ -359,8 +296,7 @@ export default function QuizCreatorModal({
                                     ))}
                                 </div>
                             </div>
-                        </>
-                    )}
+                    </>
 
                     {error && (
                         <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
@@ -389,7 +325,7 @@ export default function QuizCreatorModal({
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            disabled={isLoadingQuiz || !validation.isValid || isSaving}
+                            disabled={!validation.isValid || isSaving}
                             className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
                         >
                             {isSaving ? 'Guardando...' : isEditMode ? 'Actualizar' : 'Guardar'}

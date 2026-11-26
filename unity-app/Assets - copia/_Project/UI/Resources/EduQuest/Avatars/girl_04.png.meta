@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: b389352819eb42feaea16308cc7be686
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+  isReadable: 0
+  textureType: 0
+  textureShape: 1
+  maxTextureSize: 512
+  alphaIsTransparency: 1
+  sRGBTexture: 1
+  platformSettings: []
+  spriteSheet:
+    sprites: []

@@ -1,3 +1,4 @@
+import { shiftLabel, SHIFTS } from '../utils/courseShift';
 import {
     useState,
     useEffect,
@@ -9,12 +10,15 @@ import { useQuery } from '@tanstack/react-query';
 
 import { AuthContext } from '../context/AuthContext';
 import { useCoursesAdmin } from '../hooks/useCourseAdmin';
+import { useCareersAdmin } from '../hooks/useCareerAdmin';
+import { careersForInstitution, coursesForCareer } from '../utils/subjectHierarchy';
 import { useInstitutions } from '../hooks/useInstitution';
 import { usersService } from '../services/users.service';
 
 const EMPTY_FORM = {
     nombre: '',
     institutionId: '',
+    careerId: '',
     teacherId: '',
     courseId: '',
 };
@@ -28,7 +32,11 @@ const DAYS = [
     'SABADO',
 ];
 
-const SHIFTS = ['MANANA', 'TARDE', 'NOCHE'];
+const MODALITIES = [
+    ['PRESENCIAL', 'Presencial'],
+    ['VIRTUAL_SINCRONA', 'Virtual sincrónica (en vivo)'],
+    ['VIRTUAL_ASINCRONA', 'Virtual asincrónica (sin encuentro en vivo)'],
+];
 
 const DAY_NAMES = {
     LUNES: 'Lunes',
@@ -39,15 +47,10 @@ const DAY_NAMES = {
     SABADO: 'Sábado',
 };
 
-const SHIFT_NAMES = {
-    MANANA: 'Mañana',
-    TARDE: 'Tarde',
-    NOCHE: 'Noche',
-};
-
 const newSchedule = () => ({
     day: 'LUNES',
     shift: 'MANANA',
+    modality: 'PRESENCIAL',
     startTime: '08:00',
     endTime: '09:00',
 });
@@ -58,10 +61,11 @@ const schedulesForCourse = (subject, courseId) =>
             schedule =>
                 Number(schedule.courseId) === Number(courseId)
         )
-        .map(({ id, day, shift, startTime, endTime }) => ({
+        .map(({ id, day, shift, modality, startTime, endTime }) => ({
             id,
             day,
             shift,
+            modality: modality ?? 'PRESENCIAL',
             startTime,
             endTime,
         }));
@@ -99,7 +103,8 @@ export default function SubjectFormModal({
         );
     }, [institutionsData]);
 
-    const { data: coursesData = [] } = useCoursesAdmin();
+    const { data: coursesData = [], isLoading: coursesLoading } = useCoursesAdmin();
+    const { data: careersData = [], isLoading: careersLoading, isError: careersError } = useCareersAdmin();
 
     const courses = useMemo(() => {
         if (Array.isArray(coursesData)) {
@@ -108,6 +113,11 @@ export default function SubjectFormModal({
 
         return coursesData?.courses ?? coursesData?.data ?? [];
     }, [coursesData]);
+
+    const careers = useMemo(() => {
+        if (Array.isArray(careersData)) return careersData;
+        return careersData?.careers ?? careersData?.data ?? [];
+    }, [careersData]);
 
     const { data: teachersData = [] } = useQuery({
         queryKey: ['subject-teachers'],
@@ -124,6 +134,7 @@ export default function SubjectFormModal({
     }, [teachersData]);
 
     const [form, setForm] = useState(EMPTY_FORM);
+    const [courseShiftFilter, setCourseShiftFilter] = useState('');
     const [schedules, setSchedules] = useState([]);
     const [scheduleError, setScheduleError] = useState('');
 
@@ -151,12 +162,16 @@ export default function SubjectFormModal({
 
         const initialInstitutionId =
             initialData?.institutionId ??
-            user?.institutionId ??
-            '';
+            (isSuperAdmin ? '' : (user?.institutionId ?? ''));
 
         setForm({
             nombre: initialData?.nombre ?? '',
             institutionId: String(initialInstitutionId),
+            careerId: firstAssignment
+                ? String(firstAssignment.course?.careerId ??
+                    firstAssignment.course?.career?.id ??
+                    courses.find(course => Number(course.id) === Number(firstAssignment.courseId))?.careerId ?? '')
+                : '',
             teacherId: firstAssignment
                 ? String(firstAssignment.teacherId)
                 : '',
@@ -174,26 +189,36 @@ export default function SubjectFormModal({
                 : []
         );
 
+        setCourseShiftFilter(firstAssignment?.course?.shift ?? '');
         setScheduleError('');
     }, [initialData, open, user?.institutionId]);
 
+    // La relación Carrera -> Curso ya existe en PostgreSQL. Nunca asociar
+    // una materia directamente a una carrera distinta de la del curso.
     const selectedInstitutionId = Number(form.institutionId);
+    const selectedCareerId = Number(form.careerId);
+
+    const filteredCareers = useMemo(() => {
+        return careersForInstitution(careers, selectedInstitutionId);
+    }, [careers, selectedInstitutionId]);
 
     const filteredCourses = useMemo(() => {
-        if (!isSuperAdmin) {
-            return courses;
-        }
+        const matches = coursesForCareer(courses, selectedInstitutionId, selectedCareerId);
+        return courseShiftFilter ? matches.filter(course => course.shift === courseShiftFilter) : matches;
+    }, [courses, selectedInstitutionId, selectedCareerId, courseShiftFilter]);
 
-        if (!selectedInstitutionId) {
-            return [];
-        }
-
-        return courses.filter(
-            course =>
-                Number(course.institutionId) ===
-                selectedInstitutionId
-        );
-    }, [courses, isSuperAdmin, selectedInstitutionId]);
+    // La lista de cursos puede llegar después de que se abre el modal.
+    // Completar la carrera inicial sin sobrescribir cambios manuales.
+    useEffect(() => {
+        if (!open || !isEditing) return;
+        setForm(current => {
+            if (!current.courseId || current.careerId) return current;
+            const course = courses.find(c => Number(c.id) === Number(current.courseId));
+            if (!course?.careerId ||
+                Number(course.institutionId) !== Number(current.institutionId)) return current;
+            return { ...current, careerId: String(course.careerId) };
+        });
+    }, [courses, isEditing, open]);
 
     const filteredTeachers = useMemo(() => {
         if (!isSuperAdmin) {
@@ -223,12 +248,26 @@ export default function SubjectFormModal({
         selectedAssignment.teacherId !== selectedTeacherId;
 
     const handleInstitutionChange = value => {
+        setCourseShiftFilter('');
         setSchedules([]);
         setScheduleError('');
 
         setForm(current => ({
             ...current,
             institutionId: value,
+            careerId: '',
+            courseId: '',
+            teacherId: '',
+        }));
+    };
+
+    const handleCareerChange = value => {
+        setCourseShiftFilter('');
+        setSchedules([]);
+        setScheduleError('');
+        setForm(current => ({
+            ...current,
+            careerId: value,
             courseId: '',
             teacherId: '',
         }));
@@ -275,13 +314,17 @@ export default function SubjectFormModal({
 
         if (
             !nombre ||
+            !form.careerId ||
             !form.courseId ||
             !form.teacherId
         ) {
             return;
         }
 
-        if (isSuperAdmin && !selectedInstitutionId) {
+        if (!selectedInstitutionId ||
+            !filteredCareers.some(career => Number(career.id) === selectedCareerId) ||
+            !filteredCourses.some(course => Number(course.id) === Number(form.courseId))) {
+            setScheduleError('Seleccioná una institución, carrera y curso que correspondan entre sí.');
             return;
         }
 
@@ -306,6 +349,8 @@ export default function SubjectFormModal({
                     (other, j) =>
                         j !== i &&
                         other.day === schedule.day &&
+                        (other.modality ?? 'PRESENCIAL') !== 'VIRTUAL_ASINCRONA' &&
+                        (schedule.modality ?? 'PRESENCIAL') !== 'VIRTUAL_ASINCRONA' &&
                         schedule.startTime < other.endTime &&
                         other.startTime < schedule.endTime
                 )
@@ -321,6 +366,7 @@ export default function SubjectFormModal({
             const payload = {
                 nombre,
                 teacherId: Number(form.teacherId),
+                careerId: selectedCareerId,
                 courseId: Number(form.courseId),
                 schedules,
             };
@@ -336,6 +382,7 @@ export default function SubjectFormModal({
         const payload = {
             id: initialData.id,
             nombre,
+            careerId: selectedCareerId,
             courseId: Number(form.courseId),
             schedules,
         };
@@ -437,6 +484,52 @@ export default function SubjectFormModal({
 
                 <div className="space-y-2">
                     <label
+                        htmlFor="subject-career"
+                        className="block text-sm font-medium text-slate-300"
+                    >
+                        Carrera / nivel educativo
+                    </label>
+                    <select
+                        id="subject-career"
+                        value={form.careerId}
+                        onChange={event => handleCareerChange(event.target.value)}
+                        required
+                        disabled={!selectedInstitutionId || careersLoading}
+                        className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <option value="">Seleccionar carrera / nivel</option>
+                        {filteredCareers.map(career => (
+                            <option key={career.id} value={career.id}>
+                                {career.nombre}
+                            </option>
+                        ))}
+                    </select>
+                    {selectedInstitutionId > 0 && !careersLoading && filteredCareers.length === 0 && (
+                        <p className="text-xs text-amber-300">
+                            Esta institución todavía no tiene carreras o niveles registrados. Crealos primero en Carreras.
+                        </p>
+                    )}
+                    {careersError && (
+                        <p role="alert" className="text-xs text-red-400">
+                            No se pudieron consultar las carreras. Revisá la conexión con el backend.
+                        </p>
+                    )}
+                </div>
+
+                <div className="space-y-2">
+                    <label htmlFor="subject-course-shift" className="block text-sm font-medium text-slate-300">Turno del curso</label>
+                    <select id="subject-course-shift" value={courseShiftFilter} disabled={!form.careerId} onChange={e => {
+                        setCourseShiftFilter(e.target.value);
+                        setForm(current => ({ ...current, courseId: '', teacherId: '' }));
+                        setSchedules([]);
+                    }} className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-50">
+                        <option value="">Todos los turnos</option>
+                        {SHIFTS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
+                    </select>
+                </div>
+
+                <div className="space-y-2">
+                    <label
                         htmlFor="subject-course"
                         className="block text-sm font-medium text-slate-300"
                     >
@@ -452,10 +545,7 @@ export default function SubjectFormModal({
                             )
                         }
                         required
-                        disabled={
-                            isSuperAdmin &&
-                            !form.institutionId
-                        }
+                        disabled={!form.careerId}
                         className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <option value="">
@@ -467,7 +557,7 @@ export default function SubjectFormModal({
                                 key={course.id}
                                 value={course.id}
                             >
-                                {course.nombre}
+                                {course.nombre} · {shiftLabel(course.shift)}
                                 {isEditing &&
                                     assignedCourseIds.has(course.id)
                                     ? ' — asignado'
@@ -475,6 +565,11 @@ export default function SubjectFormModal({
                             </option>
                         ))}
                     </select>
+                    {Boolean(form.careerId) && !coursesLoading && filteredCourses.length === 0 && (
+                        <p className="text-xs text-amber-300">
+                            No hay cursos en esta carrera. Creá un curso y asignale esta carrera en la sección Cursos.
+                        </p>
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -569,7 +664,7 @@ export default function SubjectFormModal({
                             onClick={() => {
                                 setSchedules(current => [
                                     ...current,
-                                    newSchedule(),
+                                    { ...newSchedule(), shift: courses.find(c => Number(c.id) === Number(form.courseId))?.shift ?? 'MANANA' },
                                 ]);
                                 setScheduleError('');
                             }}
@@ -653,15 +748,26 @@ export default function SubjectFormModal({
                                         }
                                         className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
                                     >
-                                        {SHIFTS.map(shift => (
-                                            <option
-                                                key={shift}
-                                                value={shift}
-                                            >
-                                                {SHIFT_NAMES[shift]}
+                                        {SHIFTS.map(({ value, label }) => (
+                                            <option key={value} value={value}>
+                                                {label}
                                             </option>
                                         ))}
                                     </select>
+                                </label>
+
+                                <label className="space-y-1 text-xs text-slate-300 sm:col-span-2">
+                                    <span>Modalidad de cursada</span>
+                                    <select
+                                        value={schedule.modality ?? 'PRESENCIAL'}
+                                        onChange={event => updateSchedule(index, 'modality', event.target.value)}
+                                        className="w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                                    >
+                                        {MODALITIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                                    </select>
+                                    {schedule.modality === 'VIRTUAL_ASINCRONA' && (
+                                        <span className="block text-[11px] text-amber-200">Las horas son una franja de referencia: no implica videoclase en vivo.</span>
+                                    )}
                                 </label>
 
                                 <label className="space-y-1 text-xs text-slate-300">

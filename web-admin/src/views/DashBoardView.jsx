@@ -1,6 +1,6 @@
 
-import { useContext, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useContext, useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 
 import {
     ArrowRight,
@@ -23,6 +23,7 @@ import {
     CalendarDays,
     Megaphone,
     ShieldCheck,
+    Settings2,
     LoaderCircle,
 } from 'lucide-react';
 
@@ -85,6 +86,43 @@ const SECTIONS = {
         }],
     },
 
+    directory: {
+        label: 'Directorio de contactos',
+        eyebrow: 'Comunidad educativa',
+        description: 'Buscá personal de tu institución y consultá los contactos que cada persona haya autorizado.',
+        color: 'text-teal-300',
+        iconBackground: 'bg-teal-500/10',
+        iconBorder: 'border-teal-500/20',
+        hoverBorder: 'hover:border-teal-500/40',
+        gradient: 'from-teal-500/10 via-transparent to-transparent',
+        Icon: UsersRound,
+        directPath: '/dashboard/directory',
+        items: [{
+            key: 'directory', label: 'Abrir directorio', description: 'Contactos de personal',
+            color: 'text-teal-300', iconBackground: 'bg-teal-500/10', Icon: UsersRound,
+            path: '/dashboard/directory', publicToAuthenticated: true, hideCount: true,
+        }],
+    },
+
+    configuration: {
+        label: 'Configuración',
+        eyebrow: 'Servicios institucionales',
+        description: 'Administrá correo institucional, Gemini y notificaciones Web Push. Consultá también el historial de claves.',
+        color: 'text-teal-300',
+        iconBackground: 'bg-teal-500/10',
+        iconBorder: 'border-teal-500/20',
+        hoverBorder: 'hover:border-teal-500/40',
+        gradient: 'from-teal-500/10 via-transparent to-transparent',
+        Icon: Settings2,
+        directPath: '/dashboard/service-config',
+        items: [{
+            key: 'serviceConfig', label: 'Configuración de servicios',
+            description: 'SMTP, Gemini y Web Push', color: 'text-teal-300',
+            iconBackground: 'bg-teal-500/10', Icon: Settings2,
+            path: '/dashboard/service-config', action: 'services:view', hideCount: true,
+        }],
+    },
+
     users: {
         label: 'Gestión de usuarios',
         eyebrow: 'Administración de personas',
@@ -136,6 +174,17 @@ const SECTIONS = {
                 Icon: UsersRound,
                 path: '/dashboard/students',
                 action: 'student:view',
+            },
+            {
+                key: 'staffSignupRequests',
+                label: 'Solicitudes de personal',
+                description: 'Validar las altas públicas de docentes, preceptores y directivos.',
+                color: 'text-teal-300',
+                iconBackground: 'bg-teal-500/10',
+                Icon: UserRoundCheck,
+                path: '/dashboard/staff/requests',
+                action: 'selfSignup:approve',
+                hideCount: true,
             },
             {
                 key: 'invitations',
@@ -289,7 +338,7 @@ function ModuleCard({
         </>
     );
 
-    const className = `group relative flex min-h-[245px] w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/90 p-6 text-left shadow-lg shadow-black/10 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900 hover:shadow-xl hover:shadow-black/20 ${section.hoverBorder}`;
+    const className = `eq-glass-card group relative flex min-h-[245px] w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/90 p-6 text-left shadow-lg shadow-black/10 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:bg-slate-900 hover:shadow-xl hover:shadow-black/20 ${section.hoverBorder}`;
 
     // Avisos Tempranos navega directamente a su vista.
     if (section.directPath) {
@@ -332,7 +381,8 @@ function AccessCard({
     return (
         <Link
             to={item.path}
-            className="group relative flex min-h-[215px] cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/90 p-5 shadow-md shadow-black/10 transition-all duration-200 hover:-translate-y-1 hover:border-blue-500/40 hover:bg-slate-800/95 hover:shadow-xl hover:shadow-black/20 sm:p-6"
+            state={{ section: /students|teachers|preceptors|directors|invitations/.test(item.path) ? 'users' : 'academic' }}
+            className="eq-glass-card group relative flex min-h-[215px] cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/90 p-5 shadow-md shadow-black/10 transition-all duration-200 hover:-translate-y-1 hover:border-blue-500/40 hover:bg-slate-800/95 hover:shadow-xl hover:shadow-black/20 sm:p-6"
         >
             <div className="flex items-start justify-between gap-3">
                 <div
@@ -395,7 +445,32 @@ export default function DashboardView() {
     const auth = useContext(AuthContext);
     const { user } = auth;
 
-    const [activeSection, setActiveSection] = useState(null);
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { updateDashboardHeader } = useOutletContext() ?? {};
+    // Los accesos del sidebar usan ?section=; Panel principal sin query muestra las tarjetas habilitadas por rol.
+    const getRouteSection = () => new URLSearchParams(location.search).get('section') || location.state?.section || null;
+    const [activeSection, setActiveSection] = useState(getRouteSection);
+    useEffect(() => {
+        setActiveSection(getRouteSection());
+    }, [location.search, location.state?.section]);
+    const openSection = key => {
+        navigate(`/dashboard?section=${encodeURIComponent(key)}`);
+        setActiveSection(key);
+    };
+    const openHome = () => {
+        navigate('/dashboard');
+        setActiveSection(null);
+    };
+
+    useEffect(() => {
+        if (updateDashboardHeader) {
+            const section = SECTIONS[activeSection];
+            updateDashboardHeader(section
+                ? { title: section.label, eyebrow: section.eyebrow }
+                : null);
+        }
+    }, [activeSection, updateDashboardHeader]);
 
     const {
         data: summary,
@@ -462,18 +537,6 @@ export default function DashboardView() {
         currentSection &&
         currentVisibleItems.length > 0;
 
-    const firstName =
-        user?.firstName?.trim() || 'Usuario';
-
-    const today = new Intl.DateTimeFormat('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-    }).format(new Date());
-
-    const formattedDate =
-        today.charAt(0).toUpperCase() + today.slice(1);
-
     // Los estudiantes ven las dos tarjetas de comunicaciones en el panel principal.
     // Ya no se los redirige automáticamente a Avisos Tempranos.
 
@@ -482,47 +545,10 @@ export default function DashboardView() {
         return (
             <div className="mx-auto w-full max-w-7xl space-y-7 pb-8">
 
-                {/* BIENVENIDA COMPACTA */}
-                <div className="flex flex-col gap-4 rounded-2xl border border-slate-700/60 bg-slate-900/75 px-5 py-5 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:px-7">
-                    <div>
-                        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.15em] text-blue-400">
-                            Panel de control
-                        </p>
-
-                        <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-                            Bienvenido, {firstName}
-                        </h1>
-
-                        <p className="mt-1 text-sm text-slate-400">
-                            Seleccioná un módulo para comenzar.
-                        </p>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-2 self-start rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2.5 text-xs text-slate-300 sm:self-auto">
-                        <CalendarDays
-                            size={16}
-                            className="text-blue-400"
-                        />
-                        {formattedDate}
-                    </div>
-                </div>
-
-                {/* ENCABEZADO DE MÓDULOS */}
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                        <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-                            Módulos disponibles
-                        </h2>
-
-                        <p className="mt-1.5 text-sm text-slate-400">
-                            Accedé a las herramientas de EduQuest.
-                        </p>
-                    </div>
-
-                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-2 text-xs text-slate-400">
-                        <LayoutDashboard size={15} />
-                        {visibleSections.length + (isTeacher ? 1 : 0)}{' '}
-                        módulos
+                <div className="flex justify-end">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-400">
+                        <LayoutDashboard size={14}/>
+                        {visibleSections.length + (isTeacher ? 1 : 0)} módulos disponibles
                     </span>
                 </div>
 
@@ -532,7 +558,7 @@ export default function DashboardView() {
                     {isTeacher && (
                         <Link
                             to="/dashboard/my-subjects"
-                            className="group relative flex min-h-[245px] flex-col overflow-hidden rounded-2xl border border-emerald-500/25 bg-slate-900/90 p-6 shadow-lg shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/50 hover:bg-slate-900 hover:shadow-xl"
+                            className="eq-glass-card group relative flex min-h-[245px] flex-col overflow-hidden rounded-2xl border border-emerald-500/25 bg-slate-900/90 p-6 shadow-lg shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/50 hover:bg-slate-900 hover:shadow-xl"
                         >
                             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent" />
 
@@ -552,17 +578,16 @@ export default function DashboardView() {
                                 </p>
 
                                 <h3 className="text-xl font-bold text-white">
-                                    Mis materias
+                                    Mis cursos
                                 </h3>
 
                                 <p className="mt-3 text-sm leading-relaxed text-slate-400">
-                                    Accedé a tus materias asignadas,
-                                    contenidos y actividades.
+                                    Elegí primero el curso y luego la materia para planificar contenidos, actividades y evaluaciones.
                                 </p>
 
                                 <div className="mt-6 flex items-center justify-between border-t border-slate-700/60 pt-4">
                                     <span className="text-xs font-semibold text-slate-300">
-                                        Ingresar a mis materias
+                                        Ingresar a mis cursos
                                     </span>
 
                                     <ArrowRight
@@ -579,7 +604,7 @@ export default function DashboardView() {
                             key={key}
                             section={section}
                             count={getVisibleItems(section).length}
-                            onClick={() => setActiveSection(key)}
+                            onClick={() => openSection(key)}
                         />
                     ))}
                 </div>
@@ -590,64 +615,22 @@ export default function DashboardView() {
     // SUBMÓDULOS ADMINISTRATIVOS
     const section = currentSection;
     const visibleItems = currentVisibleItems;
-    const SectionIcon = section.Icon;
 
     return (
         <div className="mx-auto w-full max-w-7xl space-y-7 pb-8">
 
             <button
                 type="button"
-                onClick={() => setActiveSection(null)}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:border-blue-500/30 hover:bg-slate-800 hover:text-white"
+                onClick={openHome}
+                className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border-2 border-amber-200 bg-amber-400 px-4 py-2.5 text-sm font-extrabold text-slate-950 shadow-lg shadow-amber-500/25 transition hover:scale-[1.03] hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
-                <ChevronLeft size={18} />
+                <ChevronLeft size={21} strokeWidth={3} />
                 Volver a los módulos
             </button>
 
-            {/* CABECERA COMPACTA */}
-            <section className="relative overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/90 p-5 shadow-lg shadow-black/10 sm:p-6">
-                <div
-                    className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${section.gradient}`}
-                />
-
-                <div className="relative flex items-center gap-4">
-                    <div
-                        className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border ${section.iconBorder} ${section.iconBackground} ${section.color}`}
-                    >
-                        <SectionIcon
-                            size={27}
-                            strokeWidth={1.8}
-                        />
-                    </div>
-
-                    <div>
-                        <p
-                            className={`mb-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${section.color}`}
-                        >
-                            {section.eyebrow}
-                        </p>
-
-                        <h1 className="text-xl font-bold text-white sm:text-2xl">
-                            {section.label}
-                        </h1>
-
-                        <p className="mt-1 text-sm text-slate-400">
-                            {section.description}
-                        </p>
-                    </div>
-                </div>
-            </section>
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-bold text-white">
-                    Opciones disponibles
-                </h2>
-
-                <span className="rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-400">
-                    {visibleItems.length}{' '}
-                    {visibleItems.length === 1
-                        ? 'opción'
-                        : 'opciones'}
+            <div className="flex justify-end">
+                <span className="rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-400">
+                    {visibleItems.length} {visibleItems.length === 1 ? 'opción disponible' : 'opciones disponibles'}
                 </span>
             </div>
 

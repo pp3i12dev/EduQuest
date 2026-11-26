@@ -3,23 +3,24 @@ import { getPrisma } from '../config/prisma.js';
 
 export const listAssignmentOptions = async (institutionId) => {
     const prisma = getPrisma();
+    const institutionWhere = institutionId == null ? {} : { institutionId };
 
     const [courses, subjects, students, teachers] = await Promise.all([
         prisma.course.findMany({
-            where: { institutionId },
-            include: { career: true },
+            where: institutionWhere,
+            include: { career: true, institution: { select: { id: true, nombre: true } } },
             orderBy: { nombre: 'asc' },
         }),
 
         prisma.subject.findMany({
-            where: { institutionId },
+            where: { ...institutionWhere, deletedAt: null },
             orderBy: { nombre: 'asc' },
         }),
 
         prisma.studentProfile.findMany({
             where: {
                 user: {
-                    institutionId,
+                    ...institutionWhere, isActive: true, deletedAt: null,
                 },
             },
             include: {
@@ -44,7 +45,7 @@ export const listAssignmentOptions = async (institutionId) => {
         prisma.teacherProfile.findMany({
             where: {
                 user: {
-                    institutionId,
+                    ...institutionWhere, isActive: true, deletedAt: null,
                 },
             },
             include: {
@@ -85,6 +86,8 @@ export const listStudentsForCourse = async (
         where: {
             user: {
                 institutionId,
+                isActive: true,
+                deletedAt: null,
             },
         },
         include: {
@@ -98,13 +101,13 @@ export const listStudentsForCourse = async (
                     isActive: true,
                 },
             },
+            // Mostramos también la matrícula en OTRO curso para impedir
+            // asignaciones simultáneas y explicar al administrativo el conflicto.
             courses: {
-                where: {
-                    courseId,
-                },
                 select: {
                     id: true,
                     courseId: true,
+                    course: { select: { nombre: true, academicYear: true, institutionId: true } },
                 },
             },
         },
@@ -119,18 +122,36 @@ export const listStudentsForCourse = async (
         id: student.id,
         legajoStudent: student.legajoStudent,
         user: student.user,
-        assigned: student.courses.length > 0,
+        assigned: student.courses.some((enrollment) => enrollment.courseId === courseId),
+        assignedCourse: student.courses[0]
+            ? {
+                id: student.courses[0].courseId,
+                nombre: student.courses[0].course.nombre,
+                academicYear: student.courses[0].course.academicYear,
+            }
+            : null,
+        assignedToOtherCourse: student.courses.some((enrollment) => enrollment.courseId !== courseId),
     }));
 };
 
 export const createStudentCourse = (studentId, courseId) => {
     const prisma = getPrisma();
-
-    return prisma.studentCourse.create({
-        data: {
-            studentId,
-            courseId,
-        },
+    return prisma.$transaction(async (tx) => {
+        // Bloquea la matrícula de este alumno hasta terminar la transacción.
+        // $executeRaw evita deserializar el resultado void de pg_advisory_xact_lock.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${studentId}::integer, 817231::integer)`;
+        const existing = await tx.studentCourse.findFirst({
+            where: { studentId },
+            include: { course: { select: { id: true, nombre: true } } },
+        });
+        if (existing) {
+            const error = new Error(existing.courseId === courseId
+                ? 'El alumno ya está asignado a este curso'
+                : `El alumno ya está inscripto en ${existing.course.nombre}. Primero quitá esa matrícula antes de asignarle otro curso.`);
+            error.code = 'STUDENT_ALREADY_ENROLLED';
+            throw error;
+        }
+        return tx.studentCourse.create({ data: { studentId, courseId } });
     });
 };
 
@@ -153,6 +174,8 @@ export const findStudent = (institutionId, studentId) => {
             id: studentId,
             user: {
                 institutionId,
+                isActive: true,
+                deletedAt: null,
             },
         },
         include: {
@@ -167,7 +190,7 @@ export const findCourse = (institutionId, courseId) => {
     return prisma.course.findFirst({
         where: {
             id: courseId,
-            institutionId,
+            ...(institutionId == null ? {} : { institutionId }),
         },
     });
 };
@@ -185,6 +208,8 @@ export const listTeachersForCourseSubject = async (
         where: {
             user: {
                 institutionId,
+                isActive: true,
+                deletedAt: null,
             },
         },
         include: {
@@ -253,6 +278,8 @@ export const findTeacher = (institutionId, teacherId) => {
             id: teacherId,
             user: {
                 institutionId,
+                isActive: true,
+                deletedAt: null,
             },
         },
         include: {
@@ -296,102 +323,50 @@ export const findTeacherSubjectAssignment = (id) => {
     });
 };
 
-// Asigna un único docente vigente por materia y curso.
-//
-// - Desactiva a cualquier responsable anterior.
-// - Reactiva una asignación histórica si ya existía.
-// - Nunca elimina contenidos, actividades ni historial.
-// - Ejecuta los cambios dentro de una transacción.
-//
-// El bloqueo transaccional serializa las operaciones
-// concurrentes sobre la misma materia y curso.
-export const createTeacherSubject = (
-    teacherId,
-    subjectId,
-    courseId
-) => {
+// Nunca reemplazar automáticamente al docente responsable desde «Asignar».
+// Para cambiarlo se utiliza la edición explícita de la materia.
+// El índice único parcial en PostgreSQL también protege esta regla cuando
+// dos solicitudes concurrentes intentan asignar docentes distintos.
+export const createTeacherSubject = (teacherId, subjectId, courseId) => {
     const prisma = getPrisma();
-
     return prisma.$transaction(async (tx) => {
-        await tx.$queryRaw`
-            SELECT pg_advisory_xact_lock(
-                ${subjectId}::integer,
-                ${courseId}::integer
-            )
-        `;
+        // Misma clave de bloqueo usada al editar una materia.
+        // $executeRaw maneja correctamente el SELECT de una función void.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${subjectId}::integer, ${courseId}::integer)`;
 
-        const currentAssignment =
-            await tx.teacherSubject.findFirst({
-                where: {
-                    subjectId,
-                    courseId,
-                    isActive: true,
-                },
-                select: {
-                    id: true,
-                    teacherId: true,
-                },
-            });
+        const active = await tx.teacherSubject.findMany({
+            where: { subjectId, courseId, isActive: true },
+            select: { id: true, teacherId: true },
+        });
+        if (active.length > 1 || active.some(item => item.teacherId !== teacherId)) {
+            const error = new Error(
+                'Esta materia ya tiene un docente responsable en ese curso. ' +
+                'Quitá la asignación actual antes de asignar otro docente, ' +
+                'o realizá un cambio explícito desde la edición de la materia.'
+            );
+            error.code = 'SUBJECT_ALREADY_HAS_TEACHER';
+            throw error;
+        }
 
-        // Si ya es el responsable vigente, no hace falta
-        // generar una asignación nueva.
-        if (
-            currentAssignment?.teacherId === teacherId
-        ) {
+        if (active.length === 1) {
             return tx.teacherSubject.findUnique({
-                where: {
-                    id: currentAssignment.id,
-                },
+                where: { id: active[0].id },
                 include: {
-                    teacher: {
-                        include: {
-                            user: true,
-                        },
-                    },
+                    teacher: { include: { user: true } },
                     subject: true,
                     course: true,
                 },
             });
         }
 
-        // Los docentes anteriores pasan a histórico.
-        await tx.teacherSubject.updateMany({
-            where: {
-                subjectId,
-                courseId,
-                isActive: true,
-            },
-            data: {
-                isActive: false,
-            },
-        });
-
-        // La combinación docente-materia-curso es única.
-        // Si existía históricamente, se reactiva.
-        // Si nunca existió, se crea.
+        // Un docente que había estado asignado puede reactivarse, sin borrar
+        // el contenido histórico vinculado a su registro anterior.
         return tx.teacherSubject.upsert({
-            where: {
-                teacherId_subjectId_courseId: {
-                    teacherId,
-                    subjectId,
-                    courseId,
-                },
-            },
-            update: {
-                isActive: true,
-            },
-            create: {
-                teacherId,
-                subjectId,
-                courseId,
-                isActive: true,
-            },
+            where: { teacherId_subjectId_courseId: { teacherId, subjectId, courseId } },
+            update: { isActive: true },
+            create: { teacherId, subjectId, courseId, isActive: true },
             include: {
-                teacher: {
-                    include: {
-                        user: true,
-                    },
-                },
+                teacher: { include: { user: true } },
                 subject: true,
                 course: true,
             },
@@ -428,7 +403,7 @@ export const listSchedules = async (
             courseId,
             subjectId,
             course: {
-                institutionId,
+                ...(institutionId == null ? {} : { institutionId }),
             },
         },
         include: {
@@ -449,7 +424,7 @@ export const findSchedule = (institutionId, id) => {
         where: {
             id,
             course: {
-                institutionId,
+                ...(institutionId == null ? {} : { institutionId }),
             },
         },
     });
@@ -468,7 +443,7 @@ export const listSchedulesForConflict = async (
             courseId,
             day,
             course: {
-                institutionId,
+                ...(institutionId == null ? {} : { institutionId }),
             },
             ...(excludeId
                 ? { NOT: { id: excludeId } }

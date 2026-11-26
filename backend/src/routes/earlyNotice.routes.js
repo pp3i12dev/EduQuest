@@ -120,6 +120,7 @@ router.patch(
     controller.deactivate
 );
 
+router.delete('/history/bulk', controller.deleteHistoryBatch);
 router.delete('/:id/history', controller.deleteHistory);
 
 export default router;

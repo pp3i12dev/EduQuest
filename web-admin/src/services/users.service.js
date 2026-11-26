@@ -1,6 +1,14 @@
 import api from '../api/axios';
 
 export const usersService = {
+    staffSignupRequests: async (status = 'PENDING') => {
+        const { data } = await api.get('/users/staff-signup-requests', { params: { status } });
+        return data;
+    },
+    reviewStaffSignup: async ({ id, decision, reason }) => {
+        const { data } = await api.post('/users/staff-signup-requests/review', { id, decision, reason });
+        return data;
+    },
     list: async (role) => {
         const { data } = await api.get('/users', { params: { role } });
         return data;
@@ -17,8 +25,8 @@ export const usersService = {
         const { data } = await api.patch(`/users/${id}/status`, { isActive }, { params: { role } });
         return data;
     },
-    remove: async (role, id) => {
-        await api.delete(`/users/${id}`, { params: { role } });
+    remove: async (role, id, mode = 'archive', confirm = '') => {
+        await api.delete(`/users/${id}`, { params: { role, mode }, data: { confirm } });
     },
 
     getRoles: async (id) => {

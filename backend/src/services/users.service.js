@@ -7,8 +7,10 @@ import {
 import { canAnyRole } from '../config/permissions.js';
 
 import * as userRepository from '../repositories/user.repository.js';
+import { permanentlyDeleteUserAndRelations } from '../repositories/permanentUserDeletion.repository.js';
 import { ROLE_CONFIG, getRoleConfig } from '../config/userRoles.js';
 import { getRolesFromUser } from '../utils/rols.js';
+import { getPrisma } from '../config/prisma.js';
 
 class ServiceError extends Error {
     constructor(message, status = 400) {
@@ -201,10 +203,33 @@ function serializeUser(user, profileField) {
         dni: user.dni,
         email: user.email,
         telefono: user.telefono ?? null,
+        directoryEmailVisibility: user.directoryEmailVisibility ?? 'PRIVATE',
+        directoryPhoneVisibility: user.directoryPhoneVisibility ?? 'PRIVATE',
+        directoryEmailRoles: user.directoryEmailRoles ?? [],
+        directoryPhoneRoles: user.directoryPhoneRoles ?? [],
         firstName: user.firstName,
         lastName: user.lastName,
         institutionId: user.institutionId,
+        institutionName: user.institution?.nombre ?? '',
+        // Los filtros trabajan sobre una proyección limitada, no datos de actividades.
+        academicLinks: profileField === 'studentProfile'
+            ? (user.studentProfile?.courses || []).map(link => ({
+                courseId: link.course?.id, courseName: link.course?.nombre,
+                shift: link.course?.shift, careerId: link.course?.careerId,
+                careerName: link.course?.career?.nombre,
+            }))
+            : profileField === 'teacherProfile'
+                ? (user.teacherProfile?.teacherSubjects || []).map(link => ({
+                    courseId: link.course?.id, courseName: link.course?.nombre,
+                    shift: link.course?.shift, careerId: link.course?.careerId,
+                    careerName: link.course?.career?.nombre,
+                    subjectId: link.subject?.id, subjectName: link.subject?.nombre,
+                }))
+                : [],
         isActive: user.isActive,
+        signupStatus: user.signupStatus ?? null,
+        requestedRole: user.requestedRole ?? null,
+        emailVerifiedAt: user.emailVerifiedAt ?? null,
         createdAt: user.createdAt,
         profile: user[profileField] ?? null,
     };
@@ -297,6 +322,27 @@ export const createUserService = async (role, body, requester) => {
         }
     }
 
+    const isSuperAdmin = requester.isSuperAdmin === true || requester.roles?.includes('SUPER_ADMIN');
+    const institutionId = isSuperAdmin ? Number(body.institutionId) : Number(requester.institutionId);
+    if (!Number.isSafeInteger(institutionId) || institutionId < 1) {
+        throw new ServiceError('Seleccioná una institución válida para el usuario.', 400);
+    }
+    const institution = await getPrisma().institution.findFirst({
+        where: { id: institutionId, isActive: true }, select: { id: true },
+    });
+    if (!institution) throw new ServiceError('La institución no existe o está inactiva.', 400);
+    if (role === 'student' && rest.courseId != null && rest.courseId !== '') {
+        const courseId = Number(rest.courseId);
+        if (!Number.isSafeInteger(courseId) || courseId < 1) throw new ServiceError('Curso inválido.', 400);
+        const course = await getPrisma().course.findFirst({
+            where: { id: courseId, institutionId }, select: { id: true },
+        });
+        if (!course) throw new ServiceError('El curso no pertenece a la institución seleccionada.', 400);
+    }
+    if (role === 'student' && rest.courseId !== undefined && !canAnyRole(requester.roles, 'student:enroll')) {
+        throw new ServiceError('No tenés permisos para matricular alumnos.', 403);
+    }
+
     const passwordHash = await hashPassword(password);
 
     try {
@@ -307,7 +353,7 @@ export const createUserService = async (role, body, requester) => {
                 passwordHash,
                 firstName,
                 lastName,
-                institutionId: requester.institutionId,
+                institutionId,
             },
             profileField: config.profileField,
             profileData: config.buildProfileCreate(rest),
@@ -387,14 +433,38 @@ export const updateUserService = async (
         }
     }
 
+    const isSuperAdmin = requester.isSuperAdmin === true || requester.roles?.includes('SUPER_ADMIN');
+    const existingUser = await getPrisma().user.findFirst({
+        where: { id: Number(id), deletedAt: null, ...(isSuperAdmin ? {} : { institutionId: requester.institutionId }) },
+        select: { institutionId: true, deletedAt: true, isSuperAdmin: true },
+    });
+    if (!existingUser) throw new ServiceError('Usuario no encontrado en tu institución.', 404);
+    const changesInstitution = rest.institutionId !== undefined && Number(rest.institutionId) !== existingUser.institutionId;
+    if (changesInstitution) {
+        if (!isSuperAdmin) throw new ServiceError('Solamente superadministración puede trasladar usuarios.', 403);
+        if (existingUser.isSuperAdmin || Number(id) === Number(requester.id)) {
+            throw new ServiceError('No se permite trasladar esta cuenta administrativa.', 403);
+        }
+        const targetId = Number(rest.institutionId);
+        if (!Number.isSafeInteger(targetId) || targetId <= 0) throw new ServiceError('Institución de destino inválida.', 400);
+        if (rest.confirmInstitutionTransfer !== true) {
+            throw new ServiceError('Confirmá expresamente el traslado institucional y la baja de asignaciones y matrículas actuales.', 409);
+        }
+    }
+    if (rest.courseId !== undefined && changesInstitution) {
+        throw new ServiceError('Primero trasladá al alumno y luego matriculalo en un curso de la nueva institución.', 400);
+    }
     try {
-        const user = await userRepository.updateUserWithProfile({
-            id: Number(id),
-            institutionId: requester.institutionId,
-            userData,
-            profileField: config.profileField,
-            profileData,
-        });
+        const user = changesInstitution
+            ? await userRepository.transferUserInstitution({
+                id: Number(id), previousInstitutionId: existingUser.institutionId,
+                targetInstitutionId: Number(rest.institutionId), userData,
+                profileField: config.profileField, profileData,
+              })
+            : await userRepository.updateUserWithProfile({
+                id: Number(id), institutionId: existingUser.institutionId,
+                userData, profileField: config.profileField, profileData,
+              });
 
         if (role === 'student' && rest.courseId !== undefined) {
             if (!canAnyRole(requester.roles, 'student:enroll')) {
@@ -453,16 +523,27 @@ export const toggleUserStatusService = async (
 
     assertPermission(requester.roles, permissionKey);
 
+    // El registro público se activa al verificar el correo. Evitar que un
+    // administrador eluda la comprobación de email de una cuenta nueva.
+    if (role === 'student' && Boolean(isActive)) {
+        const existing = await userRepository.findUserByIdForInstitution({
+            id: Number(id), institutionId: requester.isSuperAdmin ? null : requester.institutionId,
+        });
+        if (existing?.requestedRole === 'STUDENT' && !existing?.emailVerifiedAt) {
+            throw new ServiceError('Este alumno primero debe verificar su correo.', 409);
+        }
+    }
     try {
         const user = await userRepository.setUserActive({
             id: Number(id),
-            institutionId: requester.institutionId,
+            institutionId: requester.isSuperAdmin || requester.roles?.includes('SUPER_ADMIN') ? null : requester.institutionId,
             isActive: Boolean(isActive),
         });
 
         return {
             id: user.id,
             isActive: user.isActive,
+            signupStatus: user.signupStatus ?? null,
         };
     } catch (error) {
         if (error.code === 'P2025') {
@@ -480,33 +561,46 @@ export const toggleUserStatusService = async (
 // ELIMINAR USUARIO
 // ======================================================
 
-export const deleteUserService = async (
-    role,
-    id,
-    requester
-) => {
+export const deleteUserService = async (role, id, requester, { mode = 'archive', confirm } = {}) => {
     const config = assertRoleConfig(role);
+    assertPermission(requester.roles, config.permissions.delete);
+    const userId = Number(id);
+    if (!Number.isSafeInteger(userId) || userId <= 0) throw new ServiceError('Usuario inválido.', 400);
+    if (userId === Number(requester.id)) throw new ServiceError('No podés eliminar tu propia cuenta.', 403);
 
-    assertPermission(
-        requester.roles,
-        config.permissions.delete
-    );
-
-    try {
-        await userRepository.deleteUserById({
-            id: Number(id),
-            institutionId: requester.institutionId,
-        });
-    } catch (error) {
-        if (error.code === 'P2025') {
-            throw new ServiceError(
-                'Usuario no encontrado',
-                404
-            );
-        }
-
-        throw error;
+    const isSuperAdmin = requester.isSuperAdmin === true || requester.roles?.includes('SUPER_ADMIN');
+    const prisma = getPrisma();
+    const user = await prisma.user.findFirst({
+        where: { id: userId, deletedAt: null, ...(isSuperAdmin ? {} : { institutionId: requester.institutionId }) },
+        include: { directorProfile: true, preceptorProfile: true, teacherProfile: true, studentProfile: true },
+    });
+    if (!user) throw new ServiceError('Usuario no encontrado en tu institución.', 404);
+    if (user.isSuperAdmin) throw new ServiceError('Una cuenta superadministradora no puede eliminarse desde Gestión de usuarios.', 403);
+    // No permitir borrar un usuario con perfil de mayor privilegio usando la vista docente.
+    for (const [otherRole, profile] of Object.entries({
+        director: user.directorProfile, preceptor: user.preceptorProfile,
+        teacher: user.teacherProfile, student: user.studentProfile,
+    })) {
+        if (profile) assertPermission(requester.roles, assertRoleConfig(otherRole).permissions.delete);
     }
+    if (user.directorProfile && !isSuperAdmin) {
+        throw new ServiceError('Solo superadministración puede eliminar cuentas directivas.', 403);
+    }
+    const targetInstitutionId = isSuperAdmin ? null : requester.institutionId;
+    if (mode === 'permanent') {
+        if (!isSuperAdmin && !requester.roles?.includes('DIRECTOR'))
+            throw new ServiceError('Solo directivos y superadministradores pueden eliminar definitivamente.', 403);
+        if (confirm !== 'ELIMINAR TODO') throw new ServiceError('Escribí ELIMINAR TODO para confirmar que también se eliminarán las actividades y los resultados asociados.', 400);
+        try {
+            await permanentlyDeleteUserAndRelations({ id: userId, institutionId: targetInstitutionId });
+        } catch (error) {
+            if (error.code === 'P2003' || error.code === 'P2014')
+                throw new ServiceError('No se pudo completar el borrado transaccional por una relación de base de datos no contemplada. No se borró parcialmente.', 409);
+            throw error;
+        }
+    } else if (mode === 'archive') {
+        await userRepository.archiveUserWithRelations({ id: userId, institutionId: targetInstitutionId });
+    } else throw new ServiceError('Modo de eliminación inválido.', 400);
 };
 
 // ======================================================
@@ -519,9 +613,14 @@ function serializeUserWithRoles(user) {
         dni: user.dni,
         email: user.email,
         telefono: user.telefono ?? null,
+        directoryEmailVisibility: user.directoryEmailVisibility ?? 'PRIVATE',
+        directoryPhoneVisibility: user.directoryPhoneVisibility ?? 'PRIVATE',
+        directoryEmailRoles: user.directoryEmailRoles ?? [],
+        directoryPhoneRoles: user.directoryPhoneRoles ?? [],
         firstName: user.firstName,
         lastName: user.lastName,
         isActive: user.isActive,
+        signupStatus: user.signupStatus ?? null,
         roles: getRolesFromUser(user),
         profiles: {
             student: user.studentProfile,
@@ -675,10 +774,18 @@ function serializeMyProfile(user) {
         dni: user.dni,
         email: user.email,
         telefono: user.telefono ?? null,
+        // El propietario recibe solo sus propios valores de contacto efectivos.
+        directoryContactEmail: user.directoryContactEmail ?? user.email,
+        directoryContactPhone: user.directoryContactPhone ?? user.telefono ?? '',
+        directoryEmailVisibility: user.directoryEmailVisibility ?? 'PRIVATE',
+        directoryPhoneVisibility: user.directoryPhoneVisibility ?? 'PRIVATE',
+        directoryEmailRoles: user.directoryEmailRoles ?? [],
+        directoryPhoneRoles: user.directoryPhoneRoles ?? [],
         firstName: user.firstName,
         lastName: user.lastName,
         institutionId: user.institutionId,
         isActive: user.isActive,
+        signupStatus: user.signupStatus ?? null,
         isSuperAdmin,
         createdAt: user.createdAt,
         roles: allRoles,
@@ -731,6 +838,58 @@ export const getMyProfileService = async (requester) => {
     }
 
     return serializeMyProfile(user);
+};
+
+/**
+ * PATCH /api/users/me/legajos
+ * Actualiza solo los legajos oficiales de perfiles que ya posee el usuario autenticado.
+ * El campo puede omitirse durante el registro y completarse más tarde.
+ * Nunca acepta IDs de perfiles, roles ni instituciones suministrados por el cliente.
+ */
+export const updateMyLegajosService = async (body, requester) => {
+    const legajos = {
+        legajoStudent: 'studentProfile',
+        legajoTeacher: 'teacherProfile',
+        legajoPreceptor: 'preceptorProfile',
+    };
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        throw new ServiceError('Datos de legajo inválidos.', 400);
+    }
+    const keys = Object.keys(body);
+    if (!keys.length || keys.some(key => !legajos[key])) {
+        throw new ServiceError('Solo se pueden modificar los legajos de tus propios perfiles.', 400);
+    }
+    const user = await userRepository.findOwnUserProfile(requester.id);
+    if (!user || !user.isActive || user.deletedAt) {
+        throw new ServiceError('Usuario no encontrado o inactivo.', 404);
+    }
+    const data = {};
+    for (const key of keys) {
+        if (!user[legajos[key]]) {
+            throw new ServiceError('No tenés asignado el perfil correspondiente a ese legajo.', 403);
+        }
+        if (typeof body[key] !== 'string') {
+            throw new ServiceError('El legajo debe ser texto.', 400);
+        }
+        const value = body[key].trim();
+        if (!value || value.length > 70 || !/^[\p{L}\p{N}._/\- ]+$/u.test(value)) {
+            throw new ServiceError('El legajo debe tener entre 1 y 70 caracteres válidos.', 400);
+        }
+        data[legajos[key]] = { update: { [key]: value } };
+    }
+    try {
+        const updated = await getPrisma().user.update({
+            where: { id: user.id },
+            data,
+            include: { studentProfile: true, teacherProfile: true, preceptorProfile: true, directorProfile: true },
+        });
+        return serializeMyProfile(updated);
+    } catch (error) {
+        if (error.code === 'P2002') {
+            throw new ServiceError('El legajo ya está asignado a otro usuario.', 409);
+        }
+        throw error;
+    }
 };
 
 /**

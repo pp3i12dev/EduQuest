@@ -17,7 +17,13 @@ export function useStudentsForCourse(courseId) {
     return useQuery({
         queryKey: ['assignment-students', courseId],
         queryFn: () => assignmentsService.students(courseId),
-        enabled: Boolean(courseId),
+        enabled: Number.isSafeInteger(Number(courseId)) && Number(courseId) > 0,
+        retry: (failureCount, error) => {
+            const status = error?.response?.status;
+            return (!status || status >= 500) && failureCount < 2;
+        },
+        refetchOnWindowFocus: false,
+        staleTime: 15_000,
     });
 }
 
@@ -28,10 +34,7 @@ export function useAssignStudent() {
         mutationFn: assignmentsService.assignStudent,
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: [
-                    'assignment-students',
-                    Number(variables.courseId),
-                ],
+                queryKey: ['assignment-students'],
             });
 
             queryClient.invalidateQueries({
@@ -52,10 +55,7 @@ export function useRemoveStudent() {
         mutationFn: assignmentsService.removeStudent,
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: [
-                    'assignment-students',
-                    Number(variables.courseId),
-                ],
+                queryKey: ['assignment-students'],
             });
 
             queryClient.invalidateQueries({

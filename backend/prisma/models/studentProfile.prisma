@@ -9,9 +9,10 @@ model StudentProfile {
   userId Int  @unique
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  courses      StudentCourse[]
-  attendances  Attendance[]
-  attempts     GameAttempt[]
-  avatarConfig AvatarConfig?
-  inventory    StudentInventory[]
+  courses           StudentCourse[]
+  attendances       Attendance[]
+  attempts          GameAttempt[]
+  manualEvaluations ManualEvaluation[]
+  avatarConfig      AvatarConfig?
+  inventory         StudentInventory[]
 }

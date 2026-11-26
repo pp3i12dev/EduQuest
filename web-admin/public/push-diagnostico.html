@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EduQuest — Diagnóstico de notificaciones</title>
+  <style>
+    *{box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#0b152a;color:#e6efff;margin:0;padding:24px;min-height:100vh}
+    main{max-width:720px;margin:0 auto}h1{font-size:1.6rem}.muted{color:#aebcd7;line-height:1.5}
+    .panel{border:1px solid #34527b;background:#111f38;border-radius:16px;padding:20px;margin:18px 0}
+    button{cursor:pointer;border:0;border-radius:10px;background:#f4c851;color:#162239;font-weight:700;padding:12px 16px;margin:4px 8px 4px 0}
+    button:focus-visible{outline:3px solid #8bd9ff}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.6;color:#cff6ed}
+    a{color:#8fdcff}p{line-height:1.5}
+  </style>
+</head>
+<body><main>
+  <h1>🔔 EduQuest — Diagnóstico de notificaciones en Windows</h1>
+  <p class="muted">Esta página no envía mensajes a Express ni cambia la suscripción de tu cuenta. Solo comprueba si el navegador puede crear una notificación local.</p>
+  <section class="panel">
+    <button type="button" id="inspect">1. Comprobar navegador</button>
+    <button type="button" id="local">2. Mostrar notificación de prueba</button>
+    <pre id="result" aria-live="polite">Presioná «Comprobar navegador».</pre>
+  </section>
+  <p class="muted">Si la prueba dice «notificación registrada: sí» y no ves un banner, presioná <strong>Win + N</strong> para abrir el Centro de notificaciones. Después revisá Windows → Configuración → Sistema → Notificaciones: activá las de Chrome/Edge o EduQuest, habilitá banners y desactivá «No molestar».</p>
+  <p><a href="/dashboard/profile">Volver a EduQuest</a></p>
+  <script>
+    const box = document.querySelector('#result');
+    const write = (...lines) => { box.textContent = lines.join('\n'); };
+    async function inspect() {
+      try {
+        const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration('/') : null;
+        const sub = reg ? await reg.pushManager?.getSubscription() : null;
+        const notifications = reg && typeof reg.getNotifications === 'function' ? await reg.getNotifications() : [];
+        write(
+          'Origen: ' + location.origin,
+          'Contexto seguro: ' + window.isSecureContext,
+          'Permiso de notificaciones: ' + (window.Notification ? Notification.permission : 'no disponible'),
+          'Service Worker registrado: ' + Boolean(reg),
+          'Service Worker activo: ' + Boolean(reg?.active),
+          'Script: ' + (reg?.active?.scriptURL || 'no disponible'),
+          'Suscripción Push existente en navegador: ' + Boolean(sub),
+          'Notificaciones locales registradas: ' + notifications.length,
+          'Títulos: ' + (notifications.map(n => n.title).join(' | ') || '(ninguno)')
+        );
+      } catch (error) { write('Error durante la inspección:', error.name + ': ' + error.message); }
+    }
+    document.querySelector('#inspect').addEventListener('click', inspect);
+    document.querySelector('#local').addEventListener('click', async () => {
+      try {
+        if (!('Notification' in window)) throw new Error('La API de notificaciones no está disponible.');
+        if (Notification.permission !== 'granted') throw new Error('Primero permití las notificaciones desde EduQuest; permiso actual: ' + Notification.permission);
+        const reg = await navigator.serviceWorker.getRegistration('/');
+        if (!reg?.active) throw new Error('No hay Service Worker activo para /. Revisá la instalación de /sw.js.');
+        const tag = `eduquest-local-${Date.now()}`;
+        await reg.showNotification('EduQuest — Diagnóstico local', {
+          body: 'Esta notificación no requiere Express ni conexión con Neon.',
+          icon: '/icons/icon-192.png',
+          tag, renotify: true, requireInteraction: true,
+        });
+        const observed = await reg.getNotifications({ tag });
+        write(
+          'La llamada a showNotification() terminó sin errores.',
+          'Notificación registrada por Chrome/Edge: ' + (observed.length > 0 ? 'SÍ' : 'NO'),
+          'Cantidad: ' + observed.length,
+          observed.length > 0
+            ? 'Si Windows no la muestra, revisá Win + N, No molestar y los banners de Chrome/Edge.'
+            : 'El navegador no conserva la notificación. Revisá el estado del Service Worker y las notificaciones del sistema.'
+        );
+      } catch (error) { write('Error:', error.name + ': ' + error.message); }
+    });
+  </script>
+</main></body></html>

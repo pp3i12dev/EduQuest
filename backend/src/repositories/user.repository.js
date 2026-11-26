@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 
 import { getPrisma } from '../config/prisma.js';
 
@@ -27,9 +28,23 @@ export const listUsersByProfile = ({ institutionId, profileField }) => {
     where: {
       ...(institutionId != null ? { institutionId } : {}),
       [profileField]: { isNot: null },
+      deletedAt: null,
     },
+    // Solo datos académicos necesarios para filtrar listas: nunca actividades,
+    // respuestas, notas ni intentos de Unity.
     include: {
-      [profileField]: true,
+      institution: { select: { id: true, nombre: true } },
+      [profileField]: profileField === 'studentProfile' ? {
+        include: { courses: { include: { course: { select: { id: true, nombre: true,
+          academicYear: true, shift: true, careerId: true,
+          career: { select: { nombre: true } } } } } } },
+      } : profileField === 'teacherProfile' ? {
+        include: { teacherSubjects: { where: { isActive: true }, include: {
+          course: { select: { id: true, nombre: true, academicYear: true, shift: true, careerId: true,
+            career: { select: { nombre: true } } } },
+          subject: { select: { id: true, nombre: true } },
+        } } },
+      } : true,
     },
     orderBy: {
       lastName: 'asc',
@@ -47,6 +62,8 @@ export const createUserWithProfile = ({
   return prisma.user.create({
     data: {
       ...userData,
+      directoryContactEmail: userData.email ?? null,
+      directoryContactPhone: userData.telefono ?? null,
       [profileField]: {
         create: profileData,
       },
@@ -57,17 +74,22 @@ export const createUserWithProfile = ({
   });
 };
 
-export const createStudentSelfSignup = ({ userData, courseId }) => {
+export const createStudentSelfSignup = ({ userData, courseId, tokenHash, expiresAt }) => {
   const prisma = getPrisma();
 
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
         ...userData,
+        directoryContactEmail: userData.email ?? null,
+        directoryContactPhone: userData.telefono ?? null,
         isActive: false,
+        signupStatus: 'PENDING',
+        requestedRole: 'STUDENT',
+        emailVerificationTokens: { create: { tokenHash, expiresAt } },
         studentProfile: {
           create: {
-            legajoStudent: `ALU-${Date.now()}`,
+            legajoStudent: `ALU-${randomUUID()}`,
             avatarConfig: {
               create: {
                 configJson: {
@@ -113,6 +135,7 @@ export const updateUserWithProfile = ({
     where: {
       id,
       institutionId,
+      deletedAt: null,
     },
     data: {
       ...userData,
@@ -140,11 +163,79 @@ export const setUserActive = ({
   return prisma.user.update({
     where: {
       id,
-      institutionId,
+      ...(institutionId != null ? { institutionId } : {}),
+      deletedAt: null,
     },
     data: {
       isActive,
     },
+  });
+};
+
+/**
+ * Traslado interinstitucional controlado. El usuario cambia de institución,
+ * pero sus datos historicos permanecen asociados a los registros originales.
+ * Se eliminan matrículas vigentes y se desactivan asignaciones docentes.
+ */
+export const transferUserInstitution = async ({ id, previousInstitutionId, targetInstitutionId, userData, profileField, profileData }) => {
+  const prisma = getPrisma();
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findFirst({ where: { id, institutionId: previousInstitutionId, deletedAt: null }, include: PROFILE_INCLUDE });
+    if (!user) throw Object.assign(new Error('Usuario inexistente'), { status: 404 });
+    const destination = await tx.institution.findFirst({ where: { id: targetInstitutionId, isActive: true }, select: { id: true } });
+    if (!destination) throw Object.assign(new Error('La institución de destino no está disponible'), { status: 400 });
+    if (user.studentProfile) await tx.studentCourse.deleteMany({ where: { studentId: user.studentProfile.id } });
+    if (user.teacherProfile) {
+      const active = await tx.teacherSubject.findMany({ where: { teacherId: user.teacherProfile.id, isActive: true }, select: { id: true } });
+      const ids = active.map(row => row.id);
+      await tx.teacherSubject.updateMany({ where: { id: { in: ids } }, data: { isActive: false } });
+      if (ids.length) {
+        await tx.activity.updateMany({ where: { teacherSubjectId: { in: ids } }, data: { isPublished: false, status: 'INACTIVE' } });
+        await tx.studyMaterial.updateMany({ where: { teacherSubjectId: { in: ids } }, data: { isPublished: false } });
+      }
+    }
+    // Invalidar sesiones y suscripciones Push del usuario: requiere nuevo inicio de sesión.
+    await tx.refreshToken.deleteMany({ where: { userId: id } });
+    await tx.webPushSubscription.deleteMany({ where: { userId: id } });
+    await tx.userDevice.deleteMany({ where: { userId: id } });
+    return tx.user.update({
+      where: { id },
+      data: {
+        ...userData,
+        institutionId: targetInstitutionId,
+        ...(profileData && Object.keys(profileData).length ? { [profileField]: { update: profileData } } : {}),
+      },
+      include: { [profileField]: true },
+    });
+  });
+};
+
+/**
+ * Retiro operativo. No destruye GameAttempt, EarlyNotice ni registros de auditoría.
+ * Se invalida acceso y se liberan las asignaciones vigentes.
+ */
+export const archiveUserWithRelations = async ({ id, institutionId }) => {
+  const prisma = getPrisma();
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findFirst({
+      where: { id, deletedAt: null, ...(institutionId != null ? { institutionId } : {}) },
+      include: PROFILE_INCLUDE,
+    });
+    if (!user) throw Object.assign(new Error('Usuario no encontrado'), { status: 404 });
+    if (user.isSuperAdmin) throw Object.assign(new Error('No se puede eliminar una cuenta superadministradora'), { status: 403 });
+    if (user.teacherProfile) {
+      const active = await tx.teacherSubject.findMany({ where: { teacherId: user.teacherProfile.id, isActive: true }, select: { id: true } });
+      const ids = active.map(row => row.id);
+      await tx.teacherSubject.updateMany({ where: { id: { in: ids } }, data: { isActive: false } });
+      // Ya no deben publicarse actividades ni documentos ligados a la cuenta retirada.
+      await tx.activity.updateMany({ where: { teacherId: user.teacherProfile.id, isPublished: true }, data: { isPublished: false, status: 'INACTIVE' } });
+      if (ids.length) await tx.studyMaterial.updateMany({ where: { teacherSubjectId: { in: ids } }, data: { isPublished: false } });
+    }
+    if (user.studentProfile) await tx.studentCourse.deleteMany({ where: { studentId: user.studentProfile.id } });
+    await tx.refreshToken.deleteMany({ where: { userId: id } });
+    await tx.webPushSubscription.deleteMany({ where: { userId: id } });
+    await tx.userDevice.deleteMany({ where: { userId: id } });
+    return tx.user.update({ where: { id }, data: { isActive: false, deletedAt: new Date() } });
   });
 };
 
@@ -172,19 +263,22 @@ export const assignStudentCourse = async ({
   const prisma = getPrisma();
 
   return prisma.$transaction(async (tx) => {
-    await tx.studentCourse.deleteMany({
-      where: {
-        studentId: studentProfileId,
-      },
+    // La edición del alumno puede TRANSFERIR la matrícula de curso, nunca duplicarla.
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(${studentProfileId}::integer, 817231::integer)`;
+    const profile = await tx.studentProfile.findUnique({
+      where: { id: studentProfileId },
+      select: { user: { select: { institutionId: true } } },
     });
-
-    if (courseId) {
-      await tx.studentCourse.create({
-        data: {
-          studentId: studentProfileId,
-          courseId,
-        },
-      });
+    if (!profile) throw Object.assign(new Error('Alumno inexistente'), { status: 404 });
+    if (courseId != null) {
+      const target = await tx.course.findUnique({ where: { id: courseId }, select: { institutionId: true } });
+      if (!target || target.institutionId !== profile.user.institutionId) {
+        throw Object.assign(new Error('El curso no pertenece a la institución del alumno'), { status: 400 });
+      }
+    }
+    await tx.studentCourse.deleteMany({ where: { studentId: studentProfileId } });
+    if (courseId != null) {
+      await tx.studentCourse.create({ data: { studentId: studentProfileId, courseId } });
     }
   });
 };
@@ -205,7 +299,8 @@ export const findUserWithAllProfiles = ({
   return prisma.user.findFirst({
     where: {
       id,
-      institutionId,
+      ...(institutionId != null ? { institutionId } : {}),
+      deletedAt: null,
     },
     include: ALL_PROFILES_INCLUDE,
   });
@@ -319,3 +414,11 @@ export const updateOwnPasswordHash = ({
     },
   });
 };
+
+// La autorización para consultar registros por institución se realiza además
+// en la capa de servicios. Esta consulta evita que el botón histórico active
+// solicitudes públicas sin aprobación.
+export const findUserByIdForInstitution = ({ id, institutionId }) => getPrisma().user.findFirst({
+  where: { id, deletedAt: null, ...(institutionId != null ? { institutionId } : {}) },
+  select: { id: true, signupStatus: true },
+});

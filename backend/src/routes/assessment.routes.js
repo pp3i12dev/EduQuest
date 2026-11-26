@@ -1,0 +1,16 @@
+import { Router } from 'express';
+import { authenticate, requirePermission } from '../middlewares/auth.middleware.js';
+import * as ctrl from '../controllers/assessment.controller.js';
+import { teacherLeaderboard } from '../controllers/leaderboard.controller.js';
+const router = Router();
+router.use(authenticate, requirePermission('grade:manage'));
+router.get('/assignments', ctrl.assignments);
+router.get('/students/:studentId/performance', ctrl.studentPerformance);
+router.post('/students/:studentId/evaluations', ctrl.createManualEvaluation);
+router.get('/assignments/:assignmentId/leaderboard', teacherLeaderboard);
+router.get('/assignments/:assignmentId/attempts', ctrl.list);
+router.get('/assignments/:assignmentId/filters', ctrl.filters);
+router.get('/attempts/:id', ctrl.detail);
+router.patch('/attempts/:id/archive', ctrl.archived);
+router.delete('/attempts/:id', ctrl.remove);
+export default router;

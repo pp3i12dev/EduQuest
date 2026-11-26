@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { authenticate, requirePermission } from '../middlewares/auth.middleware.js';
+import { studyUpload } from '../middlewares/studyUpload.middleware.js';
+import * as ctrl from '../controllers/studyMaterial.controller.js';
+const router = Router();
+router.use(authenticate, requirePermission('subjectContent:manage'));
+router.get('/', ctrl.list);
+router.post('/', studyUpload, ctrl.create);
+router.put('/:id/publish', ctrl.publish);
+router.get('/:id/file', ctrl.downloadTeacher);
+export default router;

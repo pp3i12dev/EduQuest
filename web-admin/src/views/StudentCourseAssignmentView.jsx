@@ -1,3 +1,4 @@
+import { shiftLabel } from '../utils/courseShift';
 import { useState } from 'react';
 
 import {
@@ -80,7 +81,7 @@ export default function StudentCourseAssignmentsView() {
                             key={course.id}
                             value={course.id}
                         >
-                            {course.nombre}
+                            {course.nombre} · Turno {shiftLabel(course.shift)}
                             {course.career
                                 ? ` — ${course.career.nombre}`
                                 : ''}

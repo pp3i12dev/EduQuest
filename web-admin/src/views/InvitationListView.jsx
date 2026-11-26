@@ -1,3 +1,4 @@
+import { courseLabel } from '../utils/courseShift';
 
 import { useState, useContext, useMemo, useEffect } from 'react';
 import {
@@ -18,18 +19,19 @@ import {
     CalendarDays,
     RefreshCw,
     Inbox,
-    Ban,
+    Ban, Trash2,
 } from 'lucide-react';
 
 import {
     useInvitations,
     useCreateInvitation,
-    useCancelInvitation,
+    useCancelInvitation, useCleanupInvitations,
 } from '../hooks/useInvitations';
 
 import {
     useCareers,
     useCoursesByCareer,
+    useInstitutions,
 } from '../hooks/useAcademic';
 
 import { AuthContext } from '../context/AuthContext';
@@ -101,16 +103,18 @@ function InviteForm({ onSubmit, onClose, isSaving, error }) {
     );
     const [careerId, setCareerId] = useState('');
     const [courseId, setCourseId] = useState('');
+    const isSuperAdmin = Boolean(user?.isSuperAdmin || user?.roles?.includes('SUPER_ADMIN'));
+    const [institutionId, setInstitutionId] = useState(String(user?.institutionId || ''));
+    const { data: institutions = [] } = useInstitutions();
 
-    const { data: careers } = useCareers(user?.institutionId);
+    const { data: careers } = useCareers(institutionId);
     const { data: courses } = useCoursesByCareer(careerId);
 
     const availableRoles = isOnlyTeacher
         ? ['STUDENT']
         : ['DIRECTOR', 'PRECEPTOR', 'TEACHER', 'STUDENT'];
 
-    const requiresCourse =
-        role === 'STUDENT' && isOnlyTeacher;
+    const requiresCourse = role === 'STUDENT';
 
     useEffect(() => {
         const handleEscape = (event) => {
@@ -130,11 +134,12 @@ function InviteForm({ onSubmit, onClose, isSaving, error }) {
         event.preventDefault();
 
         if (isSaving) return;
-        if (requiresCourse && !courseId) return;
+        if (!institutionId || (requiresCourse && !courseId)) return;
 
         onSubmit({
             email: email.trim(),
             role,
+            institutionId: Number(institutionId),
             ...(requiresCourse ? { courseId } : {}),
         });
     };
@@ -189,6 +194,15 @@ function InviteForm({ onSubmit, onClose, isSaving, error }) {
 
                 {/* CAMPOS */}
                 <div className="max-h-[65vh] space-y-5 overflow-y-auto px-6 py-6">
+                    {isSuperAdmin && <div>
+                        <label htmlFor="invite-institution" className={labelClass}>Institución de destino <span className="text-blue-400">*</span></label>
+                        <select id="invite-institution" value={institutionId} required disabled={isSaving}
+                            onChange={event => { setInstitutionId(event.target.value); setCareerId(''); setCourseId(''); }}
+                            className={`${inputClass} cursor-pointer`}>
+                            <option value="">Seleccioná una institución</option>
+                            {institutions.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}
+                        </select>
+                    </div>}
                     <div>
                         <label htmlFor="invite-role" className={labelClass}>
                             Rol de la persona
@@ -347,7 +361,7 @@ function InviteForm({ onSubmit, onClose, isSaving, error }) {
                                                 key={course.id}
                                                 value={course.id}
                                             >
-                                                {course.nombre}
+                                                {courseLabel(course)}
                                             </option>
                                         ))}
                                     </select>
@@ -384,7 +398,7 @@ function InviteForm({ onSubmit, onClose, isSaving, error }) {
 
                     <button
                         type="submit"
-                        disabled={isSaving || (requiresCourse && !courseId)}
+                        disabled={isSaving || !institutionId || (requiresCourse && !courseId)}
                         className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {isSaving ? (
@@ -418,6 +432,9 @@ export default function InvitationsListView() {
     } = useInvitations();
 
     const cancelMutation = useCancelInvitation();
+    const cleanupMutation = useCleanupInvitations();
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [cleanupConfirm, setCleanupConfirm] = useState(false);
     const createMutation = useCreateInvitation();
 
     const [formOpen, setFormOpen] = useState(false);
@@ -472,6 +489,14 @@ export default function InvitationsListView() {
         });
     }, [invitations, search, statusFilter]);
 
+    const canCleanup = invitation => ['used', 'expired'].includes(getInvitationStatus(invitation));
+    const cleanable = filteredInvitations.filter(canCleanup).map(inv => inv.id);
+    const toggleSelected = (id, checked) => setSelectedIds(previous => checked ? [...new Set([...previous, id])] : previous.filter(x => x !== id));
+    const approveCleanup = () => {
+        const ids = selectedIds.filter(id => cleanable.includes(id)).slice(0, 100);
+        if (!ids.length) return;
+        cleanupMutation.mutate(ids, { onSuccess: () => { setSelectedIds([]); setCleanupConfirm(false); } });
+    };
     const openForm = () => {
         createMutation.reset();
         setFormOpen(true);
@@ -579,7 +604,7 @@ export default function InvitationsListView() {
                     return (
                         <div
                             key={stat.label}
-                            className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg shadow-black/5"
+                            className="eq-glass-card rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg shadow-black/5"
                         >
                             <div className="flex items-center justify-between gap-2">
                                 <span className="text-sm font-medium text-slate-400">
@@ -601,7 +626,7 @@ export default function InvitationsListView() {
             </div>
 
             {/* LISTADO */}
-            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/95 shadow-xl shadow-black/10">
+            <div className="eq-glass-table overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/95 shadow-xl shadow-black/10">
                 {/* FILTROS */}
                 <div className="border-b border-slate-800 p-5 sm:p-6">
                     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -632,6 +657,10 @@ export default function InvitationsListView() {
                         </button>
                     </div>
 
+                    <div className="mb-3 flex flex-wrap items-center gap-3">
+                        <label className="inline-flex items-center gap-2 text-sm text-slate-300 cursor-pointer"><input type="checkbox" className="h-4 w-4 accent-amber-400" checked={cleanable.length > 0 && cleanable.slice(0, 100).every(id => selectedIds.includes(id))} onChange={e => setSelectedIds(e.target.checked ? cleanable.slice(0, 100) : [])} /> Seleccionar vencidas/utilizadas (hasta 100)</label>
+                        <button type="button" disabled={!selectedIds.some(id => cleanable.includes(id)) || cleanupMutation.isPending} onClick={() => setCleanupConfirm(true)} className="inline-flex items-center gap-2 rounded-xl border border-rose-500/50 px-3 py-2 text-sm font-semibold text-rose-300 hover:bg-rose-500/10 disabled:opacity-40"><Trash2 size={16}/> Eliminar seleccionadas ({selectedIds.filter(id => cleanable.includes(id)).length})</button>
+                    </div>
                     <div className="flex flex-col gap-3 md:flex-row">
                         <div className="relative flex-1">
                             <Search
@@ -725,6 +754,7 @@ export default function InvitationsListView() {
                             <table className="w-full min-w-[800px] text-left text-sm">
                                 <thead className="bg-slate-950/40">
                                     <tr className="border-b border-slate-800 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                        <th className="px-4 py-4">Selección</th>
                                         <th className="px-6 py-4">
                                             Destinatario
                                         </th>
@@ -757,6 +787,7 @@ export default function InvitationsListView() {
                                                 key={invitation.id}
                                                 className="transition-colors hover:bg-slate-800/35"
                                             >
+                                                <td className="px-4 py-5"><input type="checkbox" aria-label={`Seleccionar invitación ${invitation.id}`} disabled={!canCleanup(invitation)} checked={selectedIds.includes(invitation.id)} onChange={e => toggleSelected(invitation.id, e.target.checked)} className="h-4 w-4 accent-amber-400 disabled:opacity-30" /></td>
                                                 <td className="px-6 py-5">
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
@@ -822,9 +853,7 @@ export default function InvitationsListView() {
                                                                 Cancelar
                                                             </button>
                                                         ) : (
-                                                            <span className="text-xs text-slate-600">
-                                                                Sin acciones
-                                                            </span>
+                                                            <button type="button" onClick={() => setCancelingId(invitation.id)} disabled={cancelMutation.isPending} className="inline-flex items-center gap-2 rounded-lg border border-rose-500/30 px-3 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-500/10"><Trash2 size={15}/> Eliminar</button>
                                                         )}
                                                     </div>
                                                 </td>
@@ -867,6 +896,8 @@ export default function InvitationsListView() {
                 </div>
             )}
 
+            {cleanupMutation.isError && <p role="alert" className="rounded-lg bg-rose-950/60 p-3 text-rose-200">{getErrorMessage(cleanupMutation.error)}</p>}
+            <ConfirmDialog open={cleanupConfirm} title="Eliminar invitaciones seleccionadas" message="Se borrarán únicamente invitaciones vencidas o utilizadas. Los usuarios creados permanecerán intactos. Esta acción no se puede deshacer." confirmLabel={cleanupMutation.isPending ? 'Eliminando...' : 'Eliminar definitivamente'} onCancel={() => !cleanupMutation.isPending && setCleanupConfirm(false)} onConfirm={approveCleanup}/>
             {/* MODAL DE CREACIÓN */}
             {formOpen && (
                 <InviteForm
@@ -884,12 +915,12 @@ export default function InvitationsListView() {
             {/* CONFIRMACIÓN DE CANCELACIÓN */}
             <ConfirmDialog
                 open={cancelingId !== null}
-                title="Cancelar invitación"
-                message="¿Querés cancelar esta invitación? La persona ya no podrá utilizarla para registrarse."
+                title="Eliminar invitación"
+                message="¿Eliminar este registro? Si todavía está pendiente, su enlace dejará de funcionar. Una invitación utilizada no elimina al usuario creado."
                 confirmLabel={
                     cancelMutation.isPending
-                        ? 'Cancelando...'
-                        : 'Cancelar invitación'
+                        ? 'Procesando...'
+                        : 'Eliminar invitación'
                 }
                 onCancel={() => {
                     if (!cancelMutation.isPending) {

@@ -1,42 +1,87 @@
 model User {
-  id Int @id @default(autoincrement())
-  dni String @unique
-  email String @unique
-  telefono String?
-  passwordHash String
-  firstName String
-  lastName String
-  isActive Boolean @default(true)
-  isSuperAdmin Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  institutionId Int?
-  institution Institution? @relation(fields: [institutionId], references: [id])
-  studentProfile StudentProfile?
-  teacherProfile TeacherProfile?
-  preceptorProfile PreceptorProfile?
-  directorProfile DirectorProfile?
-  refreshTokens RefreshToken[]
-  sentInvitations Invitation[] @relation("SentInvitations")
-  passwordResetTokens PasswordResetToken[]
-  createdEarlyNotices EarlyNotice[] @relation("EarlyNoticeCreator")
-  updatedEarlyNotices EarlyNotice[] @relation("EarlyNoticeUpdater")
-  responsibleEarlyNotices EarlyNotice[] @relation("EarlyNoticeTeacher")
-  confirmedEarlyNotices EarlyNotice[] @relation("EarlyNoticeConfirmer")
-  notifications Notification[] @relation("UserNotifications")
-  earlyNoticeRevisions EarlyNoticeRevision[] @relation("EarlyNoticeRevisionAuthor")
-  createdInstitutionEvents InstitutionEvent[] @relation("InstitutionEventCreator")
-  updatedInstitutionEvents InstitutionEvent[] @relation("InstitutionEventUpdater")
-  institutionEventRevisions InstitutionEventRevision[] @relation("InstitutionEventRevisionAuthor")
+  id                         Int                        @id @default(autoincrement())
+  dni                        String                     @unique
+  email                      String                     @unique
+  telefono                   String?
+  // Contacto publicado en el directorio; nunca se usa para login ni notificaciones.
+  // null = tomar el dato de registro (compatibilidad con cuentas antiguas).
+  // "" = usuario decidió no compartir ningún dato de este tipo.
+  directoryContactEmail      String?
+  directoryContactPhone      String?
+  directoryEmailVisibility   DirectoryVisibility        @default(PRIVATE)
+  directoryPhoneVisibility   DirectoryVisibility        @default(PRIVATE)
+  // Permisos individuales por rol; estos arrays sustituyen la lectura de la configuración anterior.
+  // Siempre empiezan vacíos: ni alumnos ni personal ven datos sin consentimiento.
+  directoryEmailRoles        String[]                   @default([])
+  directoryPhoneRoles        String[]                   @default([])
+  passwordHash               String
+  firstName                  String
+  lastName                   String
+  isActive                   Boolean                    @default(true)
+  // Eliminacion administrativa: conserva evidencias historicas (notas y avisos).
+  deletedAt                  DateTime?
+  // Altas públicas: alumnos y solicitudes de personal.
+  // null = cuenta anterior o creada directamente por una autoridad.
+  // Solo los alumnos nuevos se activan al validar su correo.
+  // El personal necesita además una aprobación de autoridad competente.
+  signupStatus               StudentSignupStatus?
+  requestedRole              InvitedRole?
+  emailVerifiedAt            DateTime?
+  emailVerificationTokens    EmailVerificationToken[]
+  signupReviewedAt           DateTime?
+  signupReviewedById         Int?
+  signupReviewReason         String?                    @db.Text
+  studentSignupNotifications Notification[]             @relation("StudentSignupNotifications")
+  isSuperAdmin               Boolean                    @default(false)
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime                   @updatedAt
+  institutionId              Int?
+  institution                Institution?               @relation(fields: [institutionId], references: [id])
+  studentProfile             StudentProfile?
+  teacherProfile             TeacherProfile?
+  preceptorProfile           PreceptorProfile?
+  directorProfile            DirectorProfile?
+  refreshTokens              RefreshToken[]
+  sentInvitations            Invitation[]               @relation("SentInvitations")
+  passwordResetTokens        PasswordResetToken[]
+  createdEarlyNotices        EarlyNotice[]              @relation("EarlyNoticeCreator")
+  updatedEarlyNotices        EarlyNotice[]              @relation("EarlyNoticeUpdater")
+  responsibleEarlyNotices    EarlyNotice[]              @relation("EarlyNoticeTeacher")
+  confirmedEarlyNotices      EarlyNotice[]              @relation("EarlyNoticeConfirmer")
+  notifications              Notification[]             @relation("UserNotifications")
+  devices                    UserDevice[]               @relation("UserDevices") //
+  webPushSubscriptions       WebPushSubscription[]      @relation("UserWebPushSubscriptions")
+  earlyNoticeRevisions       EarlyNoticeRevision[]      @relation("EarlyNoticeRevisionAuthor")
+  createdInstitutionEvents   InstitutionEvent[]         @relation("InstitutionEventCreator")
+  updatedInstitutionEvents   InstitutionEvent[]         @relation("InstitutionEventUpdater")
+  institutionEventRevisions  InstitutionEventRevision[] @relation("InstitutionEventRevisionAuthor")
+
+  @@index([institutionId, signupStatus])
+  @@index([requestedRole, signupStatus])
+  @@index([deletedAt])
 }
 
 model PasswordResetToken {
-  id Int @id @default(autoincrement())
-  tokenHash String @unique
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique
   expiresAt DateTime
-  usedAt DateTime?
-  createdAt DateTime @default(now())
-  userId Int
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+// Verificación por enlace de un solo uso. Solo se almacena hash SHA-256 del token.
+model EmailVerificationToken {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, expiresAt])
 }

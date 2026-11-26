@@ -1,33 +1,37 @@
 import {
-    createQuizActivityService,
-    getQuizActivityService,
-    updateQuizActivityService,
+    createDraft,
+    getMyActivity,
+    listMyActivities,
+    setActivityStatus,
+    updateDraft,
 } from '../services/activity.service.js';
 import { handleServiceError } from '../utils/handleServiceError.js';
 
-export const createQuizActivity = async (req, res) => {
+const action = (callback, status = 200) => async (req, res) => {
     try {
-        const result = await createQuizActivityService(req.user, req.body);
-        return res.status(201).json(result);
+        return res.status(status).json(await callback(req));
     } catch (error) {
         return handleServiceError(error, res);
     }
 };
 
-export const getQuizActivity = async (req, res) => {
-    try {
-        const activity = await getQuizActivityService(req.user, req.params.id);
-        return res.json(activity);
-    } catch (error) {
-        return handleServiceError(error, res);
+const parseId = value => {
+    const id = Number(value);
+    if (!Number.isSafeInteger(id) || id <= 0) {
+        const error = new Error('Id inválido');
+        error.status = 400;
+        throw error;
     }
+    return id;
 };
 
-export const updateQuizActivity = async (req, res) => {
-    try {
-        const result = await updateQuizActivityService(req.user, req.params.id, req.body);
-        return res.json(result);
-    } catch (error) {
-        return handleServiceError(error, res);
-    }
-};
+export const list = action(req => listMyActivities(req.user));
+export const getOne = action(req => getMyActivity(req.user, parseId(req.params.id)));
+export const create = action(req => createDraft(req.user, req.body), 201);
+export const update = action(req => updateDraft(req.user, parseId(req.params.id), req.body));
+export const changeStatus = action(req => setActivityStatus(
+    req.user,
+    parseId(req.params.id),
+    req.body?.status,
+    req.body?.teacherSubjectIds,
+));

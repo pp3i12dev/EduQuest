@@ -8,6 +8,7 @@ import {
 import {
     earlyNoticeService,
 } from '../services/earlyNotice.service';
+import { notifyNotificationsChanged } from './useNotifications';
 
 /**
  * Obtiene los Avisos Tempranos.
@@ -39,7 +40,7 @@ export function useEarlyNotices(token, filters = {}) {
 
         enabled: Boolean(token),
 
-        refetchInterval: 30_000,
+        refetchInterval: 10_000,
 
         refetchOnWindowFocus: true,
     });
@@ -118,10 +119,10 @@ export function useEarlyNoticeCreationOptions(
 export function useEarlyNoticeActions(token) {
     const queryClient = useQueryClient();
 
-    const invalidate = () =>
-        queryClient.invalidateQueries({
-            queryKey: ['early-notices'],
-        });
+    const invalidate = () => {
+        notifyNotificationsChanged();
+        return queryClient.invalidateQueries({ queryKey: ['early-notices'] });
+    };
 
     /**
      * Crear aviso.

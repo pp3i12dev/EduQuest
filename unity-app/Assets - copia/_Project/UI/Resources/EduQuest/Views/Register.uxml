@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <Style src="../../../USS/EduQuest.uss" />
+<ui:VisualElement class="screen eq-theme register-screen"><ui:ScrollView class="page-scroll eq-scroll"><ui:VisualElement class="container register-layout">
+<ui:VisualElement class="logo-group small"><ui:VisualElement class="logo-star art-star" /><ui:VisualElement class="logo-text art-logo" /></ui:VisualElement>
+<ui:Label text="¡Unite a EduQuest!" class="heading title-centered" /><ui:Label text="Elegí tu institución, carrera y curso. El colegio aprobará tu solicitud." class="subheading title-centered" />
+<ui:VisualElement class="white-panel form-wide"><ui:Label text="Tu institución" class="panel-title" /><ui:DropdownField name="institution" label="Institución" class="field" /><ui:DropdownField name="career" label="Carrera" class="field" /><ui:DropdownField name="course" label="Curso" class="field" /></ui:VisualElement>
+<ui:VisualElement class="white-panel form-wide" name="personal-form"><ui:Label text="Tus datos" class="panel-title" />
+<ui:TextField name="dni" label="DNI" class="field" /><ui:TextField name="first-name" label="Nombre" class="field" /><ui:TextField name="last-name" label="Apellido" class="field" /><ui:TextField name="email" label="Correo electrónico" class="field" /><ui:TextField name="phone" label="Teléfono (opcional)" class="field" /><ui:TextField name="password" label="Contraseña" class="field" /><ui:TextField name="confirm-password" label="Confirmar contraseña" class="field" /><ui:Button name="submit" text="Solicitar registro" class="primary" /></ui:VisualElement>
+<ui:Button name="back" text="‹ Volver" class="outline-button" /><ui:Label name="status" class="status" />
+</ui:VisualElement></ui:ScrollView></ui:VisualElement>
+</ui:UXML>

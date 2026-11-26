@@ -1,4 +1,3 @@
-
 import { useContext } from 'react';
 
 import {
@@ -11,6 +10,13 @@ import {
 import { AuthContext } from '../context/AuthContext';
 
 import LoginView from '../views/LoginView';
+import StudentRegisterView from '../views/StudentRegisterView';
+import StaffRegisterView from '../views/StaffRegisterView';
+import VerifyEmailView from '../views/VerifyEmailView';
+import StaffSignupRequestsView from '../views/StaffSignupRequestsView';
+import InstitutionDirectoryView from '../views/InstitutionDirectoryView';
+import ForgotPasswordView from '../views/ForgotPasswordView';
+import ResetPasswordView from '../views/ResetPasswordView';
 import DashboardView from '../views/DashBoardView';
 import DashboardLayout from '../layouts/DashboardLayout';
 
@@ -18,6 +24,7 @@ import UsersListView from '../views/UsersListView';
 import InvitationsListView from '../views/InvitationListView';
 import AcceptInvitationView from '../views/AcceptInvitationView';
 import ProfileView from '../views/ProfileView';
+import ServiceConfigView from '../views/ServiceConfigView';
 
 import CareersListView from '../views/CareersListView';
 import CoursesListView from '../views/CoursesListView';
@@ -32,6 +39,11 @@ import SubjectSchedulesView from '../views/SubjectSchedulesView';
 
 import RoleRoute from './RoleRoute';
 import TeacherSubjectsView from '../views/TeacherSubjectsView';
+import UnitsView from '../views/UnitsView';
+import TeacherActivityStudioView from '../views/TeacherActivityStudioView';
+import TeacherAssessmentsView from '../views/TeacherAssessmentsView';
+import ActivityManagementView from '../views/ActivityManagementView';
+import StudentPerformanceView from '../views/StudentPerformanceView';
 import EarlyNoticesView from '../views/EarlyNoticesView';
 import InstitutionCommunicationsView from '../views/InstitutionCommunicationsView';
 
@@ -65,6 +77,11 @@ export default function AppRoutes() {
     return (
         <BrowserRouter>
             <Routes>
+                <Route path="/registro-alumno" element={<StudentRegisterView />} />
+                <Route path="/registro-personal" element={<StaffRegisterView />} />
+                <Route path="/verificar-correo" element={<VerifyEmailView />} />
+                <Route path="/olvide-contrasena" element={<ForgotPasswordView />} />
+                <Route path="/restablecer-contrasena" element={<ResetPasswordView />} />
                 <Route
                     path="/login"
                     element={<LoginView />}
@@ -94,7 +111,10 @@ export default function AppRoutes() {
                         element={<ProfileView />}
                     />
 
+                    <Route path="service-config" element={<RoleRoute action="services:view"><ServiceConfigView /></RoleRoute>} />
+
                     <Route path="institution-communications" element={<InstitutionCommunicationsView />} />
+                    <Route path="directory" element={<InstitutionDirectoryView />} />
 
                     <Route
                         path="early-notices"
@@ -112,6 +132,15 @@ export default function AppRoutes() {
                             </RoleRoute>
                         }
                     />
+                    <Route
+                        path="students/:studentId/performance"
+                        element={<RoleRoute action="grade:manage"><StudentPerformanceView /></RoleRoute>}
+                    />
+
+                    <Route path="staff/requests" element={<RoleRoute action="selfSignup:approve"><StaffSignupRequestsView /></RoleRoute>} />
+
+                    {/* La aprobación manual de alumnos fue retirada: solo verificación de correo. */}
+                    <Route path="students/requests" element={<Navigate to="/dashboard/students" replace />} />
 
                     <Route
                         path="teachers"
@@ -185,11 +214,32 @@ export default function AppRoutes() {
                         }
                     />
 
+                    {/* Dirección histórica: el seguimiento ahora es contextual a una materia. */}
+                    <Route path="teacher-assessments" element={<Navigate to="/dashboard/my-subjects" replace />} />
+
                     <Route
                         path="my-subjects"
                         element={
                             <RoleRoute action="subjectContent:manage">
                                 <TeacherSubjectsView />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="activities"
+                        element={<RoleRoute action="activity:manage"><ActivityManagementView /></RoleRoute>}
+                    />
+
+                    <Route
+                        path="my-subjects/:teacherSubjectId/studio"
+                        element={<RoleRoute action="subjectContent:manage"><TeacherActivityStudioView /></RoleRoute>}
+                    />
+                    <Route path="my-subjects/:teacherSubjectId/results" element={<RoleRoute action="grade:manage"><TeacherAssessmentsView /></RoleRoute>} />
+                    <Route
+                        path="my-subjects/:teacherSubjectId/units"
+                        element={
+                            <RoleRoute action="subjectContent:manage">
+                                <UnitsView />
                             </RoleRoute>
                         }
                     />

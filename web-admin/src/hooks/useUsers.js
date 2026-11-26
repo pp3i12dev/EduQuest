@@ -38,7 +38,7 @@ export function useToggleUserActive(role) {
 export function useDeleteUser(role) {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (id) => usersService.remove(role, id),
+        mutationFn: ({ id, mode, confirm }) => usersService.remove(role, id, mode, confirm),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users', role] });
             queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });

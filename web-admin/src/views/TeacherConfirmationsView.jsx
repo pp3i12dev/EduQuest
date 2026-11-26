@@ -1,4 +1,5 @@
 import { useContext, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
@@ -32,7 +33,7 @@ async function fetchPending(token) {
 export default function TeacherConfirmationsView() {
     const { token } = useContext(AuthContext);
     const queryClient = useQueryClient();
-    const [rejectionId, setRejectionId] = useState(null);
+    const [decision, setDecision] = useState(null);
     const [reason, setReason] = useState('');
     const [error, setError] = useState('');
 
@@ -48,7 +49,7 @@ export default function TeacherConfirmationsView() {
             ? earlyNoticeService.reject(token, id, rejectionReason)
             : earlyNoticeService.confirm(token, id),
         onSuccess: async () => {
-            setError(''); setRejectionId(null); setReason('');
+            setError(''); setDecision(null); setReason('');
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['teacher-confirmations'] }),
                 queryClient.invalidateQueries({ queryKey: ['early-notices'] }),
@@ -96,30 +97,32 @@ export default function TeacherConfirmationsView() {
                     </div>
                     <p className="text-xs text-amber-200">Hasta que confirmes, el aviso no constituye una ausencia oficialmente confirmada.</p>
                     <div className="flex flex-wrap items-center gap-3">
-                        <button type="button" disabled={action.isPending} onClick={() => {
-                            if (window.confirm(`¿Confirmar el aviso #${notice.id} y sus ${notice.classCount} clases?`)) {
-                                setError(''); action.mutate({ id: notice.id, reject: false });
-                            }
-                        }} className="cursor-pointer rounded-lg bg-emerald-600 px-4 py-2 font-semibold hover:bg-emerald-500 disabled:opacity-50">Confirmar todas las clases</button>
-                        <button type="button" disabled={action.isPending} onClick={() => { setRejectionId(notice.id); setReason(''); setError(''); }} className="cursor-pointer rounded-lg border border-rose-500 px-4 py-2 text-rose-200 hover:bg-rose-950/50 disabled:opacity-50">Rechazar aviso</button>
+                        <button type="button" disabled={action.isPending} onClick={() => { setError(''); setDecision({ notice, reject: false }); }} className="cursor-pointer rounded-lg bg-emerald-600 px-4 py-2 font-semibold hover:bg-emerald-500 disabled:opacity-50">Confirmar todas las clases</button>
+                        <button type="button" disabled={action.isPending} onClick={() => { setDecision({ notice, reject: true }); setReason(''); setError(''); }} className="cursor-pointer rounded-lg border border-rose-500 px-4 py-2 text-rose-200 hover:bg-rose-950/50 disabled:opacity-50">Rechazar aviso</button>
                         <Link className="text-sm text-blue-300 underline" to="/dashboard/early-notices">Ver avisos tempranos</Link>
                     </div>
-                    {rejectionId === notice.id && (
-                        <form className="space-y-3 rounded-lg border border-rose-600/40 p-4" onSubmit={(e) => {
-                            e.preventDefault();
-                            if (!reason.trim()) return setError('Indicá el motivo del rechazo');
-                            action.mutate({ id: notice.id, reject: true, rejectionReason: reason.trim() });
-                        }}>
-                            <label htmlFor={`reason-${notice.id}`} className="block text-sm font-semibold">Motivo del rechazo</label>
-                            <textarea id={`reason-${notice.id}`} required maxLength={2000} value={reason} onChange={(e) => setReason(e.target.value)} rows={3} className="w-full rounded-lg border border-slate-600 bg-slate-800 p-3" />
-                            <div className="flex gap-2">
-                                <button type="submit" disabled={action.isPending || !reason.trim()} className="cursor-pointer rounded-lg bg-rose-700 px-4 py-2 disabled:opacity-50">Confirmar rechazo</button>
-                                <button type="button" onClick={() => setRejectionId(null)} className="cursor-pointer rounded-lg border border-slate-600 px-4 py-2">Cancelar</button>
-                            </div>
-                        </form>
-                    )}
                 </article>
             ))}
+            {decision && createPortal(
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm" onMouseDown={e => { if (e.target === e.currentTarget && !action.isPending) setDecision(null); }}>
+                    <form role="dialog" aria-modal="true" aria-labelledby="confirm-decision-title" className="w-full max-w-lg space-y-5 rounded-2xl border border-slate-700 bg-slate-900 p-6 text-white shadow-2xl" onSubmit={e => {
+                        e.preventDefault();
+                        if (decision.reject && !reason.trim()) { setError('Indicá el motivo del rechazo'); return; }
+                        setError('');
+                        action.mutate({ id: decision.notice.id, reject: decision.reject, rejectionReason: reason.trim() });
+                    }}>
+                        <h2 id="confirm-decision-title" className="text-xl font-bold">{decision.reject ? 'Rechazar aviso temprano' : 'Confirmar aviso temprano'}</h2>
+                        <p className="text-sm text-slate-300">Aviso #{decision.notice.id} · {decision.notice.classCount} clases afectadas.</p>
+                        <p className="text-sm text-slate-200">{decision.reject ? 'El aviso quedará rechazado y no se notificará a los alumnos.' : 'Al confirmar, el aviso quedará validado y se habilitarán las notificaciones correspondientes.'}</p>
+                        {decision.reject && <label className="block text-sm font-semibold">Motivo del rechazo<textarea autoFocus required maxLength={2000} rows={3} value={reason} onChange={e => setReason(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-950 p-3 text-white" /></label>}
+                        {error && <p role="alert" className="text-sm text-rose-300">{error}</p>}
+                        <div className="flex flex-wrap justify-end gap-3">
+                            <button type="button" disabled={action.isPending} onClick={() => { setDecision(null); setError(''); }} className="rounded-lg border border-slate-600 px-4 py-2 hover:bg-slate-800">Volver</button>
+                            <button type="submit" disabled={action.isPending || (decision.reject && !reason.trim())} className={`rounded-lg px-4 py-2 font-semibold text-white disabled:opacity-50 ${decision.reject ? 'bg-rose-700 hover:bg-rose-600' : 'bg-emerald-600 hover:bg-emerald-500'}`}>{action.isPending ? 'Procesando…' : decision.reject ? 'Confirmar rechazo' : 'Confirmar aviso'}</button>
+                        </div>
+                    </form>
+                </div>, document.body
+            )}
         </div>
     );
 }

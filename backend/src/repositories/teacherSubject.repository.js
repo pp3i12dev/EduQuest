@@ -18,10 +18,12 @@ export const findTeacherSubjectsByTeacher = (teacherId) => {
         where: {
             teacherId,
             isActive: true,
+            subject: { deletedAt: null },
+            teacher: { user: { isActive: true, deletedAt: null } },
         },
         include: {
             subject: true,
-            course: true,
+            course: { include: { career: { select: { id: true, nombre: true, institutionId: true } } } },
             activities: true,
         },
         orderBy: {
@@ -39,6 +41,8 @@ export const findTeacherSubjectsByInstitution = (institutionId = null) => {
     return prisma.teacherSubject.findMany({
         where: {
             isActive: true,
+            subject: { deletedAt: null },
+            teacher: { user: { isActive: true, deletedAt: null } },
             ...(institutionId != null
                 ? {
                     subject: {
@@ -49,7 +53,7 @@ export const findTeacherSubjectsByInstitution = (institutionId = null) => {
         },
         include: {
             subject: true,
-            course: true,
+            course: { include: { career: { select: { id: true, nombre: true, institutionId: true } } } },
             activities: true,
         },
         orderBy: {
@@ -69,7 +73,7 @@ export const findTeacherSubjectWithDetails = (teacherSubjectId) => {
         },
         include: {
             subject: true,
-            course: true,
+            course: { include: { career: { select: { id: true, nombre: true, institutionId: true } } } },
             contents: {
                 orderBy: { createdAt: 'asc' },
             },

@@ -1,0 +1,13 @@
+model ManualEvaluation {
+  id               Int            @id @default(autoincrement())
+  grade            Decimal        @db.Decimal(4, 2)
+  observations     String?
+  createdAt        DateTime       @default(now())
+  studentId        Int
+  student          StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherSubjectId Int
+  teacherSubject   TeacherSubject @relation(fields: [teacherSubjectId], references: [id], onDelete: Restrict)
+
+  @@index([studentId, createdAt])
+  @@index([teacherSubjectId, studentId])
+}

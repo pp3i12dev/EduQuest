@@ -1,4 +1,6 @@
+import { shiftLabel } from '../utils/courseShift';
 import { useState } from 'react';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 import {
     useAssignmentOptions,
@@ -13,6 +15,7 @@ export default function TeacherSubjectAssignmentsView() {
 
     const [courseId, setCourseId] = useState('');
     const [subjectId, setSubjectId] = useState('');
+    const [pendingRemoval, setPendingRemoval] = useState(null);
 
     const {
         data: teachers,
@@ -24,13 +27,18 @@ export default function TeacherSubjectAssignmentsView() {
 
     const assignMutation = useAssignTeacher();
     const removeMutation = useRemoveTeacher();
+    const activeTeachers = (teachers ?? []).filter(teacher => teacher.assigned);
+    const hasOtherResponsible = teacherId =>
+        activeTeachers.some(teacher => teacher.id !== teacherId);
+    const mutationError = assignMutation.error?.response?.data?.message ||
+        removeMutation.error?.response?.data?.message ||
+        assignMutation.error?.message || removeMutation.error?.message;
 
     const handleToggle = (teacher) => {
+        if (assignMutation.isPending || removeMutation.isPending) return;
+        if (!teacher.assigned && hasOtherResponsible(teacher.id)) return;
         if (teacher.assigned) {
-            removeMutation.mutate(
-                teacher.assignmentId
-            );
-
+            setPendingRemoval(teacher);
             return;
         }
 
@@ -51,6 +59,19 @@ export default function TeacherSubjectAssignmentsView() {
 
     return (
         <div>
+            <ConfirmDialog
+                open={Boolean(pendingRemoval)}
+                title="Quitar docente responsable"
+                message="¿Querés desactivar esta asignación? El historial y las actividades anteriores se conservarán, pero el curso quedará sin docente activo para esta materia hasta que asignes otro."
+                confirmLabel={removeMutation.isPending ? 'Quitando...' : 'Quitar asignación'}
+                onCancel={() => { if (!removeMutation.isPending) setPendingRemoval(null); }}
+                onConfirm={() => {
+                    if (!pendingRemoval || removeMutation.isPending) return;
+                    removeMutation.mutate(pendingRemoval.assignmentId, {
+                        onSuccess: () => setPendingRemoval(null),
+                    });
+                }}
+            />
             <div className="mb-6">
                 <h2 className="text-2xl font-bold">
                     Docentes y materias
@@ -88,7 +109,7 @@ export default function TeacherSubjectAssignmentsView() {
                                         key={course.id}
                                         value={course.id}
                                     >
-                                        {course.nombre}
+                                        {course.nombre} · {shiftLabel(course.shift)}
                                     </option>
                                 )
                             )}
@@ -137,7 +158,33 @@ export default function TeacherSubjectAssignmentsView() {
                     Cargando docentes...
                 </p>
             ) : (
-                <div className="overflow-x-auto">
+                <div className="space-y-4">
+                    {activeTeachers.length === 1 && (
+                        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+                            <p className="font-semibold">Docente responsable actual</p>
+                            <p className="mt-1">
+                                {activeTeachers[0].user.firstName}{' '}
+                                {activeTeachers[0].user.lastName}
+                            </p>
+                            <p className="mt-1 text-xs text-emerald-200/80">
+                                Para asignar otra persona, quitá primero a la actual o realizá
+                                el cambio desde la edición de la materia. Esto no limita a un
+                                docente a enseñar en otros cursos o materias.
+                            </p>
+                        </div>
+                    )}
+                    {activeTeachers.length > 1 && (
+                        <div role="alert" className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200">
+                            Hay varias asignaciones activas para esta materia y curso.
+                            Revisalas antes de crear nuevas asignaciones.
+                        </div>
+                    )}
+                    {mutationError && (
+                        <div role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+                            {mutationError}
+                        </div>
+                    )}
+                    <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-slate-400 border-b border-slate-800">
@@ -204,9 +251,12 @@ export default function TeacherSubjectAssignmentsView() {
                                                 assignMutation.isPending ||
                                                 removeMutation.isPending ||
                                                 (!teacher.assigned &&
-                                                    !teacher.user
-                                                        .isActive)
+                                                    (!teacher.user.isActive ||
+                                                        hasOtherResponsible(teacher.id)))
                                             }
+                                            title={!teacher.assigned && hasOtherResponsible(teacher.id)
+                                                ? 'Esta materia ya tiene un docente responsable en el curso'
+                                                : undefined}
                                             className={`text-xs hover:underline cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${teacher.assigned
                                                     ? 'text-red-400'
                                                     : 'text-emerald-400'
@@ -221,6 +271,7 @@ export default function TeacherSubjectAssignmentsView() {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             )}
         </div>

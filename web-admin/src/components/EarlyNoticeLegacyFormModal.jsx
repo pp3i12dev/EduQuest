@@ -1,3 +1,4 @@
+import { todayArgentina } from '../utils/institutionDate';
 import { createPortal } from 'react-dom';
 
 import {
@@ -1218,6 +1219,7 @@ export default function EarlyNoticeFormModal({
                                             <input
                                                 id="notice-date"
                                                 type="date"
+                                                min={todayArgentina()}
                                                 value={form.classDate}
                                                 onChange={event =>
                                                     changeDate(

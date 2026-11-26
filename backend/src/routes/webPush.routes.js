@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { authenticate } from '../middlewares/auth.middleware.js';
+import { webPushController as c } from '../controllers/webPush.controller.js';
+const router = Router();
+router.get('/config', c.config);
+router.use(authenticate);
+router.get('/devices', c.devices);
+router.post('/subscriptions', c.subscribe);
+router.post('/status', c.status);
+router.post('/test', c.test);
+router.delete('/subscriptions', c.unsubscribe);
+export default router;

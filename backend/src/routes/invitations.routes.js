@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import {
     listInvitations, createInvitation, cancelInvitation,
-    acceptInvitation, getInvitationByToken,
+    acceptInvitation, getInvitationByToken, cleanupInvitations,
 } from '../controllers/invitations.controller.js';
 
 const router = Router();
@@ -14,6 +14,7 @@ router.post('/:token/accept', acceptInvitation);
 router.use(authenticate);
 router.get('/', listInvitations);
 router.post('/', createInvitation);
+router.post('/cleanup', cleanupInvitations);
 router.delete('/:id', cancelInvitation);
 
 export default router;

@@ -148,6 +148,10 @@ export const earlyNoticeController = {
         execute(res, () => service.deleteHistory(req.user, req.params.id));
     },
 
+    deleteHistoryBatch(req, res) {
+        execute(res, () => service.deleteHistoryBatch(req.user, req.body));
+    },
+
     deactivate(req, res) {
         execute(res, () =>
             service.deactivate(

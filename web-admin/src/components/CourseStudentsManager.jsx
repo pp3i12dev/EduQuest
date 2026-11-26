@@ -86,7 +86,7 @@ export default function CourseStudentsManager({ course }) {
     ).length;
 
     const handleAssign = (student) => {
-        if (!courseId) return;
+        if (!courseId || student.assignedToOtherCourse) return;
 
         setActionError('');
         setBusyStudentId(student.id);
@@ -254,6 +254,11 @@ export default function CourseStudentsManager({ course }) {
                                                     <CheckCircle2 size={14} />
                                                     Asignado
                                                 </span>
+                                            ) : student.assignedToOtherCourse ? (
+                                                <span className="inline-flex rounded-full bg-amber-500/15 px-2 py-1 text-xs text-amber-300"
+                                                      title="Primero quitá la matrícula del otro curso">
+                                                    Inscripto en {student.assignedCourse?.nombre || 'otro curso'}
+                                                </span>
                                             ) : (
                                                 <span className="rounded-full bg-slate-700 px-2 py-1 text-xs text-slate-300">
                                                     Sin asignar
@@ -275,7 +280,10 @@ export default function CourseStudentsManager({ course }) {
                                             ) : (
                                                 <button
                                                     type="button"
-                                                    disabled={isBusy}
+                                                    disabled={isBusy || student.assignedToOtherCourse}
+                                                    title={student.assignedToOtherCourse
+                                                        ? `Ya está inscripto en ${student.assignedCourse?.nombre || 'otro curso'}. Quitá la matrícula anterior primero.`
+                                                        : 'Inscribir en este curso'}
                                                     onClick={() => handleAssign(student)}
                                                     className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                                                 >

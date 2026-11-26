@@ -1,11 +1,12 @@
 import { getPrisma } from '../config/prisma.js';
+import { enqueueWebPushForNotification } from '../services/webPush.service.js';
 
 const prisma = () => getPrisma();
 const relations = {
   institution: { select: { id: true, nombre: true, direccion: true } },
   audiences: true,
   careers: { include: { career: { select: { id: true, nombre: true } } } },
-  courses: { include: { course: { select: { id: true, nombre: true, careerId: true } } } },
+  courses: { include: { course: { select: { id: true, nombre: true, careerId: true, shift: true } } } },
   createdBy: { select: { id: true, firstName: true, lastName: true } },
   revisions: { orderBy: { version: 'desc' }, select: { id: true, version: true, action: true, createdAt: true, createdById: true } },
 };
@@ -20,7 +21,7 @@ export const institutionCommunicationRepository = {
     const db = prisma();
     const [careers, courses, institution] = await Promise.all([
       db.career.findMany({ where: { institutionId }, select: { id: true, nombre: true }, orderBy: { nombre: 'asc' } }),
-      db.course.findMany({ where: { institutionId }, select: { id: true, nombre: true, careerId: true }, orderBy: { nombre: 'asc' } }),
+      db.course.findMany({ where: { institutionId }, select: { id: true, nombre: true, careerId: true, shift: true }, orderBy: { nombre: 'asc' } }),
       db.institution.findUnique({ where: { id: institutionId }, select: { id: true, nombre: true, direccion: true } }),
     ]);
     return { careers, courses, institution };
@@ -79,11 +80,23 @@ export const institutionCommunicationRepository = {
       } });
       const type = old ? 'EVENT_UPDATED' : 'EVENT_CREATED';
       const label = data.kind === 'SUSPENSION' ? 'Suspensión de actividades' : 'Evento institucional';
-      const body = `${old ? 'Comunicación actualizada' : 'Nueva comunicación'}: ${label}\n${data.title}\n${data.details}\nDesde: ${data.startsAt.toISOString()}\nHasta: ${data.endsAt.toISOString()}\nVersión: ${version}`;
+      const activityLabels = {
+        PRESENTIAL_CLASSES: 'Clases presenciales',
+        VIRTUAL_SYNCHRONOUS_CLASSES: 'Clases virtuales sincrónicas',
+        VIRTUAL_ASYNCHRONOUS_CLASSES: 'Clases virtuales asincrónicas',
+        VIRTUAL_CLASSES: 'Clases virtuales (ambas modalidades)',
+        EXAMS: 'Evaluaciones', ADMINISTRATIVE: 'Actividades administrativas',
+        EXTRACURRICULAR: 'Actividades extracurriculares',
+      };
+      const affected = data.kind === 'SUSPENSION'
+        ? `\nActividades afectadas: ${data.affectedActivities.map(a => activityLabels[a] || a).join(', ')}`
+        : '';
+      const body = `${old ? 'Comunicación actualizada' : 'Nueva comunicación'}: ${label}\n${data.title}\n${data.details}${affected}\nDesde: ${data.startsAt.toISOString()}\nHasta: ${data.endsAt.toISOString()}\nVersión: ${version}`;
       for (const id of recipientIds) {
         const n = await tx.notification.create({ data: {
           userId: id, institutionEventId: record.id, type, title: `${label}: ${data.title}`, message: body, revision: version,
         } });
+        await enqueueWebPushForNotification(tx, id, n.id);
         const user = await tx.user.findUnique({ where: { id }, select: { email: true } });
         if (user?.email) await tx.notificationDelivery.create({ data: { notificationId: n.id, channel: 'EMAIL', recipient: user.email } });
       }
@@ -93,6 +106,7 @@ export const institutionCommunicationRepository = {
           title: `Ya no estás incluido: ${data.title}`,
           message: 'La comunicación institucional se actualizó y ya no está dirigida a tu grupo.', revision: version,
         } });
+        await enqueueWebPushForNotification(tx, id, n.id);
         const user = await tx.user.findUnique({ where: { id }, select: { email: true } });
         if (user?.email) await tx.notificationDelivery.create({ data: { notificationId: n.id, channel: 'EMAIL', recipient: user.email } });
       }
@@ -120,6 +134,7 @@ export const institutionCommunicationRepository = {
             ? `La suspensión de clases fue cancelada. Las clases se desarrollarán normalmente según el horario habitual, salvo que la institución comunique otra disposición.${reason ? ` Motivo: ${reason}` : ''}`
             : `El evento institucional fue cancelado y no se realizará según lo anunciado.${reason ? ` Motivo: ${reason}` : ''}`, revision: version,
         } });
+        await enqueueWebPushForNotification(tx, id, n.id);
         const user = await tx.user.findUnique({ where: { id }, select: { email: true } });
         if (user?.email) await tx.notificationDelivery.create({ data: { notificationId: n.id, channel: 'EMAIL', recipient: user.email } });
       }
