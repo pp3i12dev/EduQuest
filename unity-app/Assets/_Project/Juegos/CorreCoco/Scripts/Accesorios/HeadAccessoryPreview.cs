@@ -12,6 +12,8 @@ public class HeadAccessoryPreview : MonoBehaviour
     {
         public string id;
         public Sprite sprite;
+        public int price;
+        public bool unlockedByDefault;
         public Vector3 localOffset;
         public Vector3 localEulerAngles;
         public Vector3 localScale;
@@ -19,6 +21,10 @@ public class HeadAccessoryPreview : MonoBehaviour
 
     [Header("Anclaje en el hueso de la cabeza")]
     [SerializeField] private SpriteRenderer accessoryRenderer;
+
+    [Header("Simulación de monedas (opcional)")]
+    [SerializeField] private SimulatedCoinWallet coinWallet;
+    [SerializeField] private TMP_Text statusLabel;
 
     [Header("UI del selector")]
     [SerializeField] private GameObject panelRoot;
@@ -31,7 +37,6 @@ public class HeadAccessoryPreview : MonoBehaviour
     [SerializeField] private List<AccessoryOption> accessories = new();
 
     [Header("Vista previa en Editor (sin Play)")]
-    [Min(-1)]
     [SerializeField] private int previewInEditorIndex = -1;
 
     private int _appliedIndex = -1;
@@ -41,11 +46,7 @@ public class HeadAccessoryPreview : MonoBehaviour
 
     private void Awake()
     {
-        if (!Application.isPlaying)
-        {
-            ApplyIndex(previewInEditorIndex);
-            return;
-        }
+        if (!Application.isPlaying) return;
 
         if (applyButton != null)
             applyButton.onClick.AddListener(ApplySelection);
@@ -55,6 +56,7 @@ public class HeadAccessoryPreview : MonoBehaviour
 
         BuildButtons();
         ApplyIndex(_appliedIndex);
+        SetStatus("");
 
         if (panelRoot != null)
             panelRoot.SetActive(false);
@@ -64,6 +66,15 @@ public class HeadAccessoryPreview : MonoBehaviour
     {
         if (Application.isPlaying) return;
         ApplyIndex(previewInEditorIndex);
+    }
+
+    private void LateUpdate()
+    {
+        if (!Application.isPlaying) return;
+        if (Time.timeScale <= 0f) return;
+
+        int activeIndex = (panelRoot != null && panelRoot.activeSelf) ? _previewIndex : _appliedIndex;
+        ApplyIndex(activeIndex);
     }
 
     private void OnDestroy()
@@ -83,12 +94,61 @@ public class HeadAccessoryPreview : MonoBehaviour
     {
         _previewIndex = _appliedIndex;
         ApplyIndex(_previewIndex);
+        RefreshButtonsVisuals();
+        SetStatus("");
 
         if (panelRoot != null)
             panelRoot.SetActive(true);
 
-        if (Application.isPlaying)
-            PauseGameTime();
+        PauseGameTime();
+    }
+
+    public void OnOptionClicked(int index)
+    {
+        if (index < -1 || index >= accessories.Count) return;
+
+        // -1 representa "Sin accesorio", siempre disponible
+        if (index == -1)
+        {
+            _previewIndex = -1;
+            ApplyIndex(-1);
+            SetStatus("Sin accesorio seleccionado. Tocá Aplicar para confirmar.");
+            return;
+        }
+
+        AccessoryOption item = accessories[index];
+
+        // Si ya está desbloqueado, permite previsualizarlo sin cobrar
+        if (IsItemUnlocked(index, item))
+        {
+            _previewIndex = index;
+            ApplyIndex(index);
+            SetStatus($"Vista previa: {GetItemLabel(index, item)} (Desbloqueado)");
+            return;
+        }
+
+        // Si está bloqueado, intenta comprar con el saldo simulado
+        int cost = Mathf.Max(0, item.price);
+        if (coinWallet == null)
+        {
+            SetStatus("Falta asignar SimulatedCoinWallet en el Inspector.");
+            return;
+        }
+
+        if (!coinWallet.HasEnoughCoins(cost))
+        {
+            SetStatus($"No alcanzan las monedas ({cost} requeridas).");
+            return;
+        }
+
+        if (coinWallet.TrySpendCoins(cost))
+        {
+            SetItemUnlocked(index, true);
+            _previewIndex = index;
+            ApplyIndex(index);
+            RefreshButtonsVisuals();
+            SetStatus($"Compraste {GetItemLabel(index, item)} por {cost} monedas.");
+        }
     }
 
     public void SelectPreview(int index)
@@ -106,8 +166,7 @@ public class HeadAccessoryPreview : MonoBehaviour
         if (panelRoot != null)
             panelRoot.SetActive(false);
 
-        if (Application.isPlaying)
-            ResumeGameTime();
+        ResumeGameTime();
     }
 
     public void CancelAndClose()
@@ -118,8 +177,34 @@ public class HeadAccessoryPreview : MonoBehaviour
         if (panelRoot != null)
             panelRoot.SetActive(false);
 
-        if (Application.isPlaying)
-            ResumeGameTime();
+        ResumeGameTime();
+    }
+
+    [ContextMenu("Resetear desbloqueos simulados de accesorios")]
+    public void ResetSimulatedUnlocks()
+    {
+        for (int i = 0; i < accessories.Count; i++)
+        {
+            PlayerPrefs.DeleteKey(GetUnlockKey(i, accessories[i]));
+        }
+
+        PlayerPrefs.Save();
+        _previewIndex = -1;
+        _appliedIndex = -1;
+        ApplyIndex(-1);
+        RefreshButtonsVisuals();
+        SetStatus("Desbloqueos simulados reseteados.");
+    }
+
+    public void ResetFullSimulation()
+    {
+        if (coinWallet != null)
+        {
+            coinWallet.ResetToInitialSimulatedCoins();
+        }
+
+        ResetSimulatedUnlocks();
+        SetStatus("Simulación reseteada (monedas y desbloqueos).");
     }
 
     private void PauseGameTime()
@@ -147,23 +232,76 @@ public class HeadAccessoryPreview : MonoBehaviour
         }
 
         Button clearBtn = Instantiate(optionButtonPrefab, gridContainer);
-        clearBtn.GetComponentInChildren<TMP_Text>()?.SetText("Sin accesorio");
-        clearBtn.onClick.AddListener(() => SelectPreview(-1));
+        Image clearIcon = clearBtn.transform.Find("Icon")?.GetComponent<Image>();
+        if (clearIcon != null)
+            clearIcon.gameObject.SetActive(false);
+
+        TMP_Text clearLabel = clearBtn.GetComponentInChildren<TMP_Text>();
+        if (clearLabel != null)
+            clearLabel.SetText("Sin accesorio");
+
+        clearBtn.onClick.AddListener(() => OnOptionClicked(-1));
 
         for (int i = 0; i < accessories.Count; i++)
         {
             int capturedIndex = i;
             AccessoryOption item = accessories[i];
-            Button btn = Instantiate(optionButtonPrefab, gridContainer);
 
+            Button btn = Instantiate(optionButtonPrefab, gridContainer);
             Image icon = btn.transform.Find("Icon")?.GetComponent<Image>();
-            if (icon != null) icon.sprite = item.sprite;
+            if (icon != null)
+            {
+                icon.gameObject.SetActive(item.sprite != null);
+                icon.sprite = item.sprite;
+            }
 
             TMP_Text label = btn.GetComponentInChildren<TMP_Text>();
-            if (label != null && icon == null) label.SetText(string.IsNullOrEmpty(item.id) ? $"Item {i + 1}" : item.id);
+            if (label != null)
+            {
+                string nameText = GetItemLabel(i, item);
+                bool unlocked = IsItemUnlocked(i, item);
+                label.SetText(unlocked ? nameText : $"{nameText} (${item.price})");
+            }
 
-            btn.onClick.AddListener(() => SelectPreview(capturedIndex));
+            btn.onClick.AddListener(() => OnOptionClicked(capturedIndex));
         }
+    }
+
+    private void RefreshButtonsVisuals()
+    {
+        BuildButtons();
+    }
+
+    private bool IsItemUnlocked(int index, AccessoryOption item)
+    {
+        if (item.unlockedByDefault || item.price <= 0)
+            return true;
+
+        return PlayerPrefs.GetInt(GetUnlockKey(index, item), 0) == 1;
+    }
+
+    private void SetItemUnlocked(int index, bool unlocked)
+    {
+        AccessoryOption item = accessories[index];
+        PlayerPrefs.SetInt(GetUnlockKey(index, item), unlocked ? 1 : 0);
+        PlayerPrefs.Save();
+    }
+
+    private string GetUnlockKey(int index, AccessoryOption item)
+    {
+        string safeId = string.IsNullOrWhiteSpace(item.id) ? $"index_{index}" : item.id.Trim();
+        return $"Prototipo_Sim_AccUnlocked_{safeId}";
+    }
+
+    private string GetItemLabel(int index, AccessoryOption item)
+    {
+        return string.IsNullOrWhiteSpace(item.id) ? $"Accesorio {index + 1}" : item.id;
+    }
+
+    private void SetStatus(string message)
+    {
+        if (statusLabel != null)
+            statusLabel.text = message;
     }
 
     private void ApplyIndex(int index)
@@ -181,15 +319,5 @@ public class HeadAccessoryPreview : MonoBehaviour
         accessoryRenderer.transform.localPosition = item.localOffset;
         accessoryRenderer.transform.localEulerAngles = item.localEulerAngles;
         accessoryRenderer.transform.localScale = item.localScale == Vector3.zero ? Vector3.one : item.localScale;
-    }
-
-    private void LateUpdate()
-    {
-        if (!Application.isPlaying) return;
-        if (Time.timeScale <= 0f) return;
-
-        // Reaplica el índice activo tras la animación del frame para evitar desfasajes en salto o movimiento
-        int activeIndex = (panelRoot != null && panelRoot.activeSelf) ? _previewIndex : _appliedIndex;
-        ApplyIndex(activeIndex);
     }
 }
