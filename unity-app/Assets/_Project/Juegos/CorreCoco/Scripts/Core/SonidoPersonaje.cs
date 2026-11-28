@@ -40,10 +40,19 @@ public class SonidoPersonaje : MonoBehaviour
         // GameManager.Instancia.OnPreguntaCerrada -= ReanudarLoop;
     }
 
-    private void PausarLoop() => audioLoop?.Pause();
-    private void ReanudarLoop() => audioLoop?.UnPause();
+    public void PausarLoop()
+    {
+        if (audioLoop != null)
+            audioLoop.Pause();
+    }
 
-    /// <summary>Llamar desde un Animation Event en el clip Anim_Saltar</summary>
+    public void ReanudarLoop()
+    {
+        if (audioLoop != null && clipCorrer != null)
+            audioLoop.UnPause();
+    }
+
+    /// <summary>Reproduce el efecto de salto (desde Animation Event o llamado al saltar)</summary>
     public void ReproducirSonidoSalto()
     {
         if (audioSFX != null && clipSalto != null)

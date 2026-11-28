@@ -23,6 +23,11 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Panel de accesorios que pausa y bloquea el salto al abrirse")]
     [SerializeField] private GameObject accessoryPanelRoot;
 
+    // Referencia opcional a SonidoPersonaje para reproducir el salto desde código si no usás Animation Event
+    [Header("Audio (opcional)")]
+    [Tooltip("Opcional: si se asigna y no usás Animation Event en el clip de salto, dispara el SFX al saltar")]
+    [SerializeField] private SonidoPersonaje sonidoPersonaje;
+
     [Header("Animación (opcional)")]
     [SerializeField] private Animator animator;
 
@@ -107,6 +112,11 @@ public class PlayerController : MonoBehaviour
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
             rb.AddForce(Vector2.up * fuerzaSalto, ForceMode2D.Impulse);
+
+            // Si ya tenés un Animation Event en el clip de salto llamando a ReproducirSonidoSalto(),
+            // dejá este campo en None en el Inspector para no reproducir el audio dos veces.
+            if (sonidoPersonaje != null)
+                sonidoPersonaje.ReproducirSonidoSalto();
 
             if (animator != null)
                 animator.SetTrigger(HashSaltando);

@@ -26,6 +26,10 @@ public class HeadAccessoryPreview : MonoBehaviour
     [SerializeField] private SimulatedCoinWallet coinWallet;
     [SerializeField] private TMP_Text statusLabel;
 
+    // Referencia opcional a SonidoPersonaje para pausar/reanudar el loop de correr al abrir/cerrar el panel
+    [Header("Audio del personaje (opcional)")]
+    [SerializeField] private SonidoPersonaje sonidoPersonaje;
+
     [Header("UI del selector")]
     [SerializeField] private GameObject panelRoot;
     [SerializeField] private Transform gridContainer;
@@ -100,6 +104,9 @@ public class HeadAccessoryPreview : MonoBehaviour
         if (panelRoot != null)
             panelRoot.SetActive(true);
 
+        // Pausa el sonido continuo de correr mientras está abierto el panel
+        sonidoPersonaje?.PausarLoop();
+
         PauseGameTime();
     }
 
@@ -166,6 +173,9 @@ public class HeadAccessoryPreview : MonoBehaviour
         if (panelRoot != null)
             panelRoot.SetActive(false);
 
+        // Reanuda el sonido continuo de correr al confirmar y cerrar el panel
+        sonidoPersonaje?.ReanudarLoop();
+
         ResumeGameTime();
     }
 
@@ -176,6 +186,9 @@ public class HeadAccessoryPreview : MonoBehaviour
 
         if (panelRoot != null)
             panelRoot.SetActive(false);
+
+        // Reanuda el sonido continuo de correr al cancelar y cerrar el panel
+        sonidoPersonaje?.ReanudarLoop();
 
         ResumeGameTime();
     }
